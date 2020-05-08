@@ -24,9 +24,17 @@ mongoose
 const app = express();
 app.set("port", process.env.PORT || 3000);
 
+// middleware
+app.use(express.json());
+
 app.get("/*", (req, res) => {
   console.log(`${req.method} ${req.path}`);
   return res.status(200).json({ message: "OK" });
+});
+
+app.post("/*", (req, res) => {
+  console.log(`${req.method} ${req.path} ${JSON.stringify(req.body, null, 2)}`);
+  return res.status(201).json({ message: "OK" });
 });
 
 export default app;
