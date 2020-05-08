@@ -1,0 +1,11 @@
+# Secrets
+.env
+
+# Dependencies
+node_modules
+
+# Build
+dist/**/*
+
+# OS cruft
+.DS_Store
