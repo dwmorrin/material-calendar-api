@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 
 const locationHoursSchema = new mongoose.Schema({
   day: {
+    type: String,
+    required: true,
     enum: [
       "monday",
       "tuesday",
@@ -11,7 +13,6 @@ const locationHoursSchema = new mongoose.Schema({
       "saturday",
       "sunday",
     ],
-    required: true,
   },
   hours: {
     type: Number,
