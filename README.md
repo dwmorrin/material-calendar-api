@@ -1,9 +1,6 @@
-# Using MongoDB
+# Calendar API
 
-## Goals
-
-- use the same mongoose schemas on both server & client
-- use TypeScript on both server & client
+[Client app repo found here.](https://github.com/dwmorrin/material-calendar)
 
 ## Setup
 
