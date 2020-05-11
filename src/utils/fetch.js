@@ -26,8 +26,6 @@ program
 
 program.parse(process.argv);
 
-console.log(program);
-
 const options = {
   host: program.host,
   port: process.env.PORT,
