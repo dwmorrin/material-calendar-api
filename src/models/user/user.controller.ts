@@ -13,6 +13,9 @@ export const createOne = (req: Request, res: Response) => {
 export const getMany = (_: Request, res: Response) => {
   User.find()
     .lean()
+    .select(
+      "-__v -createdAt -updatedAt -relations.updatedAt -relations.createdAt"
+    )
     .then((data) => res.status(200).json({ data }))
     .catch((error) => {
       console.error(error);
@@ -23,6 +26,10 @@ export const getMany = (_: Request, res: Response) => {
 export const getOne = (req: Request, res: Response) => {
   User.findOne({ _id: req.params.id })
     .lean()
+    .populate("projects")
+    // leaving relations.project as just an ID
+    .populate("relations.requested")
+    .populate("relations.accepted")
     .then((data) => res.status(200).json({ data }))
     .catch((error) => {
       console.error(error);

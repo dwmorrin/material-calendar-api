@@ -23,6 +23,9 @@ export const getMany = (_: Request, res: Response) => {
 export const getOne = (req: Request, res: Response) => {
   Project.findOne({ _id: req.params.id })
     .lean()
+    .populate("locations")
+    .populate("managers")
+    .populate("members")
     .then((data) => res.status(200).json({ data }))
     .catch((error) => {
       console.error(error);
