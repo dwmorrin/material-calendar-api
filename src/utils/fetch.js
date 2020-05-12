@@ -50,7 +50,8 @@ const onResponse = (res) => {
   res.setEncoding("utf8");
   res.on("data", (chunk) => {
     try {
-      console.log(JSON.parse(chunk));
+      data = JSON.parse(chunk);
+      console.dir(data, { depth: null, colors: true });
     } catch (error) {
       console.log(chunk);
     }
