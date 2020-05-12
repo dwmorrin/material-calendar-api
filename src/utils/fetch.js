@@ -44,10 +44,17 @@ if (program.data) {
 const onResponse = (res) => {
   console.log(
     `STATUS: ${res.statusCode}\n\n`,
-    `HEADERS: ${JSON.stringify(res.headers, null, 2)}\n\n`
+    `HEADERS: ${JSON.stringify(res.headers, null, 2)}\n\n`,
+    "DATA:"
   );
   res.setEncoding("utf8");
-  res.on("data", (chunk) => console.log(`BODY: ${chunk}`));
+  res.on("data", (chunk) => {
+    try {
+      console.log(JSON.parse(chunk));
+    } catch (error) {
+      console.log(chunk);
+    }
+  });
 };
 const req = http.request(options, onResponse);
 
