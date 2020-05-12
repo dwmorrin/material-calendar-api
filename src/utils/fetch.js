@@ -22,7 +22,8 @@ program
     this.path = path;
   })
   .option("-h|--host <url>", "host", "localhost")
-  .option("-d|--data <body>", "data (implicit POST)");
+  .option("-d|--data <body>", "data")
+  .option("-m|--method <method>", "HTTP method");
 
 program.parse(process.argv);
 
@@ -30,7 +31,7 @@ const options = {
   host: program.host,
   port: process.env.PORT,
   path: program.path || "/",
-  method: program.data ? "POST" : "GET",
+  method: program.method || "GET",
 };
 
 if (program.data) {
