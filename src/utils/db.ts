@@ -17,6 +17,8 @@ const connect = (url = process.env.DATABASE_URL): void => {
     console.error("No path to database set, aborting");
     process.exit(1);
   }
+  const development = process.env.NODE_ENV === "development";
+  mongoose.set("debug", development);
   mongoose
     .connect(url, {
       useNewUrlParser: true,
