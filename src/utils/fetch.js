@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * a tool for quickly pinging the development app's API
  * usage: node path/to/thisFile.js apiPath
