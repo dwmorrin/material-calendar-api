@@ -21,8 +21,9 @@ const connect = (url = process.env.DATABASE_URL): void => {
   mongoose.set("debug", development);
   mongoose
     .connect(url, {
-      useNewUrlParser: true,
       useCreateIndex: true,
+      useFindAndModify: false,
+      useNewUrlParser: true,
       useUnifiedTopology: true,
     })
     .then(databaseInit)
