@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { User, defaultUser } from "../models/user/user.model";
+import { User, defaultUser } from "../resources/user/user.model";
 
 const databaseInit = (): void => {
   // check for any minimal data needed to be present and create if needed

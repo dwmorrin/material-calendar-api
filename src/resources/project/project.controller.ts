@@ -10,6 +10,32 @@ export const createOne = (req: Request, res: Response) => {
     });
 };
 
+export const getGroups = (_: Request, res: Response) => {
+  console.log("PROJECT GROUPS");
+  Project.aggregate([
+    {
+      $group: {
+        _id: null,
+        groups: {
+          $addToSet: {
+            title: "$group.title",
+            description: "$group.description",
+            details: "$group.details",
+          },
+        },
+      },
+    },
+  ])
+    .then((data) => {
+      const [doc] = data;
+      res.status(200).json({ data: doc.groups });
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(400).end();
+    });
+};
+
 export const getMany = (_: Request, res: Response) => {
   Project.find()
     .lean()

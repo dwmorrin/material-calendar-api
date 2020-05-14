@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { User } from "../models/user/user.model";
+import { User } from "../resources/user/user.model";
 
 export const login = (req: Request, res: Response) => {
   const { username } = req.body;

@@ -16,7 +16,7 @@ const eventSchema = new mongoose.Schema(
     },
     location: {
       type: mongoose.SchemaTypes.ObjectId,
-      ref: "resource",
+      ref: "location",
       required: true,
     },
     title: {

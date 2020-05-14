@@ -1,4 +1,4 @@
-import { Resource as Location } from "./resource.model";
+import { Resource as Location } from "./location.model";
 import { Request, Response } from "express";
 
 export const createOne = (req: Request, res: Response) => {

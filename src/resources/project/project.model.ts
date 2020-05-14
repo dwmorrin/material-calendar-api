@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const projectAllotmentSchema = new mongoose.Schema({
+  location: {
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: "location",
+  },
   start: {
     type: Date,
     required: true,
