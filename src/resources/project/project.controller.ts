@@ -10,25 +10,18 @@ export const createOne = (req: Request, res: Response) => {
     });
 };
 
-export const getGroups = (_: Request, res: Response) => {
-  console.log("PROJECT GROUPS");
+export const getGroups = (req: Request, res: Response) => {
+  const { context } = req.query;
   Project.aggregate([
     {
       $group: {
-        _id: null,
-        groups: {
-          $addToSet: {
-            title: "$group.title",
-            description: "$group.description",
-            details: "$group.details",
-          },
-        },
+        _id: "$group.title",
+        projects: { $push: "$$ROOT" },
       },
     },
   ])
     .then((data) => {
-      const [doc] = data;
-      res.status(200).json({ data: doc.groups });
+      res.status(200).json({ data, context });
     })
     .catch((error) => {
       console.error(error);
@@ -36,10 +29,11 @@ export const getGroups = (_: Request, res: Response) => {
     });
 };
 
-export const getMany = (_: Request, res: Response) => {
+export const getMany = (req: Request, res: Response) => {
+  const { context } = req.query;
   Project.find()
     .lean()
-    .then((data) => res.status(200).json({ data }))
+    .then((data) => res.status(200).json({ data, context }))
     .catch((error) => {
       console.error(error);
       res.status(400).end();
