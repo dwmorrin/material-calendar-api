@@ -25,6 +25,7 @@ const eventSchema = new mongoose.Schema(
     },
     description: String,
     groupId: String,
+    reservable: Boolean,
   },
   { timestamps: true }
 );

@@ -1,5 +1,6 @@
 import { User } from "./user.model";
 import { Request, Response } from "express";
+import { Project } from "../project/project.model";
 
 export const createOne = (req: Request, res: Response) => {
   User.create(req.body)
@@ -10,13 +11,21 @@ export const createOne = (req: Request, res: Response) => {
     });
 };
 
-export const getMany = (_: Request, res: Response) => {
+export const getGroups = (req: Request, res: Response) => {
+  // TODO do a graph lookup of relationships
+  console.warn(`${req.url} not implemented yet`);
+  res.status(200).json({ data: [] });
+};
+
+export const getMany = (req: Request, res: Response) => {
+  const { context } = req.query;
   User.find()
     .lean()
     .select(
       "-__v -createdAt -updatedAt -relations.updatedAt -relations.createdAt"
     )
-    .then((data) => res.status(200).json({ data }))
+    // .populate("projects")
+    .then((data) => res.status(200).json({ data, context }))
     .catch((error) => {
       console.error(error);
       res.status(400).end();

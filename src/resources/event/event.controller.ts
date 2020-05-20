@@ -10,10 +10,11 @@ export const createOne = (req: Request, res: Response) => {
     });
 };
 
-export const getMany = (_: Request, res: Response) => {
+export const getMany = (req: Request, res: Response) => {
+  const { context } = req.query;
   Event.find()
     .lean()
-    .then((data) => res.status(200).json({ data }))
+    .then((data) => res.status(200).json({ data, context }))
     .catch((error) => {
       console.error(error);
       res.status(400).end();

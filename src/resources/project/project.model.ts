@@ -24,8 +24,8 @@ const projectSchema = new mongoose.Schema({
   description: String, // defaults to group description
   start: Date,
   end: Date,
-  // reservationStart: Date, //! do we need to differentiate from start?
-  // reservationEnd: Date, //! do we need to differentiate from end?
+  // reservationStart: Date, //TODO implement this - not allowed to book prior to
+  // reservationEnd: Date, //! should always == end
   locations: [{ type: mongoose.SchemaTypes.ObjectId, ref: "location" }],
   // groupSize: Number, //! think through this one
   // open: Boolean, //! seems to always be "open"

@@ -1,9 +1,7 @@
 import { Router } from "express";
-import * as controller from "./user.controller";
+import * as controller from "./equipment.controller";
 
 const router = Router();
-
-router.get("/groups", controller.getGroups);
 
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);
