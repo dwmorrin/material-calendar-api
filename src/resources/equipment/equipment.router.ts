@@ -1,7 +1,13 @@
 import { Router } from "express";
-import * as controller from "./equipment.controller";
+import controller from "./equipment.controller";
+import categories from "./category.controller";
+import tags from "./tag.controller";
 
 const router = Router();
+
+// categories & tags
+router.get("/categories", categories.getMany);
+router.get("/tags", tags.getMany);
 
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);
