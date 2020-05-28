@@ -1,5 +1,7 @@
 import dotenv from "dotenv";
 import dotenvExpand from "dotenv-expand";
+dotenvExpand(dotenv.config({ path: ".env" }));
+
 import express from "express";
 import session from "express-session";
 import equipmentRouter from "./resources/equipment/equipment.router";
@@ -8,14 +10,8 @@ import locationRouter from "./resources/location/location.router";
 import projectRouter from "./resources/project/project.router";
 import reservationRouter from "./resources/reservation/reservation.router";
 import userRouter from "./resources/user/user.router";
-import dbConnect from "./utils/db";
 import { login } from "./utils/login";
 import { logout } from "./utils/logout";
-
-dotenvExpand(dotenv.config({ path: ".env" }));
-
-// MongoDB connection
-dbConnect();
 
 // configure express
 const app = express();

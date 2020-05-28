@@ -1,35 +1,42 @@
 import { Request, Response } from "express";
-import { User } from "../resources/user/user.model";
+import connection from "./db";
 
 export const login = (req: Request, res: Response) => {
   const { username } = req.body;
   if (!username) {
     return res.status(400).end();
   }
-  User.findOne({ username })
-    .lean()
-    .select(
-      "-__v -createdAt -updatedAt -relations.updatedAt -relations.createdAt"
-    )
-    .then((data) => {
-      if (!data) {
-        return res.status(401).end();
-      }
-      // user data OK; try to start session
-      if (!req.session) {
-        return res.status(500).json({
-          error: {
-            code: 500,
-            message: "could not start session, try back later",
-          },
-        });
-      }
-      req.session.userId = data._id;
-      // session OK; return user info to client
-      res.status(201).json({ data });
-    })
-    .catch((error) => {
-      console.error(error);
-      res.status(400).end();
-    });
+  const query = `
+  SELECT
+    id,
+    firstName,
+    lastName,
+    role,
+    JSON_ARRAYAGG(group_id) AS 'groupIds',
+    JSON_ARRAYAGG(project_id) AS 'projectIds',
+  FROM
+    user_info
+  WHERE
+    id = ?;
+  `;
+  connection.query(query, [username], (err, rows) => {
+    if (err) {
+      return res.status(500).json({
+        error: {
+          code: 500,
+          message: "could not start session, try back later",
+        },
+      });
+    }
+    const [user] = rows;
+    if (!user.id) {
+      return res
+        .status(401)
+        .json({ error: { code: 401, message: "invalid credentials" } });
+    }
+    if (req.session) {
+      req.session.userId = user.id;
+    }
+    res.json({ data: user, context: req.query.context });
+  });
 };

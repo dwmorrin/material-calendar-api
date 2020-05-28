@@ -4,6 +4,7 @@ import controller from "./user.controller";
 const router = Router();
 
 router.get("/groups", controller.getGroups);
+router.get("/groups/:id", controller.getOneGroup);
 
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);

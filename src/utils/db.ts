@@ -1,33 +1,28 @@
-import mongoose from "mongoose";
-import { User, defaultUser } from "../resources/user/user.model";
+import mysql, { MysqlError } from "mysql";
 
-const databaseInit = (): void => {
-  // check for any minimal data needed to be present and create if needed
-  (async (): Promise<void> => {
-    const numberOfUsers = await User.find().countDocuments().exec();
-    if (numberOfUsers === 0) {
-      const user = await User.create(defaultUser);
-      console.log("No users found.  Created one.", { user });
-    }
-  })();
-};
+/**
+ * returns generic JSON response for MySQL errors for production
+ * and the raw MySQL errors for development
+ */
+export const error500 = (rawDbError: MysqlError) =>
+  process.env.NODE_ENV === "development"
+    ? rawDbError
+    : {
+        error: {
+          code: 500,
+          message: "could not start session, try back later",
+        },
+      };
 
-const connect = (url = process.env.DATABASE_URL): void => {
-  if (!url) {
-    console.error("No path to database set, aborting");
-    process.exit(1);
-  }
-  const development = process.env.NODE_ENV === "development";
-  mongoose.set("debug", development);
-  mongoose
-    .connect(url, {
-      useCreateIndex: true,
-      useFindAndModify: false,
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    })
-    .then(databaseInit)
-    .catch(console.error);
-};
+const connection = mysql.createConnection({
+  host: process.env.DATABASE_HOST,
+  user: process.env.DATABASE_USER,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME,
+});
 
-export default connect;
+connection.connect((error) => {
+  if (error) throw error;
+});
+
+export default connection;

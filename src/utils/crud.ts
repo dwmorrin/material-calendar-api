@@ -1,76 +1,76 @@
 import { Request, Response } from "express";
-import { Document, Model } from "mongoose";
+import connection, { error500 } from "./db";
 
-export const createOne = (model: Model<Document>) => (
-  req: Request,
-  res: Response
-) =>
-  model
-    .create(req.body)
-    .then((data) => res.status(201).json({ data }))
-    .catch((error) => {
-      console.error(error);
-      res.status(400).end();
-    });
+export const createOne = (table: string) => (req: Request, res: Response) => {
+  connection.query(
+    "INSERT INTO ?? SET ?",
+    [table, req.body],
+    (err, results) => {
+      if (err) return results.status(500).json(error500(err));
+      res
+        .status(201)
+        .json({ data: results.insertId, context: req.query.context });
+    }
+  );
+};
 
-export const getMany = (model: Model<Document>) => (
-  req: Request,
-  res: Response
-) =>
-  model
-    .find()
-    .lean()
-    .then((data) => res.status(200).json({ data, context: req.query.context }))
-    .catch((error) => {
-      console.error(error);
-      res.status(400).end();
-    });
+export const getMany = (table: string) => (req: Request, res: Response) => {
+  connection.query("SELECT * FROM ??", [table], (err, rows) => {
+    if (err) return res.status(500).json(error500(err));
+    res.status(200).json({ data: rows, context: req.query.context });
+  });
+};
 
-export const getOne = (model: Model<Document>) => (
-  req: Request,
-  res: Response
-) =>
-  model
-    .findOne({ _id: req.params.id })
-    .lean()
-    .then((data) => res.status(200).json({ data }))
-    .catch((error) => {
-      console.error(error);
-      res.status(400).end();
-    });
-
-export const removeOne = (model: Model<Document>) => (
-  req: Request,
-  res: Response
-) =>
-  model
-    .findOneAndRemove({ _id: req.params.id })
-    .then((data) => res.status(200).json({ data }))
-    .catch((error) => {
-      console.error(error);
-      res.status(400).end();
-    });
-
-export const updateOne = (model: Model<Document>) => (
+export const getOne = (table: string, key: string) => (
   req: Request,
   res: Response
 ) => {
-  model
-    .findOneAndUpdate({ _id: req.params.id }, req.body, {
-      new: true,
-    })
-    .lean()
-    .then((data) => res.status(200).json({ data }))
-    .catch((error) => {
-      console.log(error);
-      res.status(400).end();
-    });
+  connection.query(
+    "SELECT * FROM ?? WHERE ?? = ?",
+    [table, key, req.params.id],
+    (err, rows) => {
+      if (err) return res.status(500).json(error500(err));
+      res.status(200).json({ data: rows[0], context: req.query.context });
+    }
+  );
 };
 
-export const controllers = (model: Model<Document>) => ({
-  createOne: createOne(model),
-  getMany: getMany(model),
-  getOne: getOne(model),
-  removeOne: removeOne(model),
-  updateOne: updateOne(model),
+export const removeOne = (table: string, key: string) => (
+  req: Request,
+  res: Response
+) => {
+  connection.query(
+    "DELETE FROM ?? WHERE ?? = ?",
+    [table, key, req.params.id],
+    (err, results) => {
+      if (err) return res.status(500).json(error500(err));
+      res
+        .status(200)
+        .json({ data: results.affectedRows, context: req.query.context });
+    }
+  );
+};
+
+export const updateOne = (table: string, key: string) => (
+  req: Request,
+  res: Response
+) => {
+  connection.query(
+    "UPDATE ?? SET ? WHERE ?? = ?",
+    [table, req.body, key, req.params.id],
+    (err, results) => {
+      if (err) return res.status(500).json(error500(err));
+      res
+        .status(200)
+        .json({ data: results.affectedRows, context: req.query.context });
+    }
+  );
+};
+
+export const controllers = (table: string, key: string) => ({
+  createOne: createOne(table),
+  getMany: getMany(table),
+  getOne: getOne(table, key),
+  removeOne: removeOne(table, key),
+  updateOne: updateOne(table, key),
 });

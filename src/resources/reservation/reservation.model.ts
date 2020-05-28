@@ -1,30 +1,21 @@
-import mongoose from "mongoose";
-
 /**
  * the who, what, and when for an action taken
  */
-const actionDetailsSchema = new mongoose.Schema(
-  {
-    user: { type: mongoose.SchemaTypes.ObjectId, ref: "user" },
-    reason: String,
-  },
-  { timestamps: true }
-);
+const actionDetailsSchema = {
+  user: { type: "ObjectId", ref: "user" },
+  reason: String,
+};
 
-const notesSchema = new mongoose.Schema(
-  {
-    user: { type: mongoose.SchemaTypes.ObjectId, ref: "user" },
-    text: String,
-  },
-  { timestamps: true }
-);
+const notesSchema = {
+  user: { type: "ObjectId", ref: "user" },
+  text: String,
+};
 
 /**
  * reservations allow users to claim events
  * these function as "shopping carts"
- * {@link https://docs.mongodb.com/drivers/use-cases/inventory-management}
  */
-const reservationSchema = new mongoose.Schema({
+const reservationSchema = {
   status: {
     type: String,
     enum: [
@@ -46,13 +37,13 @@ const reservationSchema = new mongoose.Schema({
 
   // main properties
   description: String, // what the owners will be doing, for admins to review
-  event: { type: mongoose.SchemaTypes.ObjectId, ref: "event" },
-  project: { type: mongoose.SchemaTypes.ObjectId, ref: "project" },
-  owners: [{ type: mongoose.SchemaTypes.ObjectId, ref: "user" }],
+  event: { type: "ObjectId", ref: "event" },
+  project: { type: "ObjectId", ref: "project" },
+  owners: [{ type: "ObjectId", ref: "user" }],
 
   // extended properties
   guests: [String], // 3rd party guests the users want to alert admins about
-  equipment: [{ type: mongoose.SchemaTypes.ObjectId, ref: "equipment" }],
+  equipment: [{ type: "ObjectId", ref: "equipment" }],
   notes: [notesSchema],
 
   cancellation: {
@@ -61,6 +52,6 @@ const reservationSchema = new mongoose.Schema({
     approved: actionDetailsSchema, // by admin
     rejected: actionDetailsSchema, // by admin
   },
-});
+};
 
-export const Reservation = mongoose.model("reservation", reservationSchema);
+export default reservationSchema;

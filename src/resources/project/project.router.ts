@@ -3,7 +3,7 @@ import controller from "./project.controller";
 
 const router = Router();
 
-// aggreate queries
+router.get("/allotment/:id", controller.getOneLocationAllotment);
 router.get("/groups", controller.getGroups);
 
 router.delete("/:id", controller.removeOne);
