@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import connection from "./db";
+import pool, { error500 } from "./db";
 
 export const login = (req: Request, res: Response) => {
   const { username } = req.body;
@@ -13,20 +13,15 @@ export const login = (req: Request, res: Response) => {
     lastName,
     role,
     JSON_ARRAYAGG(group_id) AS 'groupIds',
-    JSON_ARRAYAGG(project_id) AS 'projectIds',
+    JSON_ARRAYAGG(project_id) AS 'projectIds'
   FROM
     user_info
   WHERE
     id = ?;
   `;
-  connection.query(query, [username], (err, rows) => {
+  pool.query(query, [username], (err, rows) => {
     if (err) {
-      return res.status(500).json({
-        error: {
-          code: 500,
-          message: "could not start session, try back later",
-        },
-      });
+      return res.status(500).json(error500(err));
     }
     const [user] = rows;
     if (!user.id) {

@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import connection, { error500 } from "../../utils/db";
+import pool, { error500 } from "../../utils/db";
 import { controllers } from "../../utils/crud";
 
 export const getMany = (req: Request, res: Response) => {
-  connection.query(
+  pool.query(
     `
     SELECT
       id,

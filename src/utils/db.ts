@@ -14,15 +14,27 @@ export const error500 = (rawDbError: MysqlError) =>
         },
       };
 
-const connection = mysql.createConnection({
-  host: process.env.DATABASE_HOST,
-  user: process.env.DATABASE_USER,
-  password: process.env.DATABASE_PASSWORD,
-  database: process.env.DATABASE_NAME,
+/**
+ * Pool reuses connections, up to the connection limit.
+ * Creates connectiontions lazily.  When no connections are available, requests
+ * a put in a queue.
+ *
+ * Use
+ *   pool.query()
+ * for simple queries as it implicity gets and releases connections.
+ *
+ * Use explicit
+ *   pool.getConnection() -> connection.query() -> connection.release()
+ * pattern when you are doing complex queries such as transactions or doing
+ * serial queries where the next query depends upon the previous results.
+ */
+const pool = mysql.createPool({
+  connectionLimit: 10,
+  debug: process.env.NODE_ENV === "development",
+  host: process.env.MYSQL_HOST,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_DATABASE,
 });
 
-connection.connect((error) => {
-  if (error) throw error;
-});
-
-export default connection;
+export default pool;

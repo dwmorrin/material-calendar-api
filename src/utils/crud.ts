@@ -1,21 +1,17 @@
 import { Request, Response } from "express";
-import connection, { error500 } from "./db";
+import pool, { error500 } from "./db";
 
 export const createOne = (table: string) => (req: Request, res: Response) => {
-  connection.query(
-    "INSERT INTO ?? SET ?",
-    [table, req.body],
-    (err, results) => {
-      if (err) return results.status(500).json(error500(err));
-      res
-        .status(201)
-        .json({ data: results.insertId, context: req.query.context });
-    }
-  );
+  pool.query("INSERT INTO ?? SET ?", [table, req.body], (err, results) => {
+    if (err) return results.status(500).json(error500(err));
+    res
+      .status(201)
+      .json({ data: results.insertId, context: req.query.context });
+  });
 };
 
 export const getMany = (table: string) => (req: Request, res: Response) => {
-  connection.query("SELECT * FROM ??", [table], (err, rows) => {
+  pool.query("SELECT * FROM ??", [table], (err, rows) => {
     if (err) return res.status(500).json(error500(err));
     res.status(200).json({ data: rows, context: req.query.context });
   });
@@ -25,7 +21,7 @@ export const getOne = (table: string, key: string) => (
   req: Request,
   res: Response
 ) => {
-  connection.query(
+  pool.query(
     "SELECT * FROM ?? WHERE ?? = ?",
     [table, key, req.params.id],
     (err, rows) => {
@@ -39,7 +35,7 @@ export const removeOne = (table: string, key: string) => (
   req: Request,
   res: Response
 ) => {
-  connection.query(
+  pool.query(
     "DELETE FROM ?? WHERE ?? = ?",
     [table, key, req.params.id],
     (err, results) => {
@@ -55,7 +51,7 @@ export const updateOne = (table: string, key: string) => (
   req: Request,
   res: Response
 ) => {
-  connection.query(
+  pool.query(
     "UPDATE ?? SET ? WHERE ?? = ?",
     [table, req.body, key, req.params.id],
     (err, results) => {

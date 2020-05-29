@@ -1,16 +1,16 @@
 import { Request, Response } from "express";
-import connection, { error500 } from "../../utils/db";
+import pool, { error500 } from "../../utils/db";
 import { controllers } from "../../utils/crud";
 
 export const getGroups = (req: Request, res: Response) => {
-  connection.query("SELECT * FROM group_memebers", (err, rows) => {
+  pool.query("SELECT * FROM group_memebers", (err, rows) => {
     if (err) return res.status(500).json(error500(err));
     res.status(200).json({ data: rows, context: req.query.context });
   });
 };
 
 export const getOneGroup = (req: Request, res: Response) => {
-  connection.query(
+  pool.query(
     "SELECT * FROM group_memebers WHERE groupId = ?",
     [req.params.id],
     (err, rows) => {
@@ -21,7 +21,7 @@ export const getOneGroup = (req: Request, res: Response) => {
 };
 
 export const getOne = (req: Request, res: Response) => {
-  connection.query(
+  pool.query(
     `
       SELECT
         id,
