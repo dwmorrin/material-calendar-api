@@ -4,6 +4,8 @@ dotenvExpand(dotenv.config({ path: ".env" }));
 
 import express, { Request, Response, NextFunction } from "express";
 import session from "express-session";
+import morgan from "morgan";
+
 import { login } from "./utils/login";
 import { logout } from "./utils/logout";
 import apiRouter from "./api.router";
@@ -27,6 +29,9 @@ app.use(
     saveUninitialized: false,
   })
 );
+
+// configure global logging
+app.use(morgan(process.env.NODE_ENV === "development" ? "dev" : "combined"));
 
 // express middleware for parsing JSON data
 app.use(express.json());
