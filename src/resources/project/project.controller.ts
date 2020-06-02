@@ -15,9 +15,9 @@ export const getOneLocationAllotment = (req: Request, res: Response) => {
       SELECT
         *
       FROM
-        project_location_allotment
+        project_allotment
       WHERE
-        projectId = ?
+        project_id = ?
      `,
     [req.params.id],
     (err, rows) => {
