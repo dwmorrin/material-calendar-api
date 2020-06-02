@@ -30,7 +30,7 @@ export const error500 = (rawDbError: MysqlError) =>
  */
 const pool = mysql.createPool({
   connectionLimit: 10,
-  debug: process.env.NODE_ENV === "development",
+  // debug: process.env.NODE_ENV === "development",
   host: process.env.MYSQL_HOST,
   user: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASSWORD,
