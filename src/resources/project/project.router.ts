@@ -5,6 +5,7 @@ const router = Router();
 
 router.get("/allotment/:id", controller.getOneLocationAllotment);
 router.get("/groups", controller.getGroups);
+router.get("/groups/:id", controller.getOneGroup);
 
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);
