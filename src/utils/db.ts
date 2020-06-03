@@ -1,6 +1,33 @@
 import mysql, { MysqlError } from "mysql";
 
 /**
+ * Helper function to translate MySQL values (TINYINT) to JS booleans.
+ * Keys given that do not exist in the source object are silently ignored.
+ * @param obj data from MySQL
+ * @param keys array of string keys to map to bool
+ */
+export const mapKeysToBool = (
+  obj: { [key: string]: unknown },
+  keys: string[]
+) => ({
+  ...obj,
+  ...keys.reduce(
+    (result, key) => (key in obj ? { ...result, [key]: !!obj[key] } : result),
+    {}
+  ),
+});
+
+/**
+ * turns column_name => columnName
+ * @param str snake_case style string
+ * @returns camelCase style string
+ */
+export const snakeToCamel = (str: string) =>
+  str.replace(/(_[a-z])/g, (underscoreLetter) =>
+    underscoreLetter.toUpperCase().replace("_", "")
+  );
+
+/**
  * returns generic JSON response for MySQL errors for production
  * and the raw MySQL errors for development
  */
