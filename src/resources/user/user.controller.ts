@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import pool, { error500 } from "../../utils/db";
+import pool, { error500, inflate } from "../../utils/db";
 import { controllers } from "../../utils/crud";
 
-const groupQuery = `
+const groupQueryFn = (where = "group_id IS NOT NULL") => `
   SELECT 
     sg.group_id AS id,
     rg.project_id AS projectId,
@@ -17,30 +17,30 @@ const groupQuery = `
     LEFT JOIN rmss.student_group sg ON sg.student_id = u.id
     LEFT JOIN rmss.rm_group rg ON rg.id = sg.group_id
   WHERE
-    sg.group_id IS NOT NULL
+    sg.${where}
   GROUP BY
     sg.group_id
 `;
 
 export const getGroups = (req: Request, res: Response) => {
-  pool.query(groupQuery, (err, rows) => {
+  pool.query(groupQueryFn(), (err, rows) => {
     if (err) return res.status(500).json(error500(err));
-    res.status(200).json({ data: rows, context: req.query.context });
+    res
+      .status(200)
+      .json({ data: rows.map(inflate), context: req.query.context });
   });
 };
 
 export const getOneGroup = (req: Request, res: Response) => {
-  pool.query(
-    groupQuery + "WHERE group_id = ?",
-    [req.params.id],
-    (err, rows) => {
-      if (err) return res.status(500).json(error500(err));
-      res.status(200).json({ data: rows[0], context: req.query.context });
-    }
-  );
+  pool.query(groupQueryFn("group_id = ?"), [req.params.id], (err, rows) => {
+    if (err) return res.status(500).json(error500(err));
+    res
+      .status(200)
+      .json({ data: inflate(rows[0]), context: req.query.context });
+  });
 };
 
-const userQueryFn = (where = "") => `
+export const userQueryFn = (where = "") => `
   SELECT 
       u.user_id AS username,
       JSON_OBJECT('first',
@@ -73,7 +73,9 @@ export const getOne = (req: Request, res: Response) => {
     [req.params.id],
     (err, rows) => {
       if (err) return res.status(500).json(error500(err));
-      res.status(200).json({ data: rows[0], context: req.query.context });
+      res
+        .status(200)
+        .json({ data: inflate(rows[0]), context: req.query.context });
     }
   );
 };
@@ -81,7 +83,7 @@ export const getOne = (req: Request, res: Response) => {
 export const getMany = (req: Request, res: Response) => {
   pool.query(userQueryFn(), (err, rows) => {
     if (err) return res.status(500).json(error500(err));
-    res.status(200).json({ data: rows, context: req.query.context });
+    res.status(200).json({ data: inflate(rows), context: req.query.context });
   });
 };
 

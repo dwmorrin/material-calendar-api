@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import pool, { error500 } from "./db";
+import pool, { error500, inflate } from "./db";
 
 export const createOne = (table: string) => (req: Request, res: Response) => {
   pool.query("INSERT INTO ?? SET ?", [table, req.body], (err, results) => {
@@ -13,7 +13,9 @@ export const createOne = (table: string) => (req: Request, res: Response) => {
 export const getMany = (table: string) => (req: Request, res: Response) => {
   pool.query("SELECT * FROM ??", [table], (err, rows) => {
     if (err) return res.status(500).json(error500(err));
-    res.status(200).json({ data: rows, context: req.query.context });
+    res
+      .status(200)
+      .json({ data: rows.map(inflate), context: req.query.context });
   });
 };
 
@@ -26,7 +28,9 @@ export const getOne = (table: string, key: string) => (
     [table, key, req.params.id],
     (err, rows) => {
       if (err) return res.status(500).json(error500(err));
-      res.status(200).json({ data: rows[0], context: req.query.context });
+      res
+        .status(200)
+        .json({ data: inflate(rows[0]), context: req.query.context });
     }
   );
 };

@@ -1,23 +1,19 @@
 import mysql, { MysqlError } from "mysql";
-import { identity, tryCatch } from "ramda";
+import { map, tryCatch } from "ramda";
 
 /**
  * Tries to parse each data as JSON.  If there's no data, or the datum is not
  * JSON, the input is just echoed back out.
+ * @param strOrJSON
+ */
+const jsonParseSafe = (strOrJSON: string) =>
+  tryCatch(JSON.parse, () => strOrJSON)(strOrJSON);
+
+/**
+ * Expands records that have JSON fields.
  * @param data a single record returned from MySQL
  */
-export const inflate = (data: {}): {} =>
-  tryCatch(
-    (data: { [k: string]: string }): {} =>
-      Object.keys(data).reduce(
-        (result, key) => ({
-          ...result,
-          [key]: tryCatch(JSON.parse, identity)(data[key]),
-        }),
-        {}
-      ),
-    identity
-  )(data);
+export const inflate = (data = {}): {} => map(jsonParseSafe, data);
 
 /**
  * Helper function to translate MySQL values (TINYINT) to JS booleans.
@@ -25,9 +21,8 @@ export const inflate = (data: {}): {} =>
  * @param obj data from MySQL
  * @param keys array of string keys to map to bool
  */
-export const mapKeysToBool = (
-  obj: { [key: string]: unknown },
-  keys: string[]
+export const mapKeysToBool = (...keys: string[]) => (
+  obj: { [key: string]: unknown } = {}
 ) => ({
   ...obj,
   ...keys.reduce(

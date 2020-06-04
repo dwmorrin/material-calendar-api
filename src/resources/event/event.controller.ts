@@ -17,15 +17,19 @@ const query = `
 const getMany = (req: Request, res: Response) =>
   pool.query(query, (err, rows) => {
     if (err) return res.status(500).json(error500(err));
-    const data = rows.map((event: {}) => mapKeysToBool(event, ["reservable"]));
+    const data = rows.map((event: {}) => mapKeysToBool(event, "reservable"));
     res.status(200).json({ data, context: req.query.context });
   });
 
 const getOne = (req: Request, res: Response) =>
   pool.query(query + "WHERE id = ?", [req.params.id], (err, rows) => {
     if (err) return res.status(500).json(error500(err));
-    const data = mapKeysToBool(rows[0], ["reservable"]);
-    res.status(200).json({ data, context: req.query.context });
+    res
+      .status(200)
+      .json({
+        data: mapKeysToBool(rows[0], "reservable"),
+        context: req.query.context,
+      });
   });
 
 export default { ...controllers("allotment", "id"), getMany, getOne };
