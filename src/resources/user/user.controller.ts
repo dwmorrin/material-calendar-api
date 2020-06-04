@@ -55,7 +55,16 @@ export const userQueryFn = (where = "") => `
               END) AS roles,
       JSON_OBJECT('email', JSON_ARRAY(u.email)) AS contact,
       IF(rg.project_id IS NOT NULL,
-          JSON_ARRAYAGG(JSON_OBJECT('id', rg.project_id, 'groupId', rg.id)),
+          JSON_ARRAYAGG(
+            JSON_OBJECT(
+              'id', rg.project_id,
+              'groupId', rg.id,
+              'projectGroup', JSON_OBJECT(
+                'id', c.id,
+                'title', c.original_course_name
+              )
+            )
+          ),
           JSON_ARRAY()) AS projects
   FROM
       user u
@@ -63,6 +72,8 @@ export const userQueryFn = (where = "") => `
       student_group sg ON sg.student_id = u.id
           LEFT JOIN
       rm_group rg ON rg.id = sg.group_id
+          LEFT JOIN
+      course c ON c.id = rg.course_id
   ${where}
   GROUP BY u.id
 `;
