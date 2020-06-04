@@ -1,4 +1,23 @@
 import mysql, { MysqlError } from "mysql";
+import { identity, tryCatch } from "ramda";
+
+/**
+ * Tries to parse each data as JSON.  If there's no data, or the datum is not
+ * JSON, the input is just echoed back out.
+ * @param data a single record returned from MySQL
+ */
+export const inflate = (data: {}): {} =>
+  tryCatch(
+    (data: { [k: string]: string }): {} =>
+      Object.keys(data).reduce(
+        (result, key) => ({
+          ...result,
+          [key]: tryCatch(JSON.parse, identity)(data[key]),
+        }),
+        {}
+      ),
+    identity
+  )(data);
 
 /**
  * Helper function to translate MySQL values (TINYINT) to JS booleans.
