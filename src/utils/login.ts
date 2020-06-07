@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import pool, { error500, inflate } from "./db";
-import { userQueryFn } from "../resources/user/user.controller";
+import { userQueryFn } from "../resources/user/user.query";
 
 export const login = (req: Request, res: Response) => {
   const { username } = req.body;
