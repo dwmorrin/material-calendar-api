@@ -1,4 +1,5 @@
 import { Router } from "express";
+import courseRouter from "./resources/course/course.router";
 import equipmentRouter from "./resources/equipment/equipment.router";
 import eventRouter from "./resources/event/event.router";
 import locationRouter from "./resources/location/location.router";
@@ -8,6 +9,7 @@ import userRouter from "./resources/user/user.router";
 
 const router = Router();
 
+router.use("/courses", courseRouter);
 router.use("/equipment", equipmentRouter);
 router.use("/events", eventRouter);
 router.use("/locations", locationRouter);
