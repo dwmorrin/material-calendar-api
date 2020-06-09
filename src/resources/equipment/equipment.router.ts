@@ -3,6 +3,9 @@ import controller from "./equipment.controller";
 
 const router = Router();
 
+router.get("/tags?", controller.getTags);
+router.get("/categor*", controller.getCategories);
+
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);
 router.get("/:id", controller.getOne);
