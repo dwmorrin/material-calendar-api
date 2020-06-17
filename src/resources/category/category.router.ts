@@ -3,6 +3,6 @@ import controller from "./category.controller";
 
 const router = Router();
 
-router.get("/", controller.getAll);
+router.get("/", controller.getMany);
 
 export default router;

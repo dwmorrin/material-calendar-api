@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import pool, { error500, inflate } from "../../utils/db";
 import { controllers } from "../../utils/crud";
 
-const query = "SELECT json_arrayagg(json_object('id',`tag`.`id`,'name',`tag`.`tags`,'category',`category`.`category`)) as tags FROM tag left join category on (tag.category=category.id)";
+const query = "SELECT tag.id,tag.tags,json_object('id',`category`.`id`,'name',`category`.`category`,'path',`category`.`sub_category`) as category from tag Left join category on tag.category=category.id";
 
 export const getAll = (req: Request, res: Response) => {
     pool.query(query, (err, rows) => {
