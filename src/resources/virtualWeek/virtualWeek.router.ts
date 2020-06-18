@@ -1,9 +1,7 @@
 import { Router } from "express";
-import controller from "./location.controller";
+import controller from "./virtualWeek.controller";
 
 const router = Router();
-
-router.get("/default", controller.getDefaultId);
 
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);

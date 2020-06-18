@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import pool, { error500, inflate } from "../../utils/db";
+import pool, { error500 } from "../../utils/db";
 import { controllers } from "../../utils/crud";
 
 const query = `
