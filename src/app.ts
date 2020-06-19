@@ -48,12 +48,11 @@ const loginGuard = (req: Request, res: Response, next: NextFunction) => {
 };
 app.use("/api", loginGuard, apiRouter);
 
-// if nothing else...
+// catch unhandled requests
 app.use((req, res) => {
-  console.warn(`Unhandled request for ${req.originalUrl}`);
-  res
-    .status(500)
-    .json({ error: { code: 500, message: "couldnt handle your request" } });
+  res.status(404).json({
+    error: { code: 404, message: `nothing found for ${req.originalUrl}` },
+  });
 });
 
 export default app;

@@ -7,6 +7,7 @@ import {
   userProjectQuery,
   userQueryFn,
 } from "./user.query";
+import adapter from "./user.adapter";
 
 export const getGroups = (req: Request, res: Response) => {
   pool.query(groupQueryFn(), (err, rows) => {
@@ -71,13 +72,48 @@ export const getOne = (req: Request, res: Response) => {
 export const getMany = (req: Request, res: Response) => {
   pool.query(userQueryFn(), (err, rows) => {
     if (err) return res.status(500).json(error500(err));
-    res.status(200).json({ data: inflate(rows), context: req.query.context });
+    res
+      .status(200)
+      .json({ data: rows.map(inflate), context: req.query.context });
+  });
+};
+
+export const createOne = (req: Request, res: Response) => {
+  pool.query("INSERT INTO user SET ?", adapter(req.body), (err, results) => {
+    if (err) return res.status(500).json(error500(err));
+    res.status(201).json({
+      data: { ...req.body, id: results.insertId },
+      context: req.query.context,
+    });
+  });
+};
+
+export const updateOne = (req: Request, res: Response) => {
+  pool.query(
+    "UPDATE user SET ? WHERE id = ?",
+    [adapter(req.body), req.params.id],
+    (err) => {
+      if (err) return res.status(500).json(error500(err));
+      res.status(200).json({ data: req.body, context: req.query.context });
+    }
+  );
+};
+
+export const removeOne = (req: Request, res: Response) => {
+  pool.query("DELETE FROM user WHERE id = ?", req.params.id, (err, results) => {
+    if (err) return res.status(500).json(error500(err));
+    res
+      .status(200)
+      .json({ data: results.affectedRows, context: req.query.context });
   });
 };
 
 export default {
   ...controllers("user", "user_id"),
+  createOne,
   getOne,
+  updateOne,
+  removeOne,
   getMany,
   getCourses,
   getGroups,

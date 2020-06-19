@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import pool, { error500, inflate } from "../../utils/db";
 import { controllers } from "../../utils/crud";
+import pool, { error500, inflate } from "../../utils/db";
 
 const query = "SELECT * FROM equipment_info";
 

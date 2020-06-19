@@ -3,10 +3,13 @@ import pool, { error500, inflate } from "./db";
 
 export const createOne = (table: string) => (req: Request, res: Response) => {
   pool.query("INSERT INTO ?? SET ?", [table, req.body], (err, results) => {
-    if (err) return results.status(500).json(error500(err));
+    if (err) return res.status(500).json(error500(err));
     res
       .status(201)
-      .json({ data: results.insertId, context: req.query.context });
+      .json({
+        data: { ...req.body, id: results.insertId },
+        context: req.query.context,
+      });
   });
 };
 
@@ -58,11 +61,9 @@ export const updateOne = (table: string, key: string) => (
   pool.query(
     "UPDATE ?? SET ? WHERE ?? = ?",
     [table, req.body, key, req.params.id],
-    (err, results) => {
+    (err) => {
       if (err) return res.status(500).json(error500(err));
-      res
-        .status(200)
-        .json({ data: results.affectedRows, context: req.query.context });
+      res.status(200).json({ data: req.body, context: req.query.context });
     }
   );
 };

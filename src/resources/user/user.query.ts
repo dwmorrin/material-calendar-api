@@ -66,6 +66,7 @@ export const userProjectQuery = `
 
 export const userQueryFn = (where = "") => `
   SELECT 
+      u.id,
       u.user_id AS username,
       JSON_OBJECT('first',
               u.first_name,
