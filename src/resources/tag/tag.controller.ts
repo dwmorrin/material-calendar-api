@@ -2,7 +2,18 @@ import { Request, Response } from "express";
 import pool, { error500, inflate } from "../../utils/db";
 import { controllers } from "../../utils/crud";
 
-const query = "SELECT tag.id,tag.tags as name,json_object('id',`category`.`id`,'name',`category`.`category`,'path',`category`.`sub_category`) as category from tag Left join category on tag.category=category.id";
+const query = `
+  SELECT
+    tag.id,
+    tag.tags AS name, 
+    JSON_OBJECT(
+      'id', `category`.`id`,
+      'name', `category`.`category`,
+      'path', `category`.`sub_category`
+    ) as category
+  FROM tag
+  LEFT JOIN category ON tag.category = category.id
+`;
 
 export const getAll = (req: Request, res: Response) => {
     pool.query(query, (err, rows) => {

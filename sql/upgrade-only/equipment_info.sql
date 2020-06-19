@@ -1,1 +1,27 @@
-CREATE ALGORITHM=UNDEFINED DEFINER=`rmss`@`localhost` SQL SECURITY DEFINER VIEW `equipment_info` AS select `equipment`.`id` AS `id`,json_object('id',`category`.`id`,'name',`category`.`sub_category`,'path',`category`.`category`) AS `category`,`equipment`.`manufacturer` AS `manufacturer`,`equipment`.`model` AS `model`,`equipment`.`description` AS `description`,`equipment`.`sku` AS `sku`,`equipment`.`quantity` AS `quantity`,json_arrayagg(json_object('id',`tag`.`id`,'name',`tag`.`tags`,'category',`category`.`category`)) AS `tags`,0 AS `consumable`,NULL AS `reservations` from ((`equipment` left join `category` on((`category`.`id` = `equipment`.`category`))) left join `tag` on(json_contains(`equipment`.`tags`,cast(`tag`.`id` as json),'$'))) group by `equipment`.`id`;
+CREATE VIEW `equipment_info` AS
+SELECT
+  `equipment`.`id` AS `id`,
+  JSON_OBJECT(
+    'id',`category`.`id`,
+    'name',`category`.`sub_category`,
+    'path',`category`.`category`
+  ) AS `category`,
+  `equipment`.`manufacturer` AS `manufacturer`,
+  `equipment`.`model` AS `model`,
+  `equipment`.`description` AS `description`,
+  `equipment`.`sku` AS `sku`,
+  `equipment`.`quantity` AS `quantity`,
+  JSON_ARRAYAGG(
+    JSON_OBJECT(
+      'id',`tag`.`id`,
+      'name',`tag`.`tags`,
+      'category',`category`.`category`
+    )
+  ) AS `tags`,
+  0 AS `consumable`,
+  NULL AS `reservations`
+FROM
+  ((`equipment` LEFT JOIN `category` on ((`category`.`id` = `equipment`.`category`)))
+  LEFT JOIN `tag` ON (JSON_CONTAINS(`equipment`.`tags`, CAST(`tag`.`id` AS JSON), '$')))
+GROUP BY
+  `equipment`.`id`;
