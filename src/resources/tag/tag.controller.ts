@@ -12,7 +12,7 @@ const query = `
       'path', c.sub_category
     ) as 'category'
   FROM tag
-  LEFT JOIN category c ON tag.category = category.id
+  LEFT JOIN category c ON tag.category = c.id
 `;
 
 export const getAll = (req: Request, res: Response) => {
