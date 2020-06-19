@@ -8,7 +8,7 @@ SELECT
   `p1`.`book_start` AS `reservationStart`,
   JSON_ARRAYAGG(
     JSON_OBJECT(
-      'id', `p2`.`studio_id`,
+      'locationId', `p2`.`studio_id`,
       'hours', `pa`.`hour`,
       'start', `pa`.`start`,
       'end', `pa`.`end`
@@ -35,7 +35,7 @@ UNION SELECT
   `p3`.`book_start` AS `reservationStart`,
   JSON_ARRAYAGG(
     JSON_OBJECT(
-      'id', `p3`.`studio_id`,
+      'locationId', `p3`.`studio_id`,
       'hours', `pa`.`hour`,
       'start', `pa`.`start`,
       'end', `pa`.`end`
