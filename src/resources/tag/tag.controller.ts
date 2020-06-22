@@ -5,10 +5,10 @@ import { controllers } from "../../utils/crud";
 const query = `
   SELECT
     tag.id,
-    tag.tags AS name, 
+    tag.title AS title, 
     JSON_OBJECT(
       'id', c.id,
-      'name', c.title,
+      'title', c.title,
       'parentId', c.parent_id
     ) as 'category'
   FROM tag
