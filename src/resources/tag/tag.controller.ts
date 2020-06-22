@@ -5,11 +5,11 @@ import { controllers } from "../../utils/crud";
 const query = `
   SELECT
     tag.id,
-    tag.tags AS name, 
+    tag.title AS title, 
     JSON_OBJECT(
       'id', c.id,
-      'name', c.category,
-      'path', c.sub_category
+      'title', c.title,
+      'parentId', c.parent_id
     ) as 'category'
   FROM tag
   LEFT JOIN category c ON tag.category = c.id
