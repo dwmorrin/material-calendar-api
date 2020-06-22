@@ -8,8 +8,8 @@ const query = `
     tag.tags AS name, 
     JSON_OBJECT(
       'id', c.id,
-      'name', c.category,
-      'path', c.sub_category
+      'name', c.title,
+      'parentId', c.parent_id
     ) as 'category'
   FROM tag
   LEFT JOIN category c ON tag.category = c.id
