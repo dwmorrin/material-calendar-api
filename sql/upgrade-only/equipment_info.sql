@@ -7,7 +7,7 @@ SELECT
   `equipment`.`sku` AS `sku`,
   `equipment`.`quantity` AS `quantity`,
   JSON_OBJECT('id',`c`.`id`,'title',`c`.`title`,'parentId',`c`.`parent_id`) AS `category`,
-  JSON_ARRAYAGG(JSON_OBJECT('id',`tag`.`id`,'title',`tag`.`tags`,'category',`c`.`title`)) AS `tags`,
+  JSON_ARRAYAGG(JSON_OBJECT('id',`tag`.`id`,'title',`tag`.`title`,'category',`c`.`title`)) AS `tags`,
   0 AS `consumable`,
   NULL AS `reservations`
 FROM
