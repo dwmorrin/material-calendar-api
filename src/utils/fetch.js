@@ -24,7 +24,8 @@ program
   })
   .option("-h|--host <url>", "host", "localhost")
   .option("-d|--data <body>", "data")
-  .option("-m|--method <method>", "HTTP method");
+  .option("-m|--method <method>", "HTTP method")
+  .option("-1|--one ", "limit output to one result");
 
 program.parse(process.argv);
 
@@ -49,12 +50,30 @@ const onResponse = (res) => {
     "DATA:"
   );
   res.setEncoding("utf8");
+  let rawData = "";
   res.on("data", (chunk) => {
+    rawData += chunk;
+  });
+  res.on("end", () => {
     try {
-      data = JSON.parse(chunk);
-      console.dir(data, { depth: null, colors: true });
+      const parsed = JSON.parse(rawData);
+      const data = parsed.data;
+      if (!data) {
+        console.log("(No data property in response.)");
+      } else {
+        console.dir(Array.isArray(data) && program.one ? data[0] : data, {
+          depth: null,
+          colors: true,
+        });
+      }
+      delete parsed.data;
+      if (Object.keys(parsed).length > 0) {
+        console.dir(parsed, { depth: null, colors: true });
+      }
     } catch (error) {
-      console.log(chunk);
+      console.log("hit an error in parsing, dumping data");
+      console.log(rawData);
+      console.log("Parsing hit this error:", error);
     }
   });
 };
