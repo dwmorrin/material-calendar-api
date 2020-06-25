@@ -39,6 +39,17 @@ const getBackupConfig = () => {
 };
 
 //-------- backup.controller ---- //
+
+/**
+ * getTimestamp returns a "YYYY-mm-dd_HH:MM:SS" format string in local time
+ */
+const getTimestamp = () => {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 1000 * 60)
+    .toJSON()
+    .replace("T", "_")
+    .split(".")[0];
+};
 const createBackup = (_: Request, res: Response) => {
   const config = getBackupConfig();
   if (!config) {
@@ -46,8 +57,7 @@ const createBackup = (_: Request, res: Response) => {
       error: { code: 500, message: "backup not setup; contact admin" },
     });
   }
-  const timestamp = new Date().toJSON().replace("T", "_").split(".")[0];
-  const filename = `db_backup_${timestamp}.sql`;
+  const filename = `db_backup_${getTimestamp()}.sql`;
   const wstream = fs.createWriteStream(path.join(config.directory, filename));
   const mysqldump = spawn("mysqldump", [
     "--single-transaction",
@@ -59,7 +69,7 @@ const createBackup = (_: Request, res: Response) => {
   mysqldump.stdout
     .pipe(wstream)
     .on("finish", () => {
-      res.status(201).json({ data: "success" });
+      getListOfBackups(_, res);
     })
     .on("error", (err) => {
       res.status(500).json(err);
