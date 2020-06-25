@@ -1,5 +1,6 @@
 # Secrets
 .env
+database-backups/**/*
 
 # Dependencies
 node_modules

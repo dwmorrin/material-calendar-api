@@ -10,6 +10,8 @@ import { login } from "./utils/login";
 import { logout } from "./utils/logout";
 import apiRouter from "./api.router";
 
+import backup from "./utils/backup";
+
 // configure express
 const app = express();
 app.set("port", process.env.PORT || 5000);

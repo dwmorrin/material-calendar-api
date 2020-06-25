@@ -1,4 +1,5 @@
 import { Router } from "express";
+import backupRouter from "./utils/backup";
 import courseRouter from "./resources/course/course.router";
 import equipmentRouter from "./resources/equipment/equipment.router";
 import categoryRouter from "./resources/category/category.router";
@@ -13,6 +14,7 @@ import virtualWeekRouter from "./resources/virtualWeek/virtualWeek.router";
 
 const router = Router();
 
+router.use("/backup", backupRouter);
 router.use("/courses", courseRouter);
 router.use("/equipment", equipmentRouter);
 router.use("/categories", categoryRouter);
