@@ -13,7 +13,7 @@
 
 import fs from "fs";
 import path from "path";
-import { spawn } from "child_process";
+import { exec, spawn } from "child_process";
 import { Request, Response, Router } from "express";
 
 const getBackupConfig = () => {
@@ -111,11 +111,48 @@ const getListOfBackups = (_: Request, res: Response) => {
   });
 };
 
+/**
+ * restoreFromFilename accepts a user supplied filename, then looks that
+ * filename up in the backups directory to verify it is valid and not an
+ * injection attack.
+ */
+const restoreFromFilename = (req: Request, res: Response) => {
+  const config = getBackupConfig();
+  if (!config) {
+    return res.status(500).json({
+      error: { code: 500, message: "backup not setup; contact admin" },
+    });
+  }
+  fs.readdir(config.directory, (err, files) => {
+    if (err) return res.status(500).json(err);
+    const { filename } = req.params;
+    const foundFilename = files.find((f) => f === filename);
+    if (!filename || !foundFilename) {
+      return res.status(400).json({
+        error: {
+          code: 400,
+          message: `given filename "${filename}", does not exist`,
+        },
+      });
+    }
+    const { user, password, database, directory } = config;
+    const filepath = path.join(directory, foundFilename);
+    exec(
+      `mysql -u${user} -p${password} ${database} < ${filepath}`,
+      (err, stdout, stderr) => {
+        if (err) return res.status(500).json(err);
+        res.status(201).json({ data: { stdout, stderr } });
+      }
+    );
+  });
+};
+
 //----- backup.router -----//
 const router = Router();
 
 router.get("/", getListOfBackups);
 router.get("/:filename", getBackup);
 router.post("/", createBackup);
+router.post("/restore/:filename", restoreFromFilename);
 
 export default router;
