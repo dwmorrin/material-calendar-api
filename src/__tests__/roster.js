@@ -38,13 +38,14 @@ const chemistryRecordString =
 const rosterString = `\n${englishRecordString}\n${chemistryRecordString}\n`;
 
 const incompleteRecord = "a\tb\tc\t";
-const incompleteRoster = `\n${englishRecord}\n${incompleteRecord}\n${chemistryRecord}`;
+const incompleteRoster = `\n${englishRecordString}\n${incompleteRecord}\n${chemistryRecordString}`;
 
 test("parse roster", () => {
-  const parsed = parseRoster(rosterString);
-  expect(parsed.length).toBe(2);
-  expect(parsed[0]).toEqual(englishRecord);
-  expect(parsed[1]).toEqual(chemistryRecord);
-  expect(() => parseRoster()).toThrow();
-  expect(() => parseRoster(incompleteRoster)).toThrow();
+  const { users, courses, roster, errors } = parseRoster(rosterString);
+  expect(errors.length).toBe(0);
+  expect(Object.keys(users).length).toBe(2);
+  expect(users["dd456"]).toEqual(chemistryRecord.student);
+  expect(courses["Intro to Chemistry"]).toEqual(chemistryRecord.course);
+  expect(parseRoster().errors.length).toBe(1);
+  expect(parseRoster(incompleteRoster).errors.length).toBe(1);
 });

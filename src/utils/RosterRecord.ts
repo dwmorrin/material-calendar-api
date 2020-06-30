@@ -3,21 +3,48 @@ import { tsv } from "./csv";
 const lineIsBlank = (line: string[]) => line.length === 1 && line[0] === "";
 const lineIsNotBlank = (line: string[]) => !lineIsBlank(line);
 
+/**
+ * Produces 4 lists: users, courses, projects, roster records, and errors
+ * @param rosterString tab separated values, newline separated records
+ */
 export const parseRoster = (rosterString: string) => {
-  const rawParse = tsv(rosterString);
-  return rawParse.filter(lineIsNotBlank).map((line, index) => {
-    try {
-      return new RosterRecord(line);
-    } catch (error) {
-      throw new Error(
-        `In roster import, line ${
-          index + 1
-        } rejected. Line contents: <<<${line.toString()}>>>, error message: ${JSON.stringify(
-          error
-        )}`
-      );
-    }
-  });
+  try {
+    const rawParse = tsv(rosterString);
+    return rawParse.filter(lineIsNotBlank).reduce(
+      (lists, line, index) => {
+        try {
+          const record = new RosterRecord(line);
+          lists.roster.push(record);
+          if (!(record.student.id in lists.users))
+            lists.users[record.student.id] = record.student;
+          if (!(record.course.title in lists.courses))
+            lists.courses[record.course.title] = record.course;
+        } catch (error) {
+          lists.errors.push(
+            new Error(
+              `In roster import, line ${
+                index + 1
+              } rejected. Line contents: ${JSON.stringify(line)}`
+            )
+          );
+        }
+        return lists;
+      },
+      {
+        users: {} as { [k: string]: Student },
+        courses: {} as { [k: string]: Course },
+        roster: [] as RosterRecord[],
+        errors: [] as Error[],
+      }
+    );
+  } catch (error) {
+    return {
+      users: {},
+      courses: {},
+      roster: [],
+      errors: [error],
+    };
+  }
 };
 
 export enum RosterFields {
@@ -30,25 +57,30 @@ export enum RosterFields {
   PROJECT_TITLE,
 }
 
+interface Course {
+  title: string;
+  catalogId: string;
+  section: string;
+  instructor: string;
+  project: { title: string };
+}
+interface Student {
+  name: {
+    first: string;
+    last: string;
+  };
+  id: string;
+}
 export interface RosterRecord {
-  course: {
-    title: string;
-    catalogId: string;
-    section: string;
-    instructor: string;
-    project: { title: string };
-  };
-  student: {
-    name: {
-      first: string;
-      last: string;
-    };
-    id: string;
-  };
+  id: number;
+  course: Course;
+  student: Student;
 }
 
 export class RosterRecord implements RosterRecord {
+  static url = "/api/roster";
   constructor(fields: string[]) {
+    this.id = -1;
     const [last, first] = fields[RosterFields.STUDENT_NAME].split(", ");
     this.course = {
       title: fields[RosterFields.COURSE_TITLE],

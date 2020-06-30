@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import pool, { error500, mapKeysToBool } from "../../utils/db";
+import { controllers } from "../../utils/crud";
 
 const makeActiveBoolean = mapKeysToBool("active");
 
@@ -14,4 +15,4 @@ export const getCurrent = (req: Request, res: Response) =>
     }
   );
 
-export default { getCurrent };
+export default { ...controllers("semester", "id"), getCurrent };

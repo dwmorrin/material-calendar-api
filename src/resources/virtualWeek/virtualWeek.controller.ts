@@ -2,7 +2,19 @@ import { Request, Response } from "express";
 import pool, { error500 } from "../../utils/db";
 import { controllers } from "../../utils/crud";
 
-const query = `
+const getManyQuery = `
+SELECT
+  id,
+  start,
+  end,
+  studio_id AS locationId,
+  -1 AS 'locationHours',
+  -1 AS 'projectHours'
+FROM
+  virtual_week
+`;
+
+const calculatedHoursQuery = `
 SELECT
   v.id,
   v.start,
@@ -34,7 +46,18 @@ GROUP BY v.id
 `;
 
 export const getOne = (req: Request, res: Response) => {
-  pool.query(query, [req.params.id, req.params.id], (err, rows) => {
+  pool.query(
+    calculatedHoursQuery,
+    [req.params.id, req.params.id],
+    (err, rows) => {
+      if (err) return res.status(500).json(error500(err));
+      res.status(200).json({ data: rows, context: req.query.context });
+    }
+  );
+};
+
+export const getMany = (req: Request, res: Response) => {
+  pool.query(getManyQuery, (err, rows) => {
     if (err) return res.status(500).json(error500(err));
     res.status(200).json({ data: rows, context: req.query.context });
   });
@@ -42,5 +65,6 @@ export const getOne = (req: Request, res: Response) => {
 
 export default {
   ...controllers("virtual_week", "id"),
+  getMany,
   getOne,
 };
