@@ -40,6 +40,9 @@ const getBackupConfig = () => {
 
 //-------- backup.controller ---- //
 
+const error500 = (message: string) => ({ code: 500, message });
+const configError = error500("backup not configured; contact admin");
+
 /**
  * getTimestamp returns a "YYYY-mm-dd_HH:MM:SS" format string in local time
  */
@@ -53,9 +56,7 @@ const getTimestamp = () => {
 const createBackup = (_: Request, res: Response) => {
   const config = getBackupConfig();
   if (!config) {
-    return res.status(500).json({
-      error: { code: 500, message: "backup not setup; contact admin" },
-    });
+    return res.status(500).json({ error: configError });
   }
   const filename = `db_backup_${getTimestamp()}.sql`;
   const wstream = fs.createWriteStream(path.join(config.directory, filename));
@@ -79,9 +80,7 @@ const createBackup = (_: Request, res: Response) => {
 const getBackup = (req: Request, res: Response) => {
   const config = getBackupConfig();
   if (!config) {
-    return res.status(500).json({
-      error: { code: 500, message: "backup not setup; contact admin" },
-    });
+    return res.status(500).json({ error: configError });
   }
 
   const { filename = "" } = req.params;
@@ -100,9 +99,7 @@ const getBackup = (req: Request, res: Response) => {
 const getListOfBackups = (_: Request, res: Response) => {
   const config = getBackupConfig();
   if (!config) {
-    return res.status(500).json({
-      error: { code: 500, message: "backup not setup; contact admin" },
-    });
+    return res.status(500).json({ error: configError });
   }
 
   fs.readdir(config.directory, (err, files) => {
@@ -119,9 +116,7 @@ const getListOfBackups = (_: Request, res: Response) => {
 const restoreFromFilename = (req: Request, res: Response) => {
   const config = getBackupConfig();
   if (!config) {
-    return res.status(500).json({
-      error: { code: 500, message: "backup not setup; contact admin" },
-    });
+    return res.status(500).json({ error: configError });
   }
   fs.readdir(config.directory, (err, files) => {
     if (err) return res.status(500).json(err);
