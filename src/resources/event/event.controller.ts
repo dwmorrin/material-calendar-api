@@ -1,7 +1,7 @@
 import { controllers } from "../../utils/crud";
 import { Request, Response } from "express";
 import pool, { error500, mapKeysToBool, inflate } from "../../utils/db";
-import { compose } from "ramda";
+import { compose, eqProps } from "ramda";
 
 const query = `
   SELECT 
@@ -46,4 +46,40 @@ const getOne = (req: Request, res: Response) =>
     });
   });
 
-export default { ...controllers("allotment", "id"), getMany, getOne };
+/**
+ * mysql does not accept key-value objects for bulk imports;
+ * values must be an array of arrays.
+ * Adjust the ordering here as needed.
+ * @param event Event object
+ */
+const flattenEvent = (event: {
+  [k: string]: string | number;
+}): (string | number)[] => [
+  event.start,
+  event.end,
+  event.locationId,
+  event.reservable,
+  event.title,
+];
+
+const insertManyQuery = `
+  INSERT INTO allotment
+    (start, end, studio_id, bookable, description)
+  VALUES ?
+`;
+
+const createMany = (req: Request, res: Response) =>
+  pool.query(insertManyQuery, [req.body.map(flattenEvent)], (err) => {
+    if (err) return res.status(500).json(error500(err));
+    res.status(201).json({
+      data: "OK",
+      context: req.query.context,
+    });
+  });
+
+export default {
+  ...controllers("allotment", "id"),
+  getMany,
+  getOne,
+  createMany,
+};
