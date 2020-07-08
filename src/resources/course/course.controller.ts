@@ -9,7 +9,7 @@ const query = `
     instructor
   FROM
     course
-  group by title
+  group by title,instructor
 `;
 
 export const getMany = (req: Request, res: Response) => {
