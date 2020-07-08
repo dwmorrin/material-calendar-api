@@ -39,6 +39,7 @@ FROM
 
 export const userCourseQuery = `
   SELECT
+    c.id,
     original_course_name as title,
     instructor,
     JSON_ARRAYAGG(rg.project_id) AS projectIds

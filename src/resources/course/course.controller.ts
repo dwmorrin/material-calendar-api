@@ -3,11 +3,13 @@ import pool, { error500 } from "../../utils/db";
 import { controllers } from "../../utils/crud";
 
 const query = `
-  SELECT DISTINCT
+  SELECT
+    id,
     original_course_name as title,
     instructor
   FROM
     course
+  group by title
 `;
 
 export const getMany = (req: Request, res: Response) => {
