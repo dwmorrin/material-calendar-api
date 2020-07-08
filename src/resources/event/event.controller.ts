@@ -53,12 +53,12 @@ const getOne = (req: Request, res: Response) =>
  * @param event Event object
  */
 const flattenEvent = (event: {
-  [k: string]: string | number;
-}): (string | number)[] => [
+  [k: string]: string | number | boolean;
+}): (string | number | boolean)[] => [
   event.start,
   event.end,
   event.locationId,
-  event.reservable,
+  event.reservable || false,
   event.title,
 ];
 
