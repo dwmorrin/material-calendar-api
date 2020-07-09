@@ -2,7 +2,7 @@ CREATE VIEW `rmss`.`project_info` AS
 SELECT 
   `p1`.`id` AS `id`,
   `p1`.`name` AS `title`,
-  JSON_OBJECT('title', `c`.`original_course_name`) AS `course`,
+  JSON_OBJECT('id',`c`.`id`,'title',`c`.`original_course_name`) AS `course`,
   `p1`.`start` AS `start`,
   `p1`.`end` AS `end`,
   `p1`.`book_start` AS `reservationStart`,
