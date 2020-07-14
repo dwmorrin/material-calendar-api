@@ -112,6 +112,9 @@ const getListOfBackups = (_: Request, res: Response) => {
  * restoreFromFilename accepts a user supplied filename, then looks that
  * filename up in the backups directory to verify it is valid and not an
  * injection attack.
+ * WARNING: this runs the commands DROP DATABASE, CREATE DATABASE then imports
+ * the file.  It does not backup first and just sends back err, stdout, stderr
+ * for the client to figure out what to do next in case of catostrophic failure.
  */
 const restoreFromFilename = (req: Request, res: Response) => {
   const config = getBackupConfig();
@@ -132,13 +135,20 @@ const restoreFromFilename = (req: Request, res: Response) => {
     }
     const { user, password, database, directory } = config;
     const filepath = path.join(directory, foundFilename);
-    exec(
-      `mysql -u${user} -p${password} ${database} < ${filepath}`,
-      (err, stdout, stderr) => {
-        if (err) return res.status(500).json(err);
-        res.status(201).json({ data: { stdout, stderr } });
-      }
-    );
+    const mysqlUserPasswordString = `mysql -u${user} -p${password}`;
+    const dropDbString = `${mysqlUserPasswordString} -e 'DROP DATABASE ${database}'`;
+    const createDbString = `${mysqlUserPasswordString} -e 'CREATE DATABASE ${database}'`;
+    const restoreDbString = `${mysqlUserPasswordString} ${database} < ${filepath}`;
+    exec(dropDbString, (err, stdout, stderr) => {
+      if (err) return res.status(500).json({ err, stdout, stderr });
+      exec(createDbString, (err, stdout, stderr) => {
+        if (err) return res.status(500).json({ err, stdout, stderr });
+        exec(restoreDbString, (err, stdout, stderr) => {
+          if (err) return res.status(500).json({ err, stdout, stderr });
+          res.status(201).json({ data: { stdout, stderr } });
+        });
+      });
+    });
   });
 };
 
