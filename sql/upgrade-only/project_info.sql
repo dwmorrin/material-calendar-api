@@ -42,9 +42,9 @@ select
   `p1`.`start` AS `start`,
   `p1`.`end` AS `end`,
   `p1`.`book_start` AS `reservationStart`,
-  json_array(
+  json_arrayagg(
     json_object(
-      'id',
+      'locationId',
       `p2`.`studio_id`,
       'hours',
       `pa`.`hour`,
@@ -89,9 +89,9 @@ select
   `p3`.`start` AS `start`,
   `p3`.`end` AS `end`,
   `p3`.`book_start` AS `reservationStart`,
-  json_array(
+  json_arrayagg(
     json_object(
-      'id',
+      'locationId',
       `p3`.`studio_id`,
       'hours',
       `pa`.`hour`,
@@ -122,4 +122,4 @@ where
     and (`p3`.`studio_id` is not null)
   )
 group by
-  `p3`.`name`;
+  `p3`.`name`
