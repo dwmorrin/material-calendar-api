@@ -1,29 +1,34 @@
-CREATE VIEW `rmss`.`project_info` AS with `manager_list` as (
+CREATE VIEW `project_info` AS with `manager_list` as (
   select
-    `rmss`.`course`.`id` AS `course_id`,
+    `course`.`id` AS `course_id`,
     json_arrayagg(
       json_object(
         'id',
-        `rmss`.`user`.`id`,
-        'first_name',
-        `rmss`.`user`.`first_name`,
-        'last_name',
-        `rmss`.`user`.`last_name`
+        `user`.`id`,
+        'username',
+        `user`.`user_id`,
+        'name',
+        json_object(
+          'first',
+          `user`.`first_name`,
+          'last',
+          `user`.`last_name`
+        )
       )
-    ) AS `manager`
+    ) AS `managers`
   from
     (
-      `rmss`.`course`
-      left join `rmss`.`user` on(
+      `course`
+      left join `user` on(
         json_contains(
-          `rmss`.`course`.`instructor`,
-          cast(`rmss`.`user`.`id` as json),
+          `course`.`instructor`,
+          cast(`user`.`id` as json),
           '$'
         )
       )
     )
   group by
-    `rmss`.`course`.`id`
+    `course`.`id`
 )
 select
   `p1`.`id` AS `id`,
@@ -52,18 +57,18 @@ select
   `p1`.`group_size` AS `groupSize`,
   `p1`.`group_hours` AS `groupAllottedHours`,
   `p1`.`is_open` AS `open`,
-  `manager_list`.`manager` AS `manager`
+  `manager_list`.`managers` AS `managers`
 from
   (
     (
       (
         (
-          `rmss`.`project` `p1`
-          left join `rmss`.`project` `p2` on((`p1`.`id` = `p2`.`parent_id`))
+          `project` `p1`
+          left join `project` `p2` on((`p1`.`id` = `p2`.`parent_id`))
         )
-        left join `rmss`.`course` `c` on((`p1`.`course_id` = `c`.`id`))
+        left join `course` `c` on((`p1`.`course_id` = `c`.`id`))
       )
-      left join `rmss`.`project_allotment` `pa` on((`p2`.`id` = `pa`.`project_id`))
+      left join `project_allotment` `pa` on((`p2`.`id` = `pa`.`project_id`))
     )
     left join `manager_list` on((`c`.`id` = `manager_list`.`course_id`))
   )
@@ -99,15 +104,15 @@ select
   `p3`.`group_size` AS `groupSize`,
   `p3`.`group_hours` AS `groupAllottedHours`,
   `p3`.`is_open` AS `open`,
-  `manager_list`.`manager` AS `manager`
+  `manager_list`.`managers` AS `managers`
 from
   (
     (
       (
-        `rmss`.`project` `p3`
-        left join `rmss`.`course` `c` on((`p3`.`course_id` = `c`.`id`))
+        `project` `p3`
+        left join `course` `c` on((`p3`.`course_id` = `c`.`id`))
       )
-      left join `rmss`.`project_allotment` `pa` on((`p3`.`id` = `pa`.`project_id`))
+      left join `project_allotment` `pa` on((`p3`.`id` = `pa`.`project_id`))
     )
     left join `manager_list` on((`c`.`id` = `manager_list`.`course_id`))
   )
@@ -117,4 +122,4 @@ where
     and (`p3`.`studio_id` is not null)
   )
 group by
-  `p3`.`name`
+  `p3`.`name`;

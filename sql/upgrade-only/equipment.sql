@@ -5,10 +5,12 @@ CREATE TABLE `equipment` (
   `model` text,
   `description` text,
   `sku` text,
+  `serial` text,
+  `barcode` text,
   `quantity` int DEFAULT NULL,
   `tags` json DEFAULT NULL,
   `consumable` int DEFAULT NULL,
   `reservations` json DEFAULT NULL,
-  `equipment_listcol` varchar(45) DEFAULT NULL,
+  `notes` text,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=94 DEFAULT CHARSET=latin1;
+);
