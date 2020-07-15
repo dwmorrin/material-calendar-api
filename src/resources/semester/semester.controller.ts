@@ -4,9 +4,20 @@ import { controllers } from "../../utils/crud";
 
 const makeActiveBoolean = mapKeysToBool("active");
 
+const query = `
+  SELECT
+    id,
+    name AS title,
+    start,
+    end,
+    active
+  FROM
+    semester
+`;
+
 export const getCurrent = (req: Request, res: Response) =>
   pool.query(
-    "SELECT * FROM semester WHERE id = (SELECT MAX(id) FROM semester)",
+    query + " WHERE id = (SELECT MAX(id) FROM semester)",
     (err, rows) => {
       if (err) return res.status(500).json(error500(err));
       res
@@ -15,4 +26,12 @@ export const getCurrent = (req: Request, res: Response) =>
     }
   );
 
-export default { ...controllers("semester", "id"), getCurrent };
+export const getMany = (req: Request, res: Response) =>
+  pool.query(query, (err, rows) => {
+    if (err) return res.status(500).json(error500(err));
+    res
+      .status(200)
+      .json({ data: rows.map(makeActiveBoolean), context: req.query.context });
+  });
+
+export default { ...controllers("semester", "id"), getCurrent, getMany };
