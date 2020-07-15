@@ -18,7 +18,12 @@ const query = `
       reservationId IS NOT NULL,
       JSON_OBJECT(
         'id', reservationId,
+        'projectId', projectId,
+        'description', purpose,
         'groupId', projectGroupId,
+        'liveRoom', \`live room\`,
+        'guests', guests,
+        'contact', phone,
         'equipment', gear 
       ),
       NULL
