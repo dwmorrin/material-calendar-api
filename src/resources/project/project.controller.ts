@@ -4,11 +4,9 @@ import { controllers } from "../../utils/crud";
 
 const groupQuery = `
   SELECT
-    id,
-    original_course_name as title,
-    JSON_ARRAY(instructor) as managers
+    *
   FROM
-    course
+    project_info
 `;
 
 export const getGroups = (req: Request, res: Response) => {

@@ -41,7 +41,7 @@ export const getOneGroup = (req: Request, res: Response) => {
 };
 
 export const getCourses = (req: Request, res: Response) =>
-  pool.query(userCourseQuery, [req.params.id], (err, rows) => {
+  pool.query(userCourseQuery(req.params.id), [req.params.id], (err, rows) => {
     if (err) return res.status(500).json(error500(err));
     res
       .status(200)
@@ -49,7 +49,7 @@ export const getCourses = (req: Request, res: Response) =>
   });
 
 export const getProjects = (req: Request, res: Response) =>
-  pool.query(userProjectQuery, [req.params.id], (err, rows) => {
+  pool.query(userProjectQuery(req.params.id), [req.params.id], (err, rows) => {
     if (err) return res.status(500).json(error500(err));
     res
       .status(200)

@@ -37,24 +37,24 @@ FROM
   ${where}
 `;
 
-export const userCourseQuery = `
+export const userCourseQuery = (id = "") => `
   SELECT
     c.id,
     original_course_name as title,
-    instructor,
-    JSON_ARRAYAGG(rg.project_id) AS projectIds
+    c.managers,
+    c.projectIds AS projectIds
   FROM
-    rmss.course c
+    rmss.course_info c
     INNER JOIN rm_group rg ON rg.course_id = c.id
     INNER JOIN student_group sg ON sg.group_id = rg.id
     INNER JOIN user u ON u.id = sg.student_id
   WHERE
-    u.user_id = ?
+    u.user_id = "${id}" OR json_contains(c.managers, '{"username" : "${id}"}')
   GROUP BY
     original_course_name;
 `;
 
-export const userProjectQuery = `
+export const userProjectQuery = (id = "") => `
   SELECT
     pi.*
   FROM
@@ -62,7 +62,8 @@ export const userProjectQuery = `
     INNER JOIN rm_group rg ON rg.project_id = pi.id
     INNER JOIN student_group sg ON sg.group_id = rg.id
     INNER JOIN user u ON u.id = sg.student_id 
-  WHERE u.user_id = ?
+  WHERE u.user_id = "${id}" OR json_contains(pi.managers, '{"username" : "${id}"}')
+  group by pi.id
 `;
 
 export const userQueryFn = (where = "") => `
