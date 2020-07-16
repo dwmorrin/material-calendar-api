@@ -45,14 +45,15 @@ export const snakeToCamel = (str: string) =>
  * returns generic JSON response for MySQL errors for production
  * and the raw MySQL errors for development
  */
-export const error500 = (rawDbError: MysqlError) =>
+export const error500 = (rawDbError: MysqlError, context: unknown) =>
   process.env.NODE_ENV === "development"
-    ? rawDbError
+    ? { error: rawDbError, context }
     : {
         error: {
           code: 500,
           message: "could not start session, try back later",
         },
+        context,
       };
 
 /**

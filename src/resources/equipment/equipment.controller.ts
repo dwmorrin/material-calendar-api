@@ -9,13 +9,11 @@ export const getByCategory = (req: Request, res: Response) => {
     query + " WHERE JSON_SEARCH(equipment_info.category, 'one', ?) group by id",
     [req.params.id],
     (err, rows) => {
-      if (err) return res.status(500).json(error500(err));
-      res
-        .status(200)
-        .json({ data: rows.map(inflate), context: req.query.context });
+      const { context } = req.query;
+      if (err) return res.status(500).json(error500(err, context));
+      res.status(200).json({ data: rows.map(inflate), context });
     }
   );
 };
-  
 
-export default {...controllers("equipment_info", "id"), getByCategory};
+export default { ...controllers("equipment_info", "id"), getByCategory };

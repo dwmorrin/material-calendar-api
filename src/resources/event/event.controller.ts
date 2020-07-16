@@ -1,7 +1,7 @@
 import { controllers } from "../../utils/crud";
 import { Request, Response } from "express";
 import pool, { error500, mapKeysToBool, inflate } from "../../utils/db";
-import { compose, eqProps } from "ramda";
+import { compose } from "ramda";
 
 const query = `
   SELECT 
@@ -36,18 +36,18 @@ const process = compose(mapKeysToBool("reservable"), inflate);
 
 const getMany = (req: Request, res: Response) =>
   pool.query(query, (err, rows) => {
-    if (err) return res.status(500).json(error500(err));
-    res
-      .status(200)
-      .json({ data: rows.map(process), context: req.query.context });
+    const { context } = req.query;
+    if (err) return res.status(500).json(error500(err, context));
+    res.status(200).json({ data: rows.map(process), context });
   });
 
 const getOne = (req: Request, res: Response) =>
   pool.query(query + "WHERE id = ?", [req.params.id], (err, rows) => {
-    if (err) return res.status(500).json(error500(err));
+    const { context } = req.query;
+    if (err) return res.status(500).json(error500(err, context));
     res.status(200).json({
       data: rows.map(process)[0],
-      context: req.query.context,
+      context,
     });
   });
 
@@ -75,10 +75,11 @@ const insertManyQuery = `
 
 const createMany = (req: Request, res: Response) =>
   pool.query(insertManyQuery, [req.body.map(flattenEvent)], (err) => {
-    if (err) return res.status(500).json(error500(err));
+    const { context } = req.query;
+    if (err) return res.status(500).json(error500(err, context));
     res.status(201).json({
       data: "OK",
-      context: req.query.context,
+      context,
     });
   });
 

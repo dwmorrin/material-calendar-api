@@ -43,20 +43,17 @@ FROM
 
 export const getGroups = (req: Request, res: Response) => {
   pool.query(groupQuery(), (err, rows) => {
-    if (err) return res.status(500).json(error500(err));
-    res
-      .status(200)
-      .json({ data: rows.map(inflate), context: req.query.context });
+    const { context } = req.query;
+    if (err) return res.status(500).json(error500(err, context));
+    res.status(200).json({ data: rows.map(inflate), context });
   });
 };
 
-// Not sure if this is every needed
 export const getOneGroup = (req: Request, res: Response) => {
   pool.query(groupQuery("WHERE g.id = ?"), [req.params.id], (err, rows) => {
-    if (err) return res.status(500).json(error500(err));
-    res
-      .status(200)
-      .json({ data: inflate(rows[0]), context: req.query.context });
+    const { context } = req.query;
+    if (err) return res.status(500).json(error500(err, context));
+    res.status(200).json({ data: inflate(rows[0]), context });
   });
 };
 
@@ -65,10 +62,9 @@ export const getGroupsByProject = (req: Request, res: Response) => {
     groupQuery("WHERE g.projectId = ?"),
     [req.params.id],
     (err, rows) => {
-      if (err) return res.status(500).json(error500(err));
-      res
-        .status(200)
-        .json({ data: rows.map(inflate), context: req.query.context });
+      const { context } = req.query;
+      if (err) return res.status(500).json(error500(err, context));
+      res.status(200).json({ data: rows.map(inflate), context });
     }
   );
 };
@@ -85,8 +81,9 @@ export const getOneLocationAllotment = (req: Request, res: Response) => {
      `,
     [req.params.id],
     (err, rows) => {
-      if (err) return res.status(500).json(error500(err));
-      res.status(200).json({ data: rows[0], context: req.query.context });
+      const { context } = req.query;
+      if (err) return res.status(500).json(error500(err, context));
+      res.status(200).json({ data: rows[0], context });
     }
   );
 };

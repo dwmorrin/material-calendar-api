@@ -19,19 +19,17 @@ export const getCurrent = (req: Request, res: Response) =>
   pool.query(
     query + " WHERE id = (SELECT MAX(id) FROM semester)",
     (err, rows) => {
-      if (err) return res.status(500).json(error500(err));
-      res
-        .status(200)
-        .json({ data: makeActiveBoolean(rows[0]), context: req.query.context });
+      const { context } = req.query;
+      if (err) return res.status(500).json(error500(err, context));
+      res.status(200).json({ data: makeActiveBoolean(rows[0]), context });
     }
   );
 
 export const getMany = (req: Request, res: Response) =>
   pool.query(query, (err, rows) => {
-    if (err) return res.status(500).json(error500(err));
-    res
-      .status(200)
-      .json({ data: rows.map(makeActiveBoolean), context: req.query.context });
+    const { context } = req.query;
+    if (err) return res.status(500).json(error500(err, context));
+    res.status(200).json({ data: rows.map(makeActiveBoolean), context });
   });
 
 export default { ...controllers("semester", "id"), getCurrent, getMany };

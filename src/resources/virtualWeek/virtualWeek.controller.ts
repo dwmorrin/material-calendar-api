@@ -50,16 +50,18 @@ export const getOne = (req: Request, res: Response) => {
     calculatedHoursQuery,
     [req.params.id, req.params.id],
     (err, rows) => {
-      if (err) return res.status(500).json(error500(err));
-      res.status(200).json({ data: rows, context: req.query.context });
+      const { context } = req.query;
+      if (err) return res.status(500).json(error500(err, context));
+      res.status(200).json({ data: rows, context });
     }
   );
 };
 
 export const getMany = (req: Request, res: Response) => {
   pool.query(getManyQuery, (err, rows) => {
-    if (err) return res.status(500).json(error500(err));
-    res.status(200).json({ data: rows, context: req.query.context });
+    const { context } = req.query;
+    if (err) return res.status(500).json(error500(err, context));
+    res.status(200).json({ data: rows, context });
   });
 };
 

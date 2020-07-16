@@ -8,8 +8,9 @@ export const login = (req: Request, res: Response) => {
     return res.status(400).end();
   }
   pool.query(userQueryFn("WHERE u.user_id = ?"), [username], (err, rows) => {
+    const { context } = req.query;
     if (err) {
-      return res.status(500).json(error500(err));
+      return res.status(500).json(error500(err, context));
     }
     const [user] = rows;
     if (!user) {
@@ -20,6 +21,6 @@ export const login = (req: Request, res: Response) => {
     if (req.session) {
       req.session.user = user;
     }
-    res.json({ data: inflate(user), context: req.query.context });
+    res.json({ data: inflate(user), context });
   });
 };
