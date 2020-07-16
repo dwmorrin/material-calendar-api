@@ -19,7 +19,7 @@ router.use("/backup", backupRouter);
 router.use("/courses", courseRouter);
 router.use("/equipment", equipmentRouter);
 router.use("/categories", categoryRouter);
-router.use("/tag", tagRouter);
+router.use("/tags", tagRouter);
 router.use("/events", eventRouter);
 router.use("/locations", locationRouter);
 router.use("/projects", projectRouter);
