@@ -3,10 +3,8 @@ import controller from "./project.controller";
 
 const router = Router();
 
-router.get("/allotment/:id", controller.getOneLocationAllotment);
-router.get("/groups", controller.getGroups);
-router.get("/groups/:id", controller.getGroupsByProject);
-router.get("/group/:id", controller.getOneGroup);
+router.get("/:id/allotments", controller.getOneLocationAllotment);
+router.get("/:id/groups", controller.getGroupsByProject);
 
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);

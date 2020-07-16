@@ -40,23 +40,6 @@ FROM
   ) r ON g.id = r.id
   ${where}
 `;
-
-export const getGroups = (req: Request, res: Response) => {
-  pool.query(groupQuery(), (err, rows) => {
-    const { context } = req.query;
-    if (err) return res.status(500).json(error500(err, context));
-    res.status(200).json({ data: rows.map(inflate), context });
-  });
-};
-
-export const getOneGroup = (req: Request, res: Response) => {
-  pool.query(groupQuery("WHERE g.id = ?"), [req.params.id], (err, rows) => {
-    const { context } = req.query;
-    if (err) return res.status(500).json(error500(err, context));
-    res.status(200).json({ data: inflate(rows[0]), context });
-  });
-};
-
 export const getGroupsByProject = (req: Request, res: Response) => {
   pool.query(
     groupQuery("WHERE g.projectId = ?"),
@@ -90,8 +73,6 @@ export const getOneLocationAllotment = (req: Request, res: Response) => {
 
 export default {
   ...controllers("project_info", "id"),
-  getGroups,
-  getOneGroup,
   getOneLocationAllotment,
   getGroupsByProject,
 };

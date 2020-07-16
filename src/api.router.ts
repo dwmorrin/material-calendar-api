@@ -15,7 +15,7 @@ import virtualWeekRouter from "./resources/virtualWeek/virtualWeek.router";
 
 const router = Router();
 
-router.use("/backup", backupRouter);
+router.use("/backups", backupRouter);
 router.use("/courses", courseRouter);
 router.use("/equipment", equipmentRouter);
 router.use("/categories", categoryRouter);
