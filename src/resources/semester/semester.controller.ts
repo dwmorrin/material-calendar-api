@@ -24,4 +24,23 @@ export const getCurrent = (req: Request, res: Response) =>
 export const getMany = (req: Request, res: Response) =>
   pool.query(query, onResult({ req, res, dataMapFn: makeActiveBoolean }).read);
 
-export default { ...controllers("semester", "id"), getCurrent, getMany };
+const adapter = (semester: { id: number; title: string }): {} => {
+  const copy = { ...semester };
+  delete copy.id;
+  delete copy.title;
+  return copy;
+};
+
+export const createOne = (req: Request, res: Response) =>
+  pool.query(
+    "INSERT INTO semester SET ?",
+    [adapter(req.body)],
+    onResult({ req, res }).create
+  );
+
+export default {
+  ...controllers("semester", "id"),
+  createOne,
+  getCurrent,
+  getMany,
+};
