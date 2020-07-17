@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { controllers } from "../../utils/crud";
-import pool, { error500, inflate } from "../../utils/db";
+import { controllers, onResult } from "../../utils/crud";
+import pool, { inflate } from "../../utils/db";
 
-const query = `
+const queryFn = (where = "") => `
   SELECT
     s.id,
     s.name AS title,
@@ -18,31 +18,25 @@ const query = `
   FROM
     studio s
     LEFT JOIN weekday_hour wh ON s.id = wh.studio_id
+  ${where}
   GROUP BY s.id
 `;
 
 export const getMany = (req: Request, res: Response) =>
-  pool.query(query, (err, rows) => {
-    const { context } = req.query;
-    if (err) return res.status(500).json(error500(err, context));
-    res.status(200).json({ data: rows.map(inflate), context });
-  });
+  pool.query(queryFn(), onResult({ req, res, dataMapFn: inflate }).read);
 
 export const getOne = (req: Request, res: Response) =>
-  pool.query(query + "WHERE id = ?", [req.params.id], (err, rows) => {
-    const { context } = req.query;
-    if (err) return res.status(500).json(error500(err, context));
-    res.status(200).json({ data: inflate(rows[0]), context });
-  });
+  pool.query(
+    queryFn("WHERE s.id = ?"),
+    [req.params.id],
+    onResult({ req, res, take: 1 }).read
+  );
 
 export const getDefaultId = (req: Request, res: Response) =>
   pool.query(
     "SELECT id FROM studio WHERE id = (SELECT MIN(id) FROM studio)",
-    (err, rows) => {
-      const { context } = req.query;
-      if (err) return res.status(500).json(error500(err, context));
-      res.status(200).json({ data: rows[0], context });
-    }
+    onResult({ req, res, take: 1 }).read
+  );
   );
 
 export default {

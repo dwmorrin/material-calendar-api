@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import pool, { error500 } from "../../utils/db";
-import { controllers } from "../../utils/crud";
+import { controllers, onResult } from "../../utils/crud";
 
 const getManyQuery = `
 SELECT
@@ -57,13 +57,8 @@ export const getOne = (req: Request, res: Response) => {
   );
 };
 
-export const getMany = (req: Request, res: Response) => {
-  pool.query(getManyQuery, (err, rows) => {
-    const { context } = req.query;
-    if (err) return res.status(500).json(error500(err, context));
-    res.status(200).json({ data: rows, context });
-  });
-};
+export const getMany = (req: Request, res: Response) =>
+  pool.query(getManyQuery, onResult({ req, res }).read);
 
 export default {
   ...controllers("virtual_week", "id"),

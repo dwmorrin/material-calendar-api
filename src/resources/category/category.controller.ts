@@ -1,6 +1,6 @@
-import { controllers } from "../../utils/crud";
+import { controllers, onResult } from "../../utils/crud";
 import { Request, Response } from "express";
-import pool, { error500 } from "../../utils/db";
+import pool from "../../utils/db";
 
 const query = `
   SELECT
@@ -12,10 +12,6 @@ const query = `
 `;
 
 export const getMany = (req: Request, res: Response) =>
-  pool.query(query, (err, rows) => {
-    const { context } = req.query;
-    if (err) return res.status(500).json(error500(err, context));
-    res.status(200).json({ data: rows, context });
-  });
+  pool.query(query, onResult({ req, res }).read);
 
 export default { ...controllers("category", "id"), getMany };

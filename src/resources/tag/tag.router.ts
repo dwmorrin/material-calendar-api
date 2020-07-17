@@ -3,7 +3,7 @@ import controller from "./tag.controller";
 
 const router = Router();
 
-router.get("/", controller.getAll);
+router.get("/", controller.getMany);
 router.get("/category/:id", controller.getByCategory);
 router.get("/subcategory/:id", controller.getBySubCategory);
 

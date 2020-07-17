@@ -1,4 +1,4 @@
-import { controllers } from "../../utils/crud";
+import { controllers, onResult } from "../../utils/crud";
 import { Request, Response } from "express";
 import pool, { error500, mapKeysToBool, inflate } from "../../utils/db";
 import { compose } from "ramda";
@@ -35,21 +35,14 @@ const query = `
 const process = compose(mapKeysToBool("reservable"), inflate);
 
 const getMany = (req: Request, res: Response) =>
-  pool.query(query, (err, rows) => {
-    const { context } = req.query;
-    if (err) return res.status(500).json(error500(err, context));
-    res.status(200).json({ data: rows.map(process), context });
-  });
+  pool.query(query, onResult({ req, res, dataMapFn: process }).read);
 
 const getOne = (req: Request, res: Response) =>
-  pool.query(query + "WHERE id = ?", [req.params.id], (err, rows) => {
-    const { context } = req.query;
-    if (err) return res.status(500).json(error500(err, context));
-    res.status(200).json({
-      data: rows.map(process)[0],
-      context,
-    });
-  });
+  pool.query(
+    query + "WHERE id = ?",
+    [req.params.id],
+    onResult({ req, res, dataMapFn: process, take: 1 }).read
+  );
 
 /**
  * mysql does not accept key-value objects for bulk imports;

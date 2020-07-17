@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import pool, { error500, inflate } from "../../utils/db";
-import { controllers } from "../../utils/crud";
+import { controllers, onResult } from "../../utils/crud";
 
 const query = `
   SELECT
@@ -15,23 +15,14 @@ const query = `
   LEFT JOIN category c ON tag.category = c.id
 `;
 
-export const getAll = (req: Request, res: Response) => {
-  pool.query(query, (err, rows) => {
-    const { context } = req.query;
-    if (err) return res.status(500).json(error500(err, context));
-    res.status(200).json({ data: rows.map(inflate), context });
-  });
-};
+export const getMany = (req: Request, res: Response) =>
+  pool.query(query, onResult({ req, res, dataMapFn: inflate }).read);
 
 export const getByCategory = (req: Request, res: Response) => {
   pool.query(
     query + "WHERE category.category = ?",
     [req.params.id],
-    (err, rows) => {
-      const { context } = req.query;
-      if (err) return res.status(500).json(error500(err, context));
-      res.status(200).json({ data: inflate(rows[0]), context });
-    }
+    onResult({ req, res, dataMapFn: inflate, take: 1 }).read
   );
 };
 
@@ -39,17 +30,13 @@ export const getBySubCategory = (req: Request, res: Response) => {
   pool.query(
     query + "WHERE category.sub_category = ?",
     [req.params.id],
-    (err, rows) => {
-      const { context } = req.query;
-      if (err) return res.status(500).json(error500(err, context));
-      res.status(200).json({ data: inflate(rows[0]), context });
-    }
+    onResult({ req, res, dataMapFn: inflate, take: 1 }).read
   );
 };
 
 export default {
-  ...controllers("tags", "id"),
-  getAll,
+  ...controllers("tag", "id"),
+  getMany,
   getByCategory,
   getBySubCategory,
 };
