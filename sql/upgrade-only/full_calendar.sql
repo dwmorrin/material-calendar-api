@@ -38,7 +38,8 @@ CREATE VIEW `rmss`.`full_calendar` AS
         `s`.`id` AS `studioId`,
         `b`.`id` AS `reservationId`,
         `p`.`id` AS `projectId`,
-        `g`.`id` AS `projectGroupId`
+        `g`.`id` AS `projectGroupId`,
+        `b`.`notes` AS `notes`
     FROM
         ((((((((`rmss`.`allotment` `a`
         LEFT JOIN `rmss`.`booking` `b` ON (((`a`.`id` = `b`.`allotment_id`)

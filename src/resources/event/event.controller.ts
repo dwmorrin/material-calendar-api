@@ -24,7 +24,8 @@ const query = `
         'liveRoom', \`live room\`,
         'guests', guests,
         'contact', phone,
-        'equipment', gear 
+        'equipment', gear,
+        'notes', notes
       ),
       NULL
     ) AS reservation
