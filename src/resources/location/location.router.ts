@@ -5,6 +5,8 @@ const router = Router();
 
 router.get("/default", controller.getDefaultId);
 
+router.get("/:id/virtualweeks", controller.getVirtualWeeks);
+
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);
 router.get("/:id", controller.getOne);
