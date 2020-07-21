@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { controllers, onResult } from "../../utils/crud";
-import pool, { inflate } from "../../utils/db";
+import pool, { inflate, error500 } from "../../utils/db";
 
 const queryFn = (where = "") => `
   SELECT
@@ -76,8 +76,30 @@ export const getVirtualWeeks = (req: Request, res: Response) =>
     onResult({ req, res }).read
   );
 
+const replaceHoursQuery = `
+REPLACE INTO weekday_hour
+  (hour, week_date, semester_id, studio_id, start, end)
+VALUES ?
+`;
+
+const flattenHours = (hours: { [k: string]: string | number }) => [
+  hours.hours,
+  hours.date,
+  hours.semesterId,
+  hours.locationId,
+  hours.start,
+  hours.end,
+];
+
+export const createOrUpdateHours = (req: Request, res: Response) =>
+  pool.query(replaceHoursQuery, [req.body.map(flattenHours)], (err, data) => {
+    if (err) return res.status(500).json(error500(err, req.query.context));
+    res.status(201).json({ data, context: req.query.context });
+  });
+
 export default {
   ...controllers("studio", "id"),
+  createOrUpdateHours,
   getMany,
   getOne,
   getDefaultId,
