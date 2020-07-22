@@ -1,6 +1,6 @@
 import { controllers, onResult } from "../../utils/crud";
 import { Request, Response } from "express";
-import pool, { inflate } from "../../utils/db";
+import pool, { error500, inflate } from "../../utils/db";
 
 const query = `
   SELECT
@@ -30,6 +30,44 @@ const query = `
     booking
 `;
 
+/**
+ * mysql does not accept key-value objects for bulk imports;
+ * values must be an array of arrays.
+ * Adjust the ordering here as needed.
+ * @param event Event object
+ */
+const flattenEquipment = (
+  equipment: {
+    [k: string]: any;
+  },
+  bookingId: number
+): (string | number | boolean)[] => [
+  equipment.id,
+  bookingId,
+  equipment.quantity,
+];
+
+const insertManyQuery = `
+  REPLACE INTO equipment_reservation
+    (equipment_id, booking_id, quantity)
+  VALUES ?
+`;
+
+const reserveEquipment = (req: Request, res: Response) => {
+  pool.query(
+    insertManyQuery,
+    [req.body.map((item) => flattenEquipment(item, parseInt(req.params.id)))],
+    (err) => {
+      const { context } = req.query;
+      if (err) return res.status(500).json(error500(err, context));
+      res.status(201).json({
+        data: { ...req.body },
+        context,
+      });
+    }
+  );
+};
+
 export const getOne = (req: Request, res: Response) =>
   pool.query(
     query + "WHERE id = ?",
@@ -44,4 +82,5 @@ export default {
   ...controllers("booking", "id"),
   getOne,
   getMany,
+  reserveEquipment,
 };

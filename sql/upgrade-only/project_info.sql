@@ -122,4 +122,4 @@ where
     and (`p3`.`studio_id` is not null)
   )
 group by
-  `p3`.`name`
+  `p3`.`name`;
