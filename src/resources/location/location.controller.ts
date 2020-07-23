@@ -11,7 +11,9 @@ const queryFn = (where = "") => `
       JSON_ARRAYAGG(JSON_OBJECT(
         'id', wh.id,
         'date', wh.week_date,
-        'hours', wh.hour
+        'hours', wh.hour,
+        'start', wh.start,
+        'end', wh.end
       )),
       JSON_ARRAY()
 	) AS hours
