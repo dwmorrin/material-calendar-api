@@ -45,16 +45,21 @@ export const snakeToCamel = (str: string) =>
  * returns generic JSON response for MySQL errors for production
  * and the raw MySQL errors for development
  */
-export const error500 = (rawDbError: MysqlError, context: unknown) =>
-  process.env.NODE_ENV === "development"
-    ? { error: rawDbError, context }
+export const error500 = (rawDbError: MysqlError, context: unknown) => {
+  console.error(rawDbError);
+  return process.env.NODE_ENV === "development"
+    ? {
+        error: { message: rawDbError.sqlMessage || rawDbError.message },
+        context,
+      }
     : {
         error: {
           code: 500,
-          message: "could not start session, try back later",
+          message: "uh-oh, the server encountered an error, try back later",
         },
         context,
       };
+};
 
 /**
  * Pool reuses connections, up to the connection limit.
