@@ -99,8 +99,30 @@ export const createOrUpdateHours = (req: Request, res: Response) =>
     res.status(201).json({ data, context: req.query.context });
   });
 
+const adapter = ({
+  title,
+  groupId,
+}: {
+  id: number;
+  title: string;
+  groupId: string;
+  hours: unknown;
+}) => ({
+  name: title,
+  location: groupId,
+});
+
+export const createOne = (req: Request, res: Response) => {
+  pool.query(
+    "INSERT INTO studio SET ?",
+    adapter(req.body),
+    onResult({ req, res }).create
+  );
+};
+
 export default {
   ...controllers("studio", "id"),
+  createOne,
   createOrUpdateHours,
   getMany,
   getOne,
