@@ -61,14 +61,14 @@ const flattenEvent = (event: {
   event.title,
 ];
 
-const insertManyQuery = `
-  INSERT INTO allotment
+const replaceManyQuery = `
+  REPLACE INTO allotment
     (start, end, studio_id, bookable, description)
   VALUES ?
 `;
 
-const createMany = (req: Request, res: Response) =>
-  pool.query(insertManyQuery, [req.body.map(flattenEvent)], (err) => {
+const createOrUpdateMany = (req: Request, res: Response) =>
+  pool.query(replaceManyQuery, [req.body.map(flattenEvent)], (err) => {
     const { context } = req.query;
     if (err) return res.status(500).json(error500(err, context));
     res.status(201).json({
@@ -81,5 +81,5 @@ export default {
   ...controllers("allotment", "id"),
   getMany,
   getOne,
-  createMany,
+  createOrUpdateMany,
 };
