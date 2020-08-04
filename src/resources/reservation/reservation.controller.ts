@@ -30,18 +30,10 @@ const query = `
     booking
 `;
 
-/**
- * mysql does not accept key-value objects for bulk imports;
- * values must be an array of arrays.
- * Adjust the ordering here as needed.
- * @param event Event object
- */
-const flattenEquipment = (
-  equipment: {
-    [k: string]: any;
-  },
-  bookingId: number
-): (string | number | boolean)[] => [
+const flattenEquipment = (bookingId: number) => (equipment: {
+  id: number;
+  quantity: number;
+}): (string | number | boolean)[] => [
   equipment.id,
   bookingId,
   equipment.quantity,
@@ -56,7 +48,7 @@ const insertManyQuery = `
 const reserveEquipment = (req: Request, res: Response) => {
   pool.query(
     insertManyQuery,
-    [req.body.map((item) => flattenEquipment(item, parseInt(req.params.id)))],
+    [req.body.map(flattenEquipment(+req.params.id))],
     (err) => {
       const { context } = req.query;
       if (err) return res.status(500).json(error500(err, context));
