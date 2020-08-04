@@ -1,18 +1,16 @@
 CREATE ALGORITHM = UNDEFINED DEFINER = `rmss` @`192.168.50.10` SQL SECURITY DEFINER VIEW `rmss`.`full_calendar` AS with `equipment_list` as (
     select
         `r`.`booking_id` AS `booking_id`,
-        `e`.`model_id` AS `model_id`,
+        (
+            case
+                when (
+                    (`e`.`manufacturer` is not null)
+                    and (`e`.`model` is not null)
+                ) then concat(`e`.`manufacturer`, ' ', `e`.`model`)
+                else `e`.`description`
+            end
+        ) AS `name`,
         json_object(
-            'name',
-            (
-                case
-                    when (
-                        (`e`.`manufacturer` is not null)
-                        and (`e`.`model` is not null)
-                    ) then concat(`e`.`manufacturer`, ' ', `e`.`model`)
-                    else `e`.`description`
-                end
-            ),
             'quantity',
             sum(`r`.`quantity`),
             'items',
@@ -26,7 +24,7 @@ CREATE ALGORITHM = UNDEFINED DEFINER = `rmss` @`192.168.50.10` SQL SECURITY DEFI
             left join `rmss`.`equipment` `e` on((`e`.`id` = `r`.`equipment_id`))
         )
     group by
-        `e`.`model_id`
+        `name`
 )
 select
     `a`.`id` AS `id`,
@@ -60,7 +58,7 @@ select
     `b`.`cancel_request_comment` AS `cancel_request_comment`,
     (
         case
-            when (`el`.`gear` is not null) then json_objectagg(ifnull(`el`.`model_id`, '0'), `el`.`gear`)
+            when (`el`.`gear` is not null) then json_objectagg(ifnull(`el`.`name`, 'UNKNOWNITEM'), `el`.`gear`)
             else NULL
         end
     ) AS `gear`,

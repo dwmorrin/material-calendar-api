@@ -22,7 +22,6 @@ CREATE VIEW `equipment_info` AS with `reservation_list` as (
 )
 select
   `equipment`.`id` AS `id`,
-  `equipment`.`model_id` AS `modelId`,
   `equipment`.`manufacturer` AS `manufacturer`,
   `equipment`.`model` AS `model`,
   `equipment`.`description` AS `description`,
