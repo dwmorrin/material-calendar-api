@@ -1,3 +1,19 @@
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `allotment`
+--
+
+DROP TABLE IF EXISTS `allotment`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `allotment` (
@@ -15,25 +31,16 @@ CREATE TABLE `allotment` (
   UNIQUE KEY `start_studio_idx` (`start`,`studio_id`),
   KEY `studio_id_idx` (`studio_id`),
   KEY `user_foreign_key` (`lock_id`),
-  CONSTRAINT `allotment_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`),
-  CONSTRAINT `user_foreign_key` FOREIGN KEY (`lock_id`) REFERENCES `user` (`id`)
+  CONSTRAINT `allotment_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `user_foreign_key` FOREIGN KEY (`lock_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=4100 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-SET @saved_cs_client     = @@character_set_client;
-/*!50503 SET character_set_client = utf8mb4 */;
-/*!50001 CREATE VIEW `booked_sessions` AS SELECT 
- 1 AS `id`,
- 1 AS `start`,
- 1 AS `end`,
- 1 AS `studio`,
- 1 AS `students`,
- 1 AS `phone`,
- 1 AS `project`,
- 1 AS `tape`,
- 1 AS `dolby`,
- 1 AS `live room`,
- 1 AS `gear`*/;
-SET character_set_client = @saved_cs_client;
+
+--
+-- Table structure for table `booking`
+--
+
+DROP TABLE IF EXISTS `booking`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `booking` (
@@ -72,6 +79,7 @@ CREATE TABLE `booking` (
   `absent_id` int DEFAULT NULL,
   `created` datetime NOT NULL,
   `modified` datetime NOT NULL,
+  `notes` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `group_id_idx` (`group_id`),
   KEY `allotment_id_idx` (`allotment_id`),
@@ -81,16 +89,22 @@ CREATE TABLE `booking` (
   KEY `checkin_id_idx` (`checkin_id`),
   KEY `checkout_id_idx` (`checkout_id`),
   KEY `absent_id_idx` (`absent_id`),
-  CONSTRAINT `booking_absent_id_user_id` FOREIGN KEY (`absent_id`) REFERENCES `user` (`id`),
-  CONSTRAINT `booking_allotment_id_allotment_id` FOREIGN KEY (`allotment_id`) REFERENCES `allotment` (`id`),
-  CONSTRAINT `booking_cancel_request_userid_user_id` FOREIGN KEY (`cancel_request_userid`) REFERENCES `user` (`id`),
-  CONSTRAINT `booking_cancelled_approval_user_id` FOREIGN KEY (`cancelled_approval`) REFERENCES `user` (`id`),
-  CONSTRAINT `booking_checkin_id_user_id` FOREIGN KEY (`checkin_id`) REFERENCES `user` (`id`),
-  CONSTRAINT `booking_checkout_id_user_id` FOREIGN KEY (`checkout_id`) REFERENCES `user` (`id`),
-  CONSTRAINT `booking_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`),
-  CONSTRAINT `booking_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=469 DEFAULT CHARSET=latin1;
+  CONSTRAINT `booking_absent_id_user_id` FOREIGN KEY (`absent_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `booking_allotment_id_allotment_id` FOREIGN KEY (`allotment_id`) REFERENCES `allotment` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `booking_cancel_request_userid_user_id` FOREIGN KEY (`cancel_request_userid`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `booking_cancelled_approval_user_id` FOREIGN KEY (`cancelled_approval`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `booking_checkin_id_user_id` FOREIGN KEY (`checkin_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `booking_checkout_id_user_id` FOREIGN KEY (`checkout_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `booking_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `booking_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=490 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `booking_guest`
+--
+
+DROP TABLE IF EXISTS `booking_guest`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `booking_guest` (
@@ -99,9 +113,15 @@ CREATE TABLE `booking_guest` (
   `guest` varchar(200) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `booking_id_idx` (`booking_id`),
-  CONSTRAINT `booking_guest_booking_id_booking_id` FOREIGN KEY (`booking_id`) REFERENCES `booking` (`id`)
+  CONSTRAINT `booking_guest_booking_id_booking_id` FOREIGN KEY (`booking_id`) REFERENCES `booking` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `booking_trading_request`
+--
+
+DROP TABLE IF EXISTS `booking_trading_request`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `booking_trading_request` (
@@ -119,28 +139,47 @@ CREATE TABLE `booking_trading_request` (
   KEY `booking_id_idx` (`booking_id`),
   KEY `confirm_id_idx` (`confirm_id`),
   KEY `project_id_idx` (`project_id`),
-  CONSTRAINT `booking_trading_request_booking_id_booking_id` FOREIGN KEY (`booking_id`) REFERENCES `booking` (`id`),
-  CONSTRAINT `booking_trading_request_confirm_id_user_id` FOREIGN KEY (`confirm_id`) REFERENCES `user` (`id`),
-  CONSTRAINT `booking_trading_request_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`),
-  CONSTRAINT `booking_trading_request_request_id_user_id` FOREIGN KEY (`request_id`) REFERENCES `user` (`id`)
+  CONSTRAINT `booking_trading_request_booking_id_booking_id` FOREIGN KEY (`booking_id`) REFERENCES `booking` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `booking_trading_request_confirm_id_user_id` FOREIGN KEY (`confirm_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `booking_trading_request_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `booking_trading_request_request_id_user_id` FOREIGN KEY (`request_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `category`
+--
+
+DROP TABLE IF EXISTS `category`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `category` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `title` text,
+  `parent_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Temporary view structure for view `category_path`
+--
+
+DROP TABLE IF EXISTS `category_path`;
+/*!50001 DROP VIEW IF EXISTS `category_path`*/;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
-/*!50001 CREATE VIEW `bookings_view` AS SELECT 
+/*!50001 CREATE VIEW `category_path` AS SELECT 
  1 AS `id`,
- 1 AS `start`,
- 1 AS `end`,
- 1 AS `studio`,
- 1 AS `student_IDs`,
- 1 AS `students`,
- 1 AS `phone`,
- 1 AS `project`,
- 1 AS `tape`,
- 1 AS `dolby`,
- 1 AS `live room`,
- 1 AS `gear`*/;
+ 1 AS `title`,
+ 1 AS `path`*/;
 SET character_set_client = @saved_cs_client;
+
+--
+-- Table structure for table `course`
+--
+
+DROP TABLE IF EXISTS `course`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `course` (
@@ -149,12 +188,36 @@ CREATE TABLE `course` (
   `is_open` tinyint DEFAULT '1',
   `course_type` int DEFAULT NULL,
   `original_course_name` varchar(128) DEFAULT NULL,
-  `instructor` varchar(50) DEFAULT NULL,
+  `instructor` json DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `course_type_idx` (`course_type`),
-  CONSTRAINT `course_course_type_course_type_id` FOREIGN KEY (`course_type`) REFERENCES `course_type` (`id`)
+  CONSTRAINT `course_course_type_course_type_id` FOREIGN KEY (`course_type`) REFERENCES `course_type` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Temporary view structure for view `course_info`
+--
+
+DROP TABLE IF EXISTS `course_info`;
+/*!50001 DROP VIEW IF EXISTS `course_info`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `course_info` AS SELECT 
+ 1 AS `id`,
+ 1 AS `name`,
+ 1 AS `is_open`,
+ 1 AS `course_type`,
+ 1 AS `original_course_name`,
+ 1 AS `projectIds`,
+ 1 AS `managers`*/;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Table structure for table `course_type`
+--
+
+DROP TABLE IF EXISTS `course_type`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `course_type` (
@@ -163,40 +226,60 @@ CREATE TABLE `course_type` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `equipment`
+--
+
+DROP TABLE IF EXISTS `equipment`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `equipment` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) DEFAULT NULL,
-  `model` varchar(255) DEFAULT NULL,
-  `serial` varchar(255) DEFAULT NULL,
   `model_id` int DEFAULT NULL,
-  `quantity` int DEFAULT '1',
-  `status` int DEFAULT '1',
-  PRIMARY KEY (`id`),
-  KEY `model_id_idx` (`model_id`),
-  CONSTRAINT `equipment_model_id_equipment_model_id` FOREIGN KEY (`model_id`) REFERENCES `equipment_model` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=212 DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `equipment_category` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `category` varchar(80) DEFAULT NULL,
+  `category` int DEFAULT NULL,
+  `manufacturer` text,
+  `model` text,
+  `description` text,
+  `sku` text,
+  `serial` text,
+  `barcode` text,
+  `quantity` int DEFAULT NULL,
+  `tags` json DEFAULT NULL,
+  `consumable` int DEFAULT NULL,
+  `reservations` json DEFAULT NULL,
+  `notes` text,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=1089 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
+
+--
+-- Temporary view structure for view `equipment_info`
+--
+
+DROP TABLE IF EXISTS `equipment_info`;
+/*!50001 DROP VIEW IF EXISTS `equipment_info`*/;
+SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `equipment_model` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `model` varchar(255) DEFAULT NULL,
-  `category_id` int unsigned DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `category_id_idx` (`category_id`),
-  CONSTRAINT `equipment_model_category_id_equipment_category_id` FOREIGN KEY (`category_id`) REFERENCES `equipment_category` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=156 DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
+/*!50001 CREATE VIEW `equipment_info` AS SELECT 
+ 1 AS `id`,
+ 1 AS `modelId`,
+ 1 AS `manufacturer`,
+ 1 AS `model`,
+ 1 AS `description`,
+ 1 AS `sku`,
+ 1 AS `quantity`,
+ 1 AS `category`,
+ 1 AS `tags`,
+ 1 AS `consumable`,
+ 1 AS `reservations`*/;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Table structure for table `equipment_reservation`
+--
+
+DROP TABLE IF EXISTS `equipment_reservation`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `equipment_reservation` (
@@ -205,12 +288,16 @@ CREATE TABLE `equipment_reservation` (
   `quantity` int DEFAULT '1',
   `checkin_status` tinyint DEFAULT '1',
   `checkout_status` tinyint DEFAULT '1',
-  PRIMARY KEY (`equipment_id`,`booking_id`),
-  KEY `equipment_reservation_booking_id_booking_id` (`booking_id`),
-  CONSTRAINT `equipment_reservation_booking_id_booking_id` FOREIGN KEY (`booking_id`) REFERENCES `booking` (`id`),
-  CONSTRAINT `equipment_reservation_equipment_id_equipment_id` FOREIGN KEY (`equipment_id`) REFERENCES `equipment` (`id`)
+  PRIMARY KEY (`equipment_id`,`booking_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Temporary view structure for view `full_calendar`
+--
+
+DROP TABLE IF EXISTS `full_calendar`;
+/*!50001 DROP VIEW IF EXISTS `full_calendar`*/;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `full_calendar` AS SELECT 
@@ -235,8 +322,16 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `open`,
  1 AS `studioId`,
  1 AS `reservationId`,
- 1 AS `projectGroupId`*/;
+ 1 AS `projectId`,
+ 1 AS `projectGroupId`,
+ 1 AS `notes`*/;
 SET character_set_client = @saved_cs_client;
+
+--
+-- Table structure for table `gear_studio`
+--
+
+DROP TABLE IF EXISTS `gear_studio`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `gear_studio` (
@@ -244,10 +339,15 @@ CREATE TABLE `gear_studio` (
   `studio_id` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`equipment_id`,`studio_id`),
   KEY `gear_studio_studio_id_studio_id` (`studio_id`),
-  CONSTRAINT `gear_studio_equipment_id_equipment_id` FOREIGN KEY (`equipment_id`) REFERENCES `equipment` (`id`),
-  CONSTRAINT `gear_studio_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
+  CONSTRAINT `gear_studio_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `group_project_hours`
+--
+
+DROP TABLE IF EXISTS `group_project_hours`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `group_project_hours` (
@@ -256,10 +356,16 @@ CREATE TABLE `group_project_hours` (
   `hours` int DEFAULT NULL,
   PRIMARY KEY (`group_id`,`project_id`),
   KEY `group_project_hours_project_id_project_id` (`project_id`),
-  CONSTRAINT `group_project_hours_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`),
-  CONSTRAINT `group_project_hours_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`)
+  CONSTRAINT `group_project_hours_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `group_project_hours_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `group_request`
+--
+
+DROP TABLE IF EXISTS `group_request`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `group_request` (
@@ -271,10 +377,42 @@ CREATE TABLE `group_request` (
   PRIMARY KEY (`id`),
   KEY `requestor_idx` (`requestor`),
   KEY `group_id_idx` (`group_id`),
-  CONSTRAINT `group_request_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`),
-  CONSTRAINT `group_request_requestor_user_id` FOREIGN KEY (`requestor`) REFERENCES `user` (`id`)
+  CONSTRAINT `group_request_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `group_request_requestor_user_id` FOREIGN KEY (`requestor`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `inventory`
+--
+
+DROP TABLE IF EXISTS `inventory`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `inventory` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `category` text,
+  `subcategory` text,
+  `manufacturer` text,
+  `model` text,
+  `description` text,
+  `sku` text,
+  `serial` text,
+  `barcode` text,
+  `quantity` int DEFAULT NULL,
+  `tags` bigint DEFAULT NULL,
+  `consumable` text,
+  `reservations` text,
+  `notes` text,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1089 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `invitation`
+--
+
+DROP TABLE IF EXISTS `invitation`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `invitation` (
@@ -290,11 +428,17 @@ CREATE TABLE `invitation` (
   KEY `invitor_idx` (`invitor`),
   KEY `group_id_idx` (`group_id`),
   KEY `project_id_idx` (`project_id`),
-  CONSTRAINT `invitation_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`),
-  CONSTRAINT `invitation_invitor_user_id` FOREIGN KEY (`invitor`) REFERENCES `user` (`id`),
-  CONSTRAINT `invitation_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE CASCADE
+  CONSTRAINT `invitation_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `invitation_invitor_user_id` FOREIGN KEY (`invitor`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `invitation_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=88 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `invitee`
+--
+
+DROP TABLE IF EXISTS `invitee`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `invitee` (
@@ -308,10 +452,16 @@ CREATE TABLE `invitee` (
   UNIQUE KEY `invitation_invitee_idx` (`invitation_id`,`invitee`,`status`),
   KEY `invitee_idx` (`invitee`),
   KEY `invitation_id_idx` (`invitation_id`),
-  CONSTRAINT `invitee_invitation_id_invitation_id` FOREIGN KEY (`invitation_id`) REFERENCES `invitation` (`id`),
-  CONSTRAINT `invitee_invitee_user_id` FOREIGN KEY (`invitee`) REFERENCES `user` (`id`)
+  CONSTRAINT `invitee_invitation_id_invitation_id` FOREIGN KEY (`invitation_id`) REFERENCES `invitation` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `invitee_invitee_user_id` FOREIGN KEY (`invitee`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=124 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `message`
+--
+
+DROP TABLE IF EXISTS `message`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `message` (
@@ -324,9 +474,15 @@ CREATE TABLE `message` (
   `modified` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `sender_idx` (`sender`),
-  CONSTRAINT `message_sender_user_id` FOREIGN KEY (`sender`) REFERENCES `user` (`id`)
+  CONSTRAINT `message_sender_user_id` FOREIGN KEY (`sender`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `message_receiver`
+--
+
+DROP TABLE IF EXISTS `message_receiver`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `message_receiver` (
@@ -338,17 +494,17 @@ CREATE TABLE `message_receiver` (
   KEY `receiver_group_idx` (`receiver_group`),
   KEY `receiver_user_idx` (`receiver_user`),
   KEY `message_id_idx` (`message_id`),
-  CONSTRAINT `message_receiver_message_id_message_id` FOREIGN KEY (`message_id`) REFERENCES `message` (`id`),
-  CONSTRAINT `message_receiver_receiver_group_rm_group_id` FOREIGN KEY (`receiver_group`) REFERENCES `rm_group` (`id`),
-  CONSTRAINT `message_receiver_receiver_user_user_id` FOREIGN KEY (`receiver_user`) REFERENCES `user` (`id`)
+  CONSTRAINT `message_receiver_message_id_message_id` FOREIGN KEY (`message_id`) REFERENCES `message` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `message_receiver_receiver_group_rm_group_id` FOREIGN KEY (`receiver_group`) REFERENCES `rm_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `message_receiver_receiver_user_user_id` FOREIGN KEY (`receiver_user`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `migration_version` (
-  `version` int DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `project`
+--
+
+DROP TABLE IF EXISTS `project`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `project` (
@@ -377,12 +533,18 @@ CREATE TABLE `project` (
   KEY `section_id_idx` (`section_id`),
   KEY `parent_id_idx` (`parent_id`),
   KEY `studio_id_idx` (`studio_id`),
-  CONSTRAINT `project_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`),
-  CONSTRAINT `project_parent_id_project_id` FOREIGN KEY (`parent_id`) REFERENCES `project` (`id`),
-  CONSTRAINT `project_section_id_section_id` FOREIGN KEY (`section_id`) REFERENCES `section` (`id`),
-  CONSTRAINT `project_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
+  CONSTRAINT `project_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `project_parent_id_project_id` FOREIGN KEY (`parent_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `project_section_id_section_id` FOREIGN KEY (`section_id`) REFERENCES `section` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `project_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `project_allotment`
+--
+
+DROP TABLE IF EXISTS `project_allotment`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `project_allotment` (
@@ -395,9 +557,15 @@ CREATE TABLE `project_allotment` (
   `bgcolor` varchar(10) DEFAULT NULL,
   `font_color` varchar(10) DEFAULT NULL,
   PRIMARY KEY (`project_id`,`start`),
-  CONSTRAINT `project_allotment_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`)
+  CONSTRAINT `project_allotment_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `project_group`
+--
+
+DROP TABLE IF EXISTS `project_group`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `project_group` (
@@ -407,6 +575,13 @@ CREATE TABLE `project_group` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Temporary view structure for view `project_info`
+--
+
+DROP TABLE IF EXISTS `project_info`;
+/*!50001 DROP VIEW IF EXISTS `project_info`*/;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `project_info` AS SELECT 
@@ -422,6 +597,12 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `open`,
  1 AS `managers`*/;
 SET character_set_client = @saved_cs_client;
+
+--
+-- Table structure for table `rm_group`
+--
+
+DROP TABLE IF EXISTS `rm_group`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `rm_group` (
@@ -439,11 +620,17 @@ CREATE TABLE `rm_group` (
   KEY `creator_idx` (`creator`),
   KEY `project_id_idx` (`project_id`),
   KEY `admin_id_idx` (`admin_id`),
-  CONSTRAINT `rm_group_admin_id_user_id` FOREIGN KEY (`admin_id`) REFERENCES `user` (`id`),
-  CONSTRAINT `rm_group_creator_user_id` FOREIGN KEY (`creator`) REFERENCES `user` (`id`),
-  CONSTRAINT `rm_group_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`)
+  CONSTRAINT `rm_group_admin_id_user_id` FOREIGN KEY (`admin_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `rm_group_creator_user_id` FOREIGN KEY (`creator`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `rm_group_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=159 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `roster`
+--
+
+DROP TABLE IF EXISTS `roster`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `roster` (
@@ -458,12 +645,19 @@ CREATE TABLE `roster` (
   KEY `course_id_idx` (`course_id`),
   KEY `semester_id_idx` (`semester_id`),
   KEY `section_id_idx` (`section_id`),
-  CONSTRAINT `roster_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`),
-  CONSTRAINT `roster_section_id_section_id` FOREIGN KEY (`section_id`) REFERENCES `section` (`id`),
-  CONSTRAINT `roster_semester_id_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`),
-  CONSTRAINT `roster_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`)
+  CONSTRAINT `roster_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `roster_section_id_section_id` FOREIGN KEY (`section_id`) REFERENCES `section` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `roster_semester_id_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `roster_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=2678 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Temporary view structure for view `roster_current_view`
+--
+
+DROP TABLE IF EXISTS `roster_current_view`;
+/*!50001 DROP VIEW IF EXISTS `roster_current_view`*/;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `roster_current_view` AS SELECT 
@@ -474,6 +668,12 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `NetID`,
  1 AS `RMSS Course`*/;
 SET character_set_client = @saved_cs_client;
+
+--
+-- Table structure for table `scheduler_sheet`
+--
+
+DROP TABLE IF EXISTS `scheduler_sheet`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `scheduler_sheet` (
@@ -484,11 +684,17 @@ CREATE TABLE `scheduler_sheet` (
   PRIMARY KEY (`studio_id`,`semester_id`,`course_id`),
   KEY `scheduler_sheet_semester_id_semester_id` (`semester_id`),
   KEY `scheduler_sheet_course_id_course_id` (`course_id`),
-  CONSTRAINT `scheduler_sheet_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`),
-  CONSTRAINT `scheduler_sheet_semester_id_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`),
-  CONSTRAINT `scheduler_sheet_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
+  CONSTRAINT `scheduler_sheet_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `scheduler_sheet_semester_id_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `scheduler_sheet_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `section`
+--
+
+DROP TABLE IF EXISTS `section`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `section` (
@@ -497,9 +703,15 @@ CREATE TABLE `section` (
   `course_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `course_id_idx` (`course_id`),
-  CONSTRAINT `section_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`)
+  CONSTRAINT `section_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `semester`
+--
+
+DROP TABLE IF EXISTS `semester`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `semester` (
@@ -511,6 +723,12 @@ CREATE TABLE `semester` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `student_group`
+--
+
+DROP TABLE IF EXISTS `student_group`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `student_group` (
@@ -518,10 +736,16 @@ CREATE TABLE `student_group` (
   `group_id` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`student_id`,`group_id`),
   KEY `student_group_group_id_rm_group_id` (`group_id`),
-  CONSTRAINT `student_group_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`),
-  CONSTRAINT `student_group_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`)
+  CONSTRAINT `student_group_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `student_group_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `student_project_hours`
+--
+
+DROP TABLE IF EXISTS `student_project_hours`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `student_project_hours` (
@@ -530,10 +754,16 @@ CREATE TABLE `student_project_hours` (
   `hours` int DEFAULT NULL,
   PRIMARY KEY (`student_id`,`project_id`),
   KEY `student_project_hours_project_id_project_id` (`project_id`),
-  CONSTRAINT `student_project_hours_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`),
-  CONSTRAINT `student_project_hours_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`)
+  CONSTRAINT `student_project_hours_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `student_project_hours_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `studio`
+--
+
+DROP TABLE IF EXISTS `studio`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `studio` (
@@ -552,6 +782,27 @@ CREATE TABLE `studio` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tag`
+--
+
+DROP TABLE IF EXISTS `tag`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tag` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `title` text,
+  `category` int DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `user`
+--
+
+DROP TABLE IF EXISTS `user`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user` (
@@ -567,8 +818,14 @@ CREATE TABLE `user` (
   `last_login` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=4146 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=4148 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `virtual_week`
+--
+
+DROP TABLE IF EXISTS `virtual_week`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `virtual_week` (
@@ -587,6 +844,12 @@ CREATE TABLE `virtual_week` (
   CONSTRAINT `virtual_week_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=122 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `week_name`
+--
+
+DROP TABLE IF EXISTS `week_name`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `week_name` (
@@ -606,6 +869,12 @@ CREATE TABLE `week_name` (
   CONSTRAINT `week_name_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `weekday_hour`
+--
+
+DROP TABLE IF EXISTS `weekday_hour`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `weekday_hour` (
@@ -615,6 +884,8 @@ CREATE TABLE `weekday_hour` (
   `semester_id` int DEFAULT NULL,
   `studio_id` int DEFAULT NULL,
   `grid_index` int DEFAULT NULL,
+  `start` time DEFAULT NULL,
+  `end` time DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `week_date_idx` (`semester_id`,`studio_id`,`week_date`),
   KEY `semester_id_idx` (`semester_id`),
@@ -623,68 +894,120 @@ CREATE TABLE `weekday_hour` (
   CONSTRAINT `weekday_hour_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2341 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-/*!50001 DROP VIEW IF EXISTS `booked_sessions`*/;
+
+--
+-- Final view structure for view `category_path`
+--
+
+/*!50001 DROP VIEW IF EXISTS `category_path`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;
 /*!50001 SET @saved_cs_results         = @@character_set_results */;
 /*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8 */;
-/*!50001 SET character_set_results     = utf8 */;
-/*!50001 SET collation_connection      = utf8_general_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`dm187`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `booked_sessions` AS select `a`.`id` AS `id`,`a`.`start` AS `start`,`a`.`end` AS `end`,`s`.`name` AS `studio`,group_concat(distinct concat(`u`.`first_name`,' ',`u`.`last_name`) separator ', ') AS `students`,`b`.`contact_phone` AS `phone`,`p`.`name` AS `project`,`b`.`format_analog` AS `tape`,`b`.`format_dolby` AS `dolby`,`b`.`living_room` AS `live room`,group_concat(distinct concat(`e`.`model`,';',`e`.`serial`,';',`r`.`quantity`) separator ',') AS `gear` from ((((((((`allotment` `a` left join `booking` `b` on(((`a`.`id` = `b`.`allotment_id`) and (`b`.`confirmed` = 1)))) left join `rm_group` `g` on((`b`.`group_id` = `g`.`id`))) left join `student_group` `sg` on((`g`.`id` = `sg`.`group_id`))) left join `user` `u` on((`sg`.`student_id` = `u`.`id`))) left join `studio` `s` on((`a`.`studio_id` = `s`.`id`))) left join `equipment_reservation` `r` on((`r`.`booking_id` = `b`.`id`))) left join `equipment` `e` on((`e`.`id` = `r`.`equipment_id`))) left join `project` `p` on((`p`.`id` = `g`.`project_id`))) where (`g`.`name` is not null) group by `a`.`id` order by `a`.`start` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `bookings_view`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = latin1 */;
-/*!50001 SET character_set_results     = latin1 */;
-/*!50001 SET collation_connection      = latin1_swedish_ci */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`rmss`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `bookings_view` AS select `a`.`id` AS `id`,`a`.`start` AS `start`,`a`.`end` AS `end`,`s`.`name` AS `studio`,group_concat(distinct substring_index(`u`.`email`,'@',1) separator ',') AS `student_IDs`,group_concat(distinct concat(`u`.`first_name`,' ',`u`.`last_name`) separator ', ') AS `students`,`b`.`contact_phone` AS `phone`,`p`.`name` AS `project`,`b`.`format_analog` AS `tape`,`b`.`format_dolby` AS `dolby`,`b`.`living_room` AS `live room`,group_concat(distinct concat(`e`.`model`,';',`e`.`serial`,';',`r`.`quantity`) separator ',') AS `gear` from ((((((((`allotment` `a` left join `booking` `b` on(((`a`.`id` = `b`.`allotment_id`) and (`b`.`confirmed` = 1)))) left join `rm_group` `g` on((`b`.`group_id` = `g`.`id`))) left join `student_group` `sg` on((`g`.`id` = `sg`.`group_id`))) left join `user` `u` on((`sg`.`student_id` = `u`.`id`))) left join `studio` `s` on((`a`.`studio_id` = `s`.`id`))) left join `equipment_reservation` `r` on((`r`.`booking_id` = `b`.`id`))) left join `equipment` `e` on((`e`.`id` = `r`.`equipment_id`))) left join `project` `p` on((`p`.`id` = `g`.`project_id`))) where (`g`.`name` is not null) group by `a`.`id` order by `a`.`start` */;
+/*!50001 VIEW `category_path` AS with recursive `category_path` (`id`,`title`,`path`) as (select `category`.`id` AS `id`,`category`.`title` AS `title`,`category`.`title` AS `path` from `category` where (`category`.`parent_id` is null) union all select `c`.`id` AS `id`,`c`.`title` AS `title`,concat(`cp`.`path`,'/',`c`.`title`) AS `CONCAT(cp.path, '/', c.title)` from (`category_path` `cp` join `category` `c` on((`cp`.`id` = `c`.`parent_id`)))) select `category_path`.`id` AS `id`,`category_path`.`title` AS `title`,`category_path`.`path` AS `path` from `category_path` order by `category_path`.`path` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `course_info`
+--
+
+/*!50001 DROP VIEW IF EXISTS `course_info`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`rmss`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `course_info` AS with `project_list` as (select `course`.`id` AS `id`,json_arrayagg(`project`.`id`) AS `project_ids` from (`course` left join `project` on((`course`.`id` = `project`.`course_id`))) group by `course`.`id`) select `course`.`id` AS `id`,`course`.`name` AS `name`,`course`.`is_open` AS `is_open`,`course`.`course_type` AS `course_type`,`course`.`original_course_name` AS `original_course_name`,`project_list`.`project_ids` AS `projectIds`,json_arrayagg(json_object('id',`user`.`id`,'username',`user`.`user_id`,'name',json_object('first',`user`.`first_name`,'last',`user`.`last_name`))) AS `managers` from ((`course` left join `user` on(json_contains(`course`.`instructor`,cast(`user`.`id` as json),'$'))) left join `project_list` on((`course`.`id` = `project_list`.`id`))) group by `course`.`id` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `equipment_info`
+--
+
+/*!50001 DROP VIEW IF EXISTS `equipment_info`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`rmss`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `equipment_info` AS with `reservation_list` as (select `r`.`equipment_id` AS `id`,json_object('quantity',`r`.`quantity`,'bookingId',`r`.`booking_id`,'start',`a`.`start`,'end',`a`.`end`) AS `booking` from ((`equipment_reservation` `r` left join `booking` `b` on((`b`.`id` = `r`.`booking_id`))) left join `allotment` `a` on((`b`.`allotment_id` = `a`.`id`)))) select `equipment`.`id` AS `id`,`equipment`.`model_id` AS `modelId`,`equipment`.`manufacturer` AS `manufacturer`,`equipment`.`model` AS `model`,`equipment`.`description` AS `description`,`equipment`.`sku` AS `sku`,`equipment`.`quantity` AS `quantity`,json_object('id',`c`.`id`,'title',`c`.`title`,'parentId',`c`.`parent_id`) AS `category`,'[]' AS `tags`,0 AS `consumable`,(case when (`r`.`booking` is not null) then json_arrayagg(`r`.`booking`) else '[]' end) AS `reservations` from (((`equipment` left join `category` `c` on((`c`.`id` = `equipment`.`category`))) left join `tag` on(json_contains(`equipment`.`tags`,cast(`tag`.`id` as json),'$'))) left join `reservation_list` `r` on((`r`.`id` = `equipment`.`id`))) group by `equipment`.`id` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `full_calendar`
+--
+
 /*!50001 DROP VIEW IF EXISTS `full_calendar`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;
 /*!50001 SET @saved_cs_results         = @@character_set_results */;
 /*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8 */;
-/*!50001 SET character_set_results     = utf8 */;
-/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`dm187`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `full_calendar` AS select `a`.`id` AS `id`,`a`.`start` AS `start`,`a`.`end` AS `end`,`s`.`name` AS `studio`,(case when (`g`.`name` is null) then `a`.`description` else `g`.`name` end) AS `description`,(case when (`g`.`name` is not null) then group_concat(distinct concat(`u`.`first_name`,' ',`u`.`last_name`) separator ', ') else NULL end) AS `students`,group_concat(distinct `u`.`email` separator ', ') AS `email`,`b`.`contact_phone` AS `phone`,`p`.`name` AS `project`,`b`.`format_analog` AS `tape`,`b`.`format_dolby` AS `dolby`,`b`.`living_room` AS `live room`,`b`.`purpose` AS `purpose`,`b`.`guests` AS `guests`,`b`.`cancel_request` AS `cancel_request`,`b`.`cancel_request_time` AS `cancel_request_time`,`b`.`cancel_request_comment` AS `cancel_request_comment`,group_concat(distinct concat(`e`.`model`,';',`e`.`serial`,';',`r`.`quantity`) separator ',') AS `gear`,`a`.`bookable` AS `open`,`s`.`id` AS `studioId`,`b`.`id` AS `reservationId`,`g`.`id` AS `projectGroupId` from ((((((((`allotment` `a` left join `booking` `b` on(((`a`.`id` = `b`.`allotment_id`) and (`b`.`confirmed` = 1)))) left join `rm_group` `g` on((`b`.`group_id` = `g`.`id`))) left join `student_group` `sg` on((`g`.`id` = `sg`.`group_id`))) left join `user` `u` on((`sg`.`student_id` = `u`.`id`))) left join `studio` `s` on((`a`.`studio_id` = `s`.`id`))) left join `equipment_reservation` `r` on((`r`.`booking_id` = `b`.`id`))) left join `equipment` `e` on((`e`.`id` = `r`.`equipment_id`))) left join `project` `p` on((`p`.`id` = `g`.`project_id`))) where (`s`.`name` <> 'Staff Only') group by `a`.`id` order by `studio`,`a`.`start` */;
+/*!50013 DEFINER=`rmss`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `full_calendar` AS with `equipment_list` as (select `r`.`booking_id` AS `booking_id`,`e`.`model_id` AS `model_id`,json_object('name',(case when ((`e`.`manufacturer` is not null) and (`e`.`model` is not null)) then concat(`e`.`manufacturer`,' ',`e`.`model`) else `e`.`description` end),'quantity',sum(`r`.`quantity`),'items',json_arrayagg(json_object('id',`e`.`id`,'quantity',`r`.`quantity`))) AS `gear` from (`equipment_reservation` `r` left join `equipment` `e` on((`e`.`id` = `r`.`equipment_id`))) group by `e`.`model_id`) select `a`.`id` AS `id`,`a`.`start` AS `start`,`a`.`end` AS `end`,`s`.`name` AS `studio`,(case when (`g`.`name` is null) then `a`.`description` else `g`.`name` end) AS `description`,(case when (`g`.`name` is not null) then group_concat(distinct concat(`u`.`first_name`,' ',`u`.`last_name`) separator ', ') else NULL end) AS `students`,group_concat(distinct `u`.`email` separator ', ') AS `email`,`b`.`contact_phone` AS `phone`,`p`.`name` AS `project`,`b`.`format_analog` AS `tape`,`b`.`format_dolby` AS `dolby`,`b`.`living_room` AS `live room`,`b`.`purpose` AS `purpose`,`b`.`guests` AS `guests`,`b`.`cancel_request` AS `cancel_request`,`b`.`cancel_request_time` AS `cancel_request_time`,`b`.`cancel_request_comment` AS `cancel_request_comment`,(case when (`el`.`gear` is not null) then json_objectagg(ifnull(`el`.`model_id`,'0'),`el`.`gear`) else NULL end) AS `gear`,`a`.`bookable` AS `open`,`s`.`id` AS `studioId`,`b`.`id` AS `reservationId`,`p`.`id` AS `projectId`,`g`.`id` AS `projectGroupId`,`b`.`notes` AS `notes` from (((((((`allotment` `a` left join `booking` `b` on(((`a`.`id` = `b`.`allotment_id`) and (`b`.`confirmed` = 1)))) left join `rm_group` `g` on((`b`.`group_id` = `g`.`id`))) left join `student_group` `sg` on((`g`.`id` = `sg`.`group_id`))) left join `user` `u` on((`sg`.`student_id` = `u`.`id`))) left join `studio` `s` on((`a`.`studio_id` = `s`.`id`))) left join `equipment_list` `el` on((`el`.`booking_id` = `b`.`id`))) left join `project` `p` on((`p`.`id` = `g`.`project_id`))) where (`s`.`name` <> 'Staff Only') group by `a`.`id` order by `studio`,`a`.`start` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `project_info`
+--
+
 /*!50001 DROP VIEW IF EXISTS `project_info`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;
 /*!50001 SET @saved_cs_results         = @@character_set_results */;
 /*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8 */;
-/*!50001 SET character_set_results     = utf8 */;
-/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`dm187`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `project_info` AS select `p1`.`id` AS `id`,`p1`.`name` AS `title`,json_object('title',`c`.`original_course_name`) AS `course`,`p1`.`start` AS `start`,`p1`.`end` AS `end`,`p1`.`book_start` AS `reservationStart`,json_arrayagg(json_object('locationId',`p2`.`studio_id`,'hours',`pa`.`hour`,'start',`pa`.`start`,'end',`pa`.`end`)) AS `allotments`,`p1`.`group_size` AS `groupSize`,`p1`.`group_hours` AS `groupAllottedHours`,`p1`.`is_open` AS `open`,json_array(`c`.`instructor`) AS `managers` from (((`project` `p1` left join `project` `p2` on((`p1`.`id` = `p2`.`parent_id`))) left join `course` `c` on((`p1`.`course_id` = `c`.`id`))) left join `project_allotment` `pa` on((`p2`.`id` = `pa`.`project_id`))) where (`p2`.`studio_id` is not null) group by `p1`.`name` union select `p3`.`id` AS `id`,`p3`.`name` AS `title`,json_object('title',`c`.`original_course_name`) AS `course`,`p3`.`start` AS `start`,`p3`.`end` AS `end`,`p3`.`book_start` AS `reservationStart`,json_arrayagg(json_object('locationId',`p3`.`studio_id`,'hours',`pa`.`hour`,'start',`pa`.`start`,'end',`pa`.`end`)) AS `allotments`,`p3`.`group_size` AS `groupSize`,`p3`.`group_hours` AS `groupAllottedHours`,`p3`.`is_open` AS `open`,json_array(`c`.`instructor`) AS `managers` from ((`project` `p3` left join `course` `c` on((`p3`.`course_id` = `c`.`id`))) left join `project_allotment` `pa` on((`p3`.`id` = `pa`.`project_id`))) where ((`p3`.`parent_id` is null) and (`p3`.`studio_id` is not null)) group by `p3`.`name` */;
+/*!50013 DEFINER=`rmss`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `project_info` AS with `manager_list` as (select `course`.`id` AS `course_id`,json_arrayagg(json_object('id',`user`.`id`,'username',`user`.`user_id`,'name',json_object('first',`user`.`first_name`,'last',`user`.`last_name`))) AS `managers` from (`course` left join `user` on(json_contains(`course`.`instructor`,cast(`user`.`id` as json),'$'))) group by `course`.`id`) select `p1`.`id` AS `id`,`p1`.`name` AS `title`,json_object('id',`c`.`id`,'title',`c`.`original_course_name`) AS `course`,`p1`.`start` AS `start`,`p1`.`end` AS `end`,`p1`.`book_start` AS `reservationStart`,json_arrayagg(json_object('locationId',`p2`.`studio_id`,'hours',`pa`.`hour`,'start',`pa`.`start`,'end',`pa`.`end`)) AS `allotments`,`p1`.`group_size` AS `groupSize`,`p1`.`group_hours` AS `groupAllottedHours`,`p1`.`is_open` AS `open`,`manager_list`.`managers` AS `managers` from ((((`project` `p1` left join `project` `p2` on((`p1`.`id` = `p2`.`parent_id`))) left join `course` `c` on((`p1`.`course_id` = `c`.`id`))) left join `project_allotment` `pa` on((`p2`.`id` = `pa`.`project_id`))) left join `manager_list` on((`c`.`id` = `manager_list`.`course_id`))) where (`p2`.`studio_id` is not null) group by `p1`.`name` union select `p3`.`id` AS `id`,`p3`.`name` AS `title`,json_object('id',`c`.`id`,'title',`c`.`original_course_name`) AS `course`,`p3`.`start` AS `start`,`p3`.`end` AS `end`,`p3`.`book_start` AS `reservationStart`,json_arrayagg(json_object('locationId',`p3`.`studio_id`,'hours',`pa`.`hour`,'start',`pa`.`start`,'end',`pa`.`end`)) AS `allotments`,`p3`.`group_size` AS `groupSize`,`p3`.`group_hours` AS `groupAllottedHours`,`p3`.`is_open` AS `open`,`manager_list`.`managers` AS `managers` from (((`project` `p3` left join `course` `c` on((`p3`.`course_id` = `c`.`id`))) left join `project_allotment` `pa` on((`p3`.`id` = `pa`.`project_id`))) left join `manager_list` on((`c`.`id` = `manager_list`.`course_id`))) where ((`p3`.`parent_id` is null) and (`p3`.`studio_id` is not null)) group by `p3`.`name` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `roster_current_view`
+--
+
 /*!50001 DROP VIEW IF EXISTS `roster_current_view`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;
 /*!50001 SET @saved_cs_results         = @@character_set_results */;
 /*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8 */;
-/*!50001 SET character_set_results     = utf8 */;
-/*!50001 SET collation_connection      = utf8_general_ci */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`dm187`@`localhost` SQL SECURITY DEFINER */
+/*!50013 DEFINER=`rmss`@`localhost` SQL SECURITY DEFINER */
 /*!50001 VIEW `roster_current_view` AS select `c`.`original_course_name` AS `Course`,`s`.`name` AS `Section.`,`c`.`instructor` AS `Instructor`,concat_ws(' ',`u`.`first_name`,`u`.`last_name`) AS `Student`,`u`.`user_id` AS `NetID`,`c`.`name` AS `RMSS Course` from (((`course` `c` join `section` `s`) join `user` `u`) join `roster` `r`) where ((`r`.`student_id` = `u`.`id`) and (`r`.`course_id` = `c`.`id`) and (`r`.`section_id` = `s`.`id`) and (`r`.`semester_id` = (select max(`semester`.`id`) from `semester`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
