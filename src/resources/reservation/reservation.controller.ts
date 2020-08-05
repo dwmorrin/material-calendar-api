@@ -58,6 +58,10 @@ const reserveEquipment = (req: Request, res: Response) => {
       });
     }
   );
+  // Remove any quantities that have been set to 0 (simpler implementation than doing a delete where equipment_id + reservation_id match the zeroed item)
+  pool.query(`
+  DELETE FROM equipment_reservation where quantity=0
+`);
 };
 
 export const getOne = (req: Request, res: Response) =>
