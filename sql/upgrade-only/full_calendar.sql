@@ -22,9 +22,11 @@ CREATE ALGORITHM = UNDEFINED DEFINER = `rmss` @`192.168.50.10` SQL SECURITY DEFI
         (
             `rmss`.`equipment_reservation` `r`
             left join `rmss`.`equipment` `e` on((`e`.`id` = `r`.`equipment_id`))
+            left join `booking` `b` on ((`r`.`booking_id` = `b`.`id`))
         )
     group by
-        `name`
+        `name`,
+        `b`.`id`
 )
 select
     `a`.`id` AS `id`,
