@@ -44,7 +44,7 @@ export const userCourseQuery = (id = "") => `
     c.managers,
     c.projectIds AS projectIds
   FROM
-    rmss.course_info c
+    ${process.env.MYSQL_DATABASE}.course_info c
     INNER JOIN rm_group rg ON rg.course_id = c.id
     INNER JOIN student_group sg ON sg.group_id = rg.id
     INNER JOIN user u ON u.id = sg.student_id

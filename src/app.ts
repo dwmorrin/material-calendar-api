@@ -44,7 +44,7 @@ app.post("/logout", logout);
 
 // application routing
 const loginGuard = (req: Request, res: Response, next: NextFunction) => {
-  if (process.env.NODE_ENV !== "development" && !req.session?.userId)
+  if (process.env.NODE_ENV !== "development" && !req.session?.user?.id)
     return res.status(401).send("not logged in");
   next();
 };
