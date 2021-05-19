@@ -1,3 +1,9 @@
+-- MySQL dump 10.13  Distrib 8.0.22, for osx10.15 (x86_64)
+--
+-- Host: 127.0.0.1    Database: booking
+-- ------------------------------------------------------
+-- Server version	8.0.23
+
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
@@ -780,7 +786,7 @@ CREATE TABLE `studio` (
   `sun_hour` smallint DEFAULT NULL,
   `equipment_reservation` tinyint DEFAULT '1',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -814,11 +820,11 @@ CREATE TABLE `user` (
   `middle_name` varchar(20) DEFAULT NULL,
   `email` varchar(252) DEFAULT NULL,
   `user_type` tinyint DEFAULT NULL,
-  `created` datetime NOT NULL,
-  `last_login` datetime NOT NULL,
+  `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `last_login` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=4148 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=4150 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -907,6 +913,7 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET character_set_results     = utf8mb4 */;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
 /*!50001 VIEW `category_path` AS with recursive `category_path` (`id`,`title`,`path`) as (select `category`.`id` AS `id`,`category`.`title` AS `title`,`category`.`title` AS `path` from `category` where (`category`.`parent_id` is null) union all select `c`.`id` AS `id`,`c`.`title` AS `title`,concat(`cp`.`path`,'/',`c`.`title`) AS `CONCAT(cp.path, '/', c.title)` from (`category_path` `cp` join `category` `c` on((`cp`.`id` = `c`.`parent_id`)))) select `category_path`.`id` AS `id`,`category_path`.`title` AS `title`,`category_path`.`path` AS `path` from `category_path` order by `category_path`.`path` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
@@ -924,6 +931,7 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET character_set_results     = utf8mb4 */;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
 /*!50001 VIEW `course_info` AS with `project_list` as (select `course`.`id` AS `id`,json_arrayagg(`project`.`id`) AS `project_ids` from (`course` left join `project` on((`course`.`id` = `project`.`course_id`))) group by `course`.`id`) select `course`.`id` AS `id`,`course`.`name` AS `name`,`course`.`is_open` AS `is_open`,`course`.`course_type` AS `course_type`,`course`.`original_course_name` AS `original_course_name`,`project_list`.`project_ids` AS `projectIds`,json_arrayagg(json_object('id',`user`.`id`,'username',`user`.`user_id`,'name',json_object('first',`user`.`first_name`,'last',`user`.`last_name`))) AS `managers` from ((`course` left join `user` on(json_contains(`course`.`instructor`,cast(`user`.`id` as json),'$'))) left join `project_list` on((`course`.`id` = `project_list`.`id`))) group by `course`.`id` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
@@ -941,6 +949,7 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET character_set_results     = utf8mb4 */;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
 /*!50001 VIEW `equipment_info` AS with `reservation_list` as (select `r`.`equipment_id` AS `id`,json_object('quantity',`r`.`quantity`,'bookingId',`r`.`booking_id`,'start',`a`.`start`,'end',`a`.`end`) AS `booking` from ((`equipment_reservation` `r` left join `booking` `b` on((`b`.`id` = `r`.`booking_id`))) left join `allotment` `a` on((`b`.`allotment_id` = `a`.`id`)))) select `equipment`.`id` AS `id`,`equipment`.`model_id` AS `modelId`,`equipment`.`manufacturer` AS `manufacturer`,`equipment`.`model` AS `model`,`equipment`.`description` AS `description`,`equipment`.`sku` AS `sku`,`equipment`.`quantity` AS `quantity`,json_object('id',`c`.`id`,'title',`c`.`title`,'parentId',`c`.`parent_id`) AS `category`,'[]' AS `tags`,0 AS `consumable`,(case when (`r`.`booking` is not null) then json_arrayagg(`r`.`booking`) else '[]' end) AS `reservations` from (((`equipment` left join `category` `c` on((`c`.`id` = `equipment`.`category`))) left join `tag` on(json_contains(`equipment`.`tags`,cast(`tag`.`id` as json),'$'))) left join `reservation_list` `r` on((`r`.`id` = `equipment`.`id`))) group by `equipment`.`id` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
@@ -958,6 +967,7 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET character_set_results     = utf8mb4 */;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
 /*!50001 VIEW `full_calendar` AS with `equipment_list` as (select `r`.`booking_id` AS `booking_id`,`e`.`model_id` AS `model_id`,json_object('name',(case when ((`e`.`manufacturer` is not null) and (`e`.`model` is not null)) then concat(`e`.`manufacturer`,' ',`e`.`model`) else `e`.`description` end),'quantity',sum(`r`.`quantity`),'items',json_arrayagg(json_object('id',`e`.`id`,'quantity',`r`.`quantity`))) AS `gear` from (`equipment_reservation` `r` left join `equipment` `e` on((`e`.`id` = `r`.`equipment_id`))) group by `e`.`model_id`) select `a`.`id` AS `id`,`a`.`start` AS `start`,`a`.`end` AS `end`,`s`.`name` AS `studio`,(case when (`g`.`name` is null) then `a`.`description` else `g`.`name` end) AS `description`,(case when (`g`.`name` is not null) then group_concat(distinct concat(`u`.`first_name`,' ',`u`.`last_name`) separator ', ') else NULL end) AS `students`,group_concat(distinct `u`.`email` separator ', ') AS `email`,`b`.`contact_phone` AS `phone`,`p`.`name` AS `project`,`b`.`format_analog` AS `tape`,`b`.`format_dolby` AS `dolby`,`b`.`living_room` AS `live room`,`b`.`purpose` AS `purpose`,`b`.`guests` AS `guests`,`b`.`cancel_request` AS `cancel_request`,`b`.`cancel_request_time` AS `cancel_request_time`,`b`.`cancel_request_comment` AS `cancel_request_comment`,(case when (`el`.`gear` is not null) then json_objectagg(ifnull(`el`.`model_id`,'0'),`el`.`gear`) else NULL end) AS `gear`,`a`.`bookable` AS `open`,`s`.`id` AS `studioId`,`b`.`id` AS `reservationId`,`p`.`id` AS `projectId`,`g`.`id` AS `projectGroupId`,`b`.`notes` AS `notes` from (((((((`allotment` `a` left join `booking` `b` on(((`a`.`id` = `b`.`allotment_id`) and (`b`.`confirmed` = 1)))) left join `rm_group` `g` on((`b`.`group_id` = `g`.`id`))) left join `student_group` `sg` on((`g`.`id` = `sg`.`group_id`))) left join `user` `u` on((`sg`.`student_id` = `u`.`id`))) left join `studio` `s` on((`a`.`studio_id` = `s`.`id`))) left join `equipment_list` `el` on((`el`.`booking_id` = `b`.`id`))) left join `project` `p` on((`p`.`id` = `g`.`project_id`))) where (`s`.`name` <> 'Staff Only') group by `a`.`id` order by `studio`,`a`.`start` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
@@ -975,6 +985,7 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET character_set_results     = utf8mb4 */;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
 /*!50001 VIEW `project_info` AS with `manager_list` as (select `course`.`id` AS `course_id`,json_arrayagg(json_object('id',`user`.`id`,'username',`user`.`user_id`,'name',json_object('first',`user`.`first_name`,'last',`user`.`last_name`))) AS `managers` from (`course` left join `user` on(json_contains(`course`.`instructor`,cast(`user`.`id` as json),'$'))) group by `course`.`id`) select `p1`.`id` AS `id`,`p1`.`name` AS `title`,json_object('id',`c`.`id`,'title',`c`.`original_course_name`) AS `course`,`p1`.`start` AS `start`,`p1`.`end` AS `end`,`p1`.`book_start` AS `reservationStart`,json_arrayagg(json_object('locationId',`p2`.`studio_id`,'hours',`pa`.`hour`,'start',`pa`.`start`,'end',`pa`.`end`)) AS `allotments`,`p1`.`group_size` AS `groupSize`,`p1`.`group_hours` AS `groupAllottedHours`,`p1`.`is_open` AS `open`,`manager_list`.`managers` AS `managers` from ((((`project` `p1` left join `project` `p2` on((`p1`.`id` = `p2`.`parent_id`))) left join `course` `c` on((`p1`.`course_id` = `c`.`id`))) left join `project_allotment` `pa` on((`p2`.`id` = `pa`.`project_id`))) left join `manager_list` on((`c`.`id` = `manager_list`.`course_id`))) where (`p2`.`studio_id` is not null) group by `p1`.`name` union select `p3`.`id` AS `id`,`p3`.`name` AS `title`,json_object('id',`c`.`id`,'title',`c`.`original_course_name`) AS `course`,`p3`.`start` AS `start`,`p3`.`end` AS `end`,`p3`.`book_start` AS `reservationStart`,json_arrayagg(json_object('locationId',`p3`.`studio_id`,'hours',`pa`.`hour`,'start',`pa`.`start`,'end',`pa`.`end`)) AS `allotments`,`p3`.`group_size` AS `groupSize`,`p3`.`group_hours` AS `groupAllottedHours`,`p3`.`is_open` AS `open`,`manager_list`.`managers` AS `managers` from (((`project` `p3` left join `course` `c` on((`p3`.`course_id` = `c`.`id`))) left join `project_allotment` `pa` on((`p3`.`id` = `pa`.`project_id`))) left join `manager_list` on((`c`.`id` = `manager_list`.`course_id`))) where ((`p3`.`parent_id` is null) and (`p3`.`studio_id` is not null)) group by `p3`.`name` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
@@ -992,6 +1003,7 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET character_set_results     = utf8mb4 */;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
 /*!50001 VIEW `roster_current_view` AS select `c`.`original_course_name` AS `Course`,`s`.`name` AS `Section.`,`c`.`instructor` AS `Instructor`,concat_ws(' ',`u`.`first_name`,`u`.`last_name`) AS `Student`,`u`.`user_id` AS `NetID`,`c`.`name` AS `RMSS Course` from (((`course` `c` join `section` `s`) join `user` `u`) join `roster` `r`) where ((`r`.`student_id` = `u`.`id`) and (`r`.`course_id` = `c`.`id`) and (`r`.`section_id` = `s`.`id`) and (`r`.`semester_id` = (select max(`semester`.`id`) from `semester`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
@@ -1005,3 +1017,5 @@ CREATE TABLE `weekday_hour` (
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2021-05-18 12:59:50
