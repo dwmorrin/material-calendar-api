@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { Query } from "mysql";
 import { controllers, onResult } from "../../utils/crud";
 import pool, { inflate, error500 } from "../../utils/db";
 
@@ -24,17 +25,17 @@ const queryFn = (where = "") => `
   GROUP BY s.id
 `;
 
-export const getMany = (req: Request, res: Response) =>
+export const getMany = (req: Request, res: Response): Query =>
   pool.query(queryFn(), onResult({ req, res, dataMapFn: inflate }).read);
 
-export const getOne = (req: Request, res: Response) =>
+export const getOne = (req: Request, res: Response): Query =>
   pool.query(
     queryFn("WHERE s.id = ?"),
     [req.params.id],
     onResult({ req, res, take: 1 }).read
   );
 
-export const getDefaultId = (req: Request, res: Response) =>
+export const getDefaultId = (req: Request, res: Response): Query =>
   pool.query(
     "SELECT id FROM studio WHERE id = (SELECT MIN(id) FROM studio)",
     onResult({ req, res, take: 1 }).read
@@ -71,7 +72,7 @@ WHERE
 GROUP BY v.id
 `;
 
-export const getVirtualWeeks = (req: Request, res: Response) =>
+export const getVirtualWeeks = (req: Request, res: Response): Query =>
   pool.query(
     calculatedVirtualWeekHoursQuery,
     [req.params.id, req.params.id],
@@ -93,7 +94,7 @@ const flattenHours = (hours: { [k: string]: string | number }) => [
   hours.end,
 ];
 
-export const createOrUpdateHours = (req: Request, res: Response) =>
+export const createOrUpdateHours = (req: Request, res: Response): Query =>
   pool.query(replaceHoursQuery, [req.body.map(flattenHours)], (err, data) => {
     if (err) return res.status(500).json(error500(err, req.query.context));
     res.status(201).json({ data, context: req.query.context });
@@ -112,13 +113,12 @@ const adapter = ({
   location: groupId,
 });
 
-export const createOne = (req: Request, res: Response) => {
+export const createOne = (req: Request, res: Response): Query =>
   pool.query(
     "INSERT INTO studio SET ?",
     adapter(req.body),
     onResult({ req, res }).create
   );
-};
 
 export default {
   ...controllers("studio", "id"),
