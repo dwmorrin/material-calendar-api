@@ -24,7 +24,7 @@ const loginGuard = (req: Request, res: Response, next: NextFunction) => {
   // allow developer to hard code a username into the .env file
   if (process.env.NODE_ENV === "development") {
     if (process.env.NET_ID) req.headers.netId = process.env.NET_ID;
-    else res.status(500).send("NET_ID not set in .env");
+    else return res.status(500).json({ error: "NET_ID not set in .env" });
   }
   if (req.headers.netId) next();
   else res.status(401).send("not logged in");
