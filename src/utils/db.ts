@@ -76,7 +76,8 @@ export const error500 = (rawDbError: MysqlError, context: unknown) => {
  * serial queries where the next query depends upon the previous results.
  */
 const pool = mysql.createPool({
-  timezone: "Z",
+  //timezone: "Z",
+  dateStrings: true,
   connectionLimit: 10,
   // debug: process.env.NODE_ENV === "development",
   host: process.env.MYSQL_HOST,
