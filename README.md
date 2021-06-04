@@ -10,13 +10,14 @@ This is the backend to a calendar app for scheduling events in locations.
 Create a .env file:
 
 ```
-MYSQL_DATABASE=booking
-MYSQL_HOST=localhost
-MYSQL_PASSWORD=password
-MYSQL_USER=root
-NET_ID=user123
-NODE_ENV=development
 PORT=3001
+NODE_ENV=development
+MYSQL_HOST="127.0.0.1"
+MYSQL_USER=root
+MYSQL_PASSWORD=password
+MYSQL_DATABASE=calendar
+MYSQL_BACKUP_DIR=/my/backup/dir
+NET_ID=username_to_login_with_for_development
 ```
 
 The app does not handle authorization; it just expects a `netId` property to be in the request
