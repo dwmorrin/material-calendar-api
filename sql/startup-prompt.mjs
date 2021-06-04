@@ -14,10 +14,6 @@ const schema = {
       hidden: true,
       required: true,
     },
-    database: {
-      description: "database name?",
-      required: true,
-    },
     first: {
       description: "user first name?",
       required: true,

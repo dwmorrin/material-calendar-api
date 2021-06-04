@@ -37,7 +37,7 @@ try {
  */
 async function initializeDatabase(error, responses) {
   if (error) fatal(error);
-  const { user, password, first, last, email, database } = responses;
+  const { user, password, first, last, email } = responses;
 
   // using mysql utility to prepare database for mysqljs lib
   const mysqlCmd = (statement) =>
@@ -56,10 +56,10 @@ async function initializeDatabase(error, responses) {
   // );
 
   // convenient to run this command here; could be done with mysqljs lib
-  await exec(mysqlCmd(`DROP DATABASE IF EXISTS ${database}`));
-  await exec(mysqlCmd(`CREATE DATABASE ${database}`));
+  await exec(mysqlCmd(`DROP DATABASE IF EXISTS ${MYSQL_DATABASE}`));
+  await exec(mysqlCmd(`CREATE DATABASE ${MYSQL_DATABASE}`));
   await exec(
-    `mysql ${database} < "${join(__dirname, "material_calendar.sql")}"`
+    `mysql ${MYSQL_DATABASE} < "${join(__dirname, "material_calendar.sql")}"`
   );
 
   // now we should be able to test/use the mysqljs library
@@ -68,7 +68,7 @@ async function initializeDatabase(error, responses) {
     host: MYSQL_HOST,
     user: MYSQL_USER,
     password: MYSQL_PASSWORD,
-    database,
+    database: MYSQL_DATABASE,
   });
   connection.query(
     insertNewUserQuery({
