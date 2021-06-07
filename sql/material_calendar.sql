@@ -1,25 +1,3 @@
--- MySQL dump 10.13  Distrib 8.0.22, for osx10.15 (x86_64)
---
--- Host: 127.0.0.1    Database: booking
--- ------------------------------------------------------
--- Server version	8.0.23
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8mb4 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-
---
--- Table structure for table `allotment`
---
-
-DROP TABLE IF EXISTS `allotment`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `allotment` (
@@ -41,12 +19,6 @@ CREATE TABLE `allotment` (
   CONSTRAINT `user_foreign_key` FOREIGN KEY (`lock_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=4100 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `booking`
---
-
-DROP TABLE IF EXISTS `booking`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `booking` (
@@ -105,12 +77,6 @@ CREATE TABLE `booking` (
   CONSTRAINT `booking_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=490 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `booking_guest`
---
-
-DROP TABLE IF EXISTS `booking_guest`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `booking_guest` (
@@ -122,12 +88,6 @@ CREATE TABLE `booking_guest` (
   CONSTRAINT `booking_guest_booking_id_booking_id` FOREIGN KEY (`booking_id`) REFERENCES `booking` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `booking_trading_request`
---
-
-DROP TABLE IF EXISTS `booking_trading_request`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `booking_trading_request` (
@@ -151,12 +111,6 @@ CREATE TABLE `booking_trading_request` (
   CONSTRAINT `booking_trading_request_request_id_user_id` FOREIGN KEY (`request_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `category`
---
-
-DROP TABLE IF EXISTS `category`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `category` (
@@ -166,13 +120,6 @@ CREATE TABLE `category` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Temporary view structure for view `category_path`
---
-
-DROP TABLE IF EXISTS `category_path`;
-/*!50001 DROP VIEW IF EXISTS `category_path`*/;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `category_path` AS SELECT 
@@ -180,12 +127,6 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `title`,
  1 AS `path`*/;
 SET character_set_client = @saved_cs_client;
-
---
--- Table structure for table `course`
---
-
-DROP TABLE IF EXISTS `course`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `course` (
@@ -200,13 +141,6 @@ CREATE TABLE `course` (
   CONSTRAINT `course_course_type_course_type_id` FOREIGN KEY (`course_type`) REFERENCES `course_type` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Temporary view structure for view `course_info`
---
-
-DROP TABLE IF EXISTS `course_info`;
-/*!50001 DROP VIEW IF EXISTS `course_info`*/;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `course_info` AS SELECT 
@@ -218,12 +152,6 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `projectIds`,
  1 AS `managers`*/;
 SET character_set_client = @saved_cs_client;
-
---
--- Table structure for table `course_type`
---
-
-DROP TABLE IF EXISTS `course_type`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `course_type` (
@@ -232,12 +160,6 @@ CREATE TABLE `course_type` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `equipment`
---
-
-DROP TABLE IF EXISTS `equipment`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `equipment` (
@@ -258,13 +180,6 @@ CREATE TABLE `equipment` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1089 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Temporary view structure for view `equipment_info`
---
-
-DROP TABLE IF EXISTS `equipment_info`;
-/*!50001 DROP VIEW IF EXISTS `equipment_info`*/;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `equipment_info` AS SELECT 
@@ -280,12 +195,6 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `consumable`,
  1 AS `reservations`*/;
 SET character_set_client = @saved_cs_client;
-
---
--- Table structure for table `equipment_reservation`
---
-
-DROP TABLE IF EXISTS `equipment_reservation`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `equipment_reservation` (
@@ -297,13 +206,6 @@ CREATE TABLE `equipment_reservation` (
   PRIMARY KEY (`equipment_id`,`booking_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Temporary view structure for view `full_calendar`
---
-
-DROP TABLE IF EXISTS `full_calendar`;
-/*!50001 DROP VIEW IF EXISTS `full_calendar`*/;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `full_calendar` AS SELECT 
@@ -332,12 +234,6 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `projectGroupId`,
  1 AS `notes`*/;
 SET character_set_client = @saved_cs_client;
-
---
--- Table structure for table `gear_studio`
---
-
-DROP TABLE IF EXISTS `gear_studio`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `gear_studio` (
@@ -348,12 +244,6 @@ CREATE TABLE `gear_studio` (
   CONSTRAINT `gear_studio_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `group_project_hours`
---
-
-DROP TABLE IF EXISTS `group_project_hours`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `group_project_hours` (
@@ -366,12 +256,6 @@ CREATE TABLE `group_project_hours` (
   CONSTRAINT `group_project_hours_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `group_request`
---
-
-DROP TABLE IF EXISTS `group_request`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `group_request` (
@@ -387,12 +271,6 @@ CREATE TABLE `group_request` (
   CONSTRAINT `group_request_requestor_user_id` FOREIGN KEY (`requestor`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `inventory`
---
-
-DROP TABLE IF EXISTS `inventory`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `inventory` (
@@ -413,12 +291,6 @@ CREATE TABLE `inventory` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1089 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `invitation`
---
-
-DROP TABLE IF EXISTS `invitation`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `invitation` (
@@ -439,12 +311,6 @@ CREATE TABLE `invitation` (
   CONSTRAINT `invitation_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=88 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `invitee`
---
-
-DROP TABLE IF EXISTS `invitee`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `invitee` (
@@ -462,12 +328,6 @@ CREATE TABLE `invitee` (
   CONSTRAINT `invitee_invitee_user_id` FOREIGN KEY (`invitee`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=124 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `message`
---
-
-DROP TABLE IF EXISTS `message`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `message` (
@@ -483,12 +343,6 @@ CREATE TABLE `message` (
   CONSTRAINT `message_sender_user_id` FOREIGN KEY (`sender`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `message_receiver`
---
-
-DROP TABLE IF EXISTS `message_receiver`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `message_receiver` (
@@ -505,12 +359,6 @@ CREATE TABLE `message_receiver` (
   CONSTRAINT `message_receiver_receiver_user_user_id` FOREIGN KEY (`receiver_user`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `project`
---
-
-DROP TABLE IF EXISTS `project`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `project` (
@@ -545,12 +393,6 @@ CREATE TABLE `project` (
   CONSTRAINT `project_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `project_allotment`
---
-
-DROP TABLE IF EXISTS `project_allotment`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `project_allotment` (
@@ -566,12 +408,6 @@ CREATE TABLE `project_allotment` (
   CONSTRAINT `project_allotment_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `project_group`
---
-
-DROP TABLE IF EXISTS `project_group`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `project_group` (
@@ -581,13 +417,6 @@ CREATE TABLE `project_group` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Temporary view structure for view `project_info`
---
-
-DROP TABLE IF EXISTS `project_info`;
-/*!50001 DROP VIEW IF EXISTS `project_info`*/;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `project_info` AS SELECT 
@@ -603,12 +432,14 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `open`,
  1 AS `managers`*/;
 SET character_set_client = @saved_cs_client;
-
---
--- Table structure for table `rm_group`
---
-
-DROP TABLE IF EXISTS `rm_group`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `project_studio` (
+  `project_id` int NOT NULL,
+  `studio_id` int NOT NULL,
+  PRIMARY KEY (`project_id`,`studio_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `rm_group` (
@@ -631,12 +462,6 @@ CREATE TABLE `rm_group` (
   CONSTRAINT `rm_group_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=159 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `roster`
---
-
-DROP TABLE IF EXISTS `roster`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `roster` (
@@ -657,13 +482,6 @@ CREATE TABLE `roster` (
   CONSTRAINT `roster_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=2678 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Temporary view structure for view `roster_current_view`
---
-
-DROP TABLE IF EXISTS `roster_current_view`;
-/*!50001 DROP VIEW IF EXISTS `roster_current_view`*/;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `roster_current_view` AS SELECT 
@@ -674,12 +492,6 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `NetID`,
  1 AS `RMSS Course`*/;
 SET character_set_client = @saved_cs_client;
-
---
--- Table structure for table `scheduler_sheet`
---
-
-DROP TABLE IF EXISTS `scheduler_sheet`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `scheduler_sheet` (
@@ -695,12 +507,6 @@ CREATE TABLE `scheduler_sheet` (
   CONSTRAINT `scheduler_sheet_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `section`
---
-
-DROP TABLE IF EXISTS `section`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `section` (
@@ -712,12 +518,6 @@ CREATE TABLE `section` (
   CONSTRAINT `section_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `semester`
---
-
-DROP TABLE IF EXISTS `semester`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `semester` (
@@ -727,14 +527,8 @@ CREATE TABLE `semester` (
   `end` date DEFAULT NULL,
   `active` tinyint DEFAULT '1',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `student_group`
---
-
-DROP TABLE IF EXISTS `student_group`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `student_group` (
@@ -746,12 +540,6 @@ CREATE TABLE `student_group` (
   CONSTRAINT `student_group_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `student_project_hours`
---
-
-DROP TABLE IF EXISTS `student_project_hours`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `student_project_hours` (
@@ -764,12 +552,6 @@ CREATE TABLE `student_project_hours` (
   CONSTRAINT `student_project_hours_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `studio`
---
-
-DROP TABLE IF EXISTS `studio`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `studio` (
@@ -786,14 +568,8 @@ CREATE TABLE `studio` (
   `sun_hour` smallint DEFAULT NULL,
   `equipment_reservation` tinyint DEFAULT '1',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `tag`
---
-
-DROP TABLE IF EXISTS `tag`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `tag` (
@@ -803,12 +579,6 @@ CREATE TABLE `tag` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `user`
---
-
-DROP TABLE IF EXISTS `user`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user` (
@@ -824,14 +594,8 @@ CREATE TABLE `user` (
   `last_login` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=4150 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=4151 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `virtual_week`
---
-
-DROP TABLE IF EXISTS `virtual_week`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `virtual_week` (
@@ -850,12 +614,6 @@ CREATE TABLE `virtual_week` (
   CONSTRAINT `virtual_week_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=122 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `week_name`
---
-
-DROP TABLE IF EXISTS `week_name`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `week_name` (
@@ -875,12 +633,6 @@ CREATE TABLE `week_name` (
   CONSTRAINT `week_name_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `weekday_hour`
---
-
-DROP TABLE IF EXISTS `weekday_hour`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `weekday_hour` (
@@ -898,13 +650,8 @@ CREATE TABLE `weekday_hour` (
   KEY `studio_id_idx` (`studio_id`),
   CONSTRAINT `weekday_hour_semester_id_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`),
   CONSTRAINT `weekday_hour_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2341 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=2356 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Final view structure for view `category_path`
---
-
 /*!50001 DROP VIEW IF EXISTS `category_path`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;
 /*!50001 SET @saved_cs_results         = @@character_set_results */;
@@ -918,11 +665,6 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
-
---
--- Final view structure for view `course_info`
---
-
 /*!50001 DROP VIEW IF EXISTS `course_info`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;
 /*!50001 SET @saved_cs_results         = @@character_set_results */;
@@ -936,11 +678,6 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
-
---
--- Final view structure for view `equipment_info`
---
-
 /*!50001 DROP VIEW IF EXISTS `equipment_info`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;
 /*!50001 SET @saved_cs_results         = @@character_set_results */;
@@ -954,11 +691,6 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
-
---
--- Final view structure for view `full_calendar`
---
-
 /*!50001 DROP VIEW IF EXISTS `full_calendar`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;
 /*!50001 SET @saved_cs_results         = @@character_set_results */;
@@ -972,11 +704,6 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
-
---
--- Final view structure for view `project_info`
---
-
 /*!50001 DROP VIEW IF EXISTS `project_info`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;
 /*!50001 SET @saved_cs_results         = @@character_set_results */;
@@ -990,11 +717,6 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
-
---
--- Final view structure for view `roster_current_view`
---
-
 /*!50001 DROP VIEW IF EXISTS `roster_current_view`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;
 /*!50001 SET @saved_cs_results         = @@character_set_results */;
@@ -1008,14 +730,3 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
-
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
--- Dump completed on 2021-05-18 12:59:50
