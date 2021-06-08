@@ -131,34 +131,10 @@ SET character_set_client = @saved_cs_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `course` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(128) DEFAULT NULL,
-  `is_open` tinyint DEFAULT '1',
-  `course_type` int DEFAULT NULL,
-  `original_course_name` varchar(128) DEFAULT NULL,
+  `title` varchar(128) DEFAULT NULL,
   `instructor` varchar(50) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `course_type_idx` (`course_type`),
-  CONSTRAINT `course_course_type_course_type_id` FOREIGN KEY (`course_type`) REFERENCES `course_type` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-SET @saved_cs_client     = @@character_set_client;
-/*!50503 SET character_set_client = utf8mb4 */;
-/*!50001 CREATE VIEW `course_info` AS SELECT 
- 1 AS `id`,
- 1 AS `name`,
- 1 AS `is_open`,
- 1 AS `course_type`,
- 1 AS `original_course_name`,
- 1 AS `projectIds`,
- 1 AS `managers`*/;
-SET character_set_client = @saved_cs_client;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `course_type` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `course_type` varchar(80) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -417,21 +393,6 @@ CREATE TABLE `project_group` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-SET @saved_cs_client     = @@character_set_client;
-/*!50503 SET character_set_client = utf8mb4 */;
-/*!50001 CREATE VIEW `project_info` AS SELECT 
- 1 AS `id`,
- 1 AS `title`,
- 1 AS `course`,
- 1 AS `start`,
- 1 AS `end`,
- 1 AS `reservationStart`,
- 1 AS `allotments`,
- 1 AS `groupSize`,
- 1 AS `groupAllottedHours`,
- 1 AS `open`,
- 1 AS `managers`*/;
-SET character_set_client = @saved_cs_client;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `project_studio` (
@@ -482,16 +443,6 @@ CREATE TABLE `roster` (
   CONSTRAINT `roster_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB AUTO_INCREMENT=2678 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-SET @saved_cs_client     = @@character_set_client;
-/*!50503 SET character_set_client = utf8mb4 */;
-/*!50001 CREATE VIEW `roster_current_view` AS SELECT 
- 1 AS `Course`,
- 1 AS `Section.`,
- 1 AS `Instructor`,
- 1 AS `Student`,
- 1 AS `NetID`,
- 1 AS `RMSS Course`*/;
-SET character_set_client = @saved_cs_client;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `scheduler_sheet` (
@@ -665,19 +616,6 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `course_info`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `course_info` AS with `project_list` as (select `course`.`id` AS `id`,json_arrayagg(`project`.`id`) AS `project_ids` from (`course` left join `project` on((`course`.`id` = `project`.`course_id`))) group by `course`.`id`) select `course`.`id` AS `id`,`course`.`name` AS `name`,`course`.`is_open` AS `is_open`,`course`.`course_type` AS `course_type`,`course`.`original_course_name` AS `original_course_name`,`project_list`.`project_ids` AS `projectIds`,json_arrayagg(json_object('id',`user`.`id`,'username',`user`.`user_id`,'name',json_object('first',`user`.`first_name`,'last',`user`.`last_name`))) AS `managers` from ((`course` left join `user` on(json_contains(`course`.`instructor`,cast(`user`.`id` as json),'$'))) left join `project_list` on((`course`.`id` = `project_list`.`id`))) group by `course`.`id` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
 /*!50001 DROP VIEW IF EXISTS `equipment_info`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;
 /*!50001 SET @saved_cs_results         = @@character_set_results */;
@@ -701,32 +639,6 @@ CREATE TABLE `weekday_hour` (
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
 /*!50001 VIEW `full_calendar` AS with `equipment_list` as (select `r`.`booking_id` AS `booking_id`,`e`.`model_id` AS `model_id`,json_object('name',(case when ((`e`.`manufacturer` is not null) and (`e`.`model` is not null)) then concat(`e`.`manufacturer`,' ',`e`.`model`) else `e`.`description` end),'quantity',sum(`r`.`quantity`),'items',json_arrayagg(json_object('id',`e`.`id`,'quantity',`r`.`quantity`))) AS `gear` from (`equipment_reservation` `r` left join `equipment` `e` on((`e`.`id` = `r`.`equipment_id`))) group by `e`.`model_id`) select `a`.`id` AS `id`,`a`.`start` AS `start`,`a`.`end` AS `end`,`s`.`name` AS `studio`,(case when (`g`.`name` is null) then `a`.`description` else `g`.`name` end) AS `description`,(case when (`g`.`name` is not null) then group_concat(distinct concat(`u`.`first_name`,' ',`u`.`last_name`) separator ', ') else NULL end) AS `students`,group_concat(distinct `u`.`email` separator ', ') AS `email`,`b`.`contact_phone` AS `phone`,`p`.`name` AS `project`,`b`.`format_analog` AS `tape`,`b`.`format_dolby` AS `dolby`,`b`.`living_room` AS `live room`,`b`.`purpose` AS `purpose`,`b`.`guests` AS `guests`,`b`.`cancel_request` AS `cancel_request`,`b`.`cancel_request_time` AS `cancel_request_time`,`b`.`cancel_request_comment` AS `cancel_request_comment`,(case when (`el`.`gear` is not null) then json_objectagg(ifnull(`el`.`model_id`,'0'),`el`.`gear`) else NULL end) AS `gear`,`a`.`bookable` AS `open`,`s`.`id` AS `studioId`,`b`.`id` AS `reservationId`,`p`.`id` AS `projectId`,`g`.`id` AS `projectGroupId`,`b`.`notes` AS `notes` from (((((((`allotment` `a` left join `booking` `b` on(((`a`.`id` = `b`.`allotment_id`) and (`b`.`confirmed` = 1)))) left join `rm_group` `g` on((`b`.`group_id` = `g`.`id`))) left join `student_group` `sg` on((`g`.`id` = `sg`.`group_id`))) left join `user` `u` on((`sg`.`student_id` = `u`.`id`))) left join `studio` `s` on((`a`.`studio_id` = `s`.`id`))) left join `equipment_list` `el` on((`el`.`booking_id` = `b`.`id`))) left join `project` `p` on((`p`.`id` = `g`.`project_id`))) where (`s`.`name` <> 'Staff Only') group by `a`.`id` order by `studio`,`a`.`start` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `project_info`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `project_info` AS with `manager_list` as (select `course`.`id` AS `course_id`,json_arrayagg(json_object('id',`user`.`id`,'username',`user`.`user_id`,'name',json_object('first',`user`.`first_name`,'last',`user`.`last_name`))) AS `managers` from (`course` left join `user` on(json_contains(`course`.`instructor`,cast(`user`.`id` as json),'$'))) group by `course`.`id`) select `p1`.`id` AS `id`,`p1`.`name` AS `title`,json_object('id',`c`.`id`,'title',`c`.`original_course_name`) AS `course`,`p1`.`start` AS `start`,`p1`.`end` AS `end`,`p1`.`book_start` AS `reservationStart`,json_arrayagg(json_object('locationId',`p2`.`studio_id`,'hours',`pa`.`hour`,'start',`pa`.`start`,'end',`pa`.`end`)) AS `allotments`,`p1`.`group_size` AS `groupSize`,`p1`.`group_hours` AS `groupAllottedHours`,`p1`.`is_open` AS `open`,`manager_list`.`managers` AS `managers` from ((((`project` `p1` left join `project` `p2` on((`p1`.`id` = `p2`.`parent_id`))) left join `course` `c` on((`p1`.`course_id` = `c`.`id`))) left join `project_allotment` `pa` on((`p2`.`id` = `pa`.`project_id`))) left join `manager_list` on((`c`.`id` = `manager_list`.`course_id`))) where (`p2`.`studio_id` is not null) group by `p1`.`name` union select `p3`.`id` AS `id`,`p3`.`name` AS `title`,json_object('id',`c`.`id`,'title',`c`.`original_course_name`) AS `course`,`p3`.`start` AS `start`,`p3`.`end` AS `end`,`p3`.`book_start` AS `reservationStart`,json_arrayagg(json_object('locationId',`p3`.`studio_id`,'hours',`pa`.`hour`,'start',`pa`.`start`,'end',`pa`.`end`)) AS `allotments`,`p3`.`group_size` AS `groupSize`,`p3`.`group_hours` AS `groupAllottedHours`,`p3`.`is_open` AS `open`,`manager_list`.`managers` AS `managers` from (((`project` `p3` left join `course` `c` on((`p3`.`course_id` = `c`.`id`))) left join `project_allotment` `pa` on((`p3`.`id` = `pa`.`project_id`))) left join `manager_list` on((`c`.`id` = `manager_list`.`course_id`))) where ((`p3`.`parent_id` is null) and (`p3`.`studio_id` is not null)) group by `p3`.`name` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `roster_current_view`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `roster_current_view` AS select `c`.`original_course_name` AS `Course`,`s`.`name` AS `Section.`,`c`.`instructor` AS `Instructor`,concat_ws(' ',`u`.`first_name`,`u`.`last_name`) AS `Student`,`u`.`user_id` AS `NetID`,`c`.`name` AS `RMSS Course` from (((`course` `c` join `section` `s`) join `user` `u`) join `roster` `r`) where ((`r`.`student_id` = `u`.`id`) and (`r`.`course_id` = `c`.`id`) and (`r`.`section_id` = `s`.`id`) and (`r`.`semester_id` = (select max(`semester`.`id`) from `semester`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
