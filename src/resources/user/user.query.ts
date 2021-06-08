@@ -40,30 +40,28 @@ FROM
 export const userCourseQuery = (id = "") => `
   SELECT
     c.id,
-    original_course_name as title,
-    c.managers,
-    c.projectIds AS projectIds
+    c.title
   FROM
-    ${process.env.MYSQL_DATABASE}.course_info c
+    course c
     INNER JOIN rm_group rg ON rg.course_id = c.id
     INNER JOIN student_group sg ON sg.group_id = rg.id
     INNER JOIN user u ON u.id = sg.student_id
   WHERE
-    u.user_id = "${id}" OR json_contains(c.managers, '{"username" : "${id}"}')
+    u.user_id = "${id}"
   GROUP BY
-    original_course_name;
+    c.title;
 `;
 
 export const userProjectQuery = (id = "") => `
   SELECT
-    pi.*
+    p.*
   FROM
-    project_info pi
-    INNER JOIN rm_group rg ON rg.project_id = pi.id
+    project p
+    INNER JOIN rm_group rg ON rg.project_id = p.id
     INNER JOIN student_group sg ON sg.group_id = rg.id
     INNER JOIN user u ON u.id = sg.student_id 
-  WHERE u.user_id = "${id}" OR json_contains(pi.managers, '{"username" : "${id}"}')
-  group by pi.id
+  WHERE u.user_id = "${id}"
+  group by p.id
 `;
 
 export const userQueryFn = (where = "") => `
@@ -85,11 +83,11 @@ export const userQueryFn = (where = "") => `
           JSON_ARRAYAGG(
             JSON_OBJECT(
               'id', rg.project_id,
-              'title', c.name,
+              'title', c.title,
               'groupId', rg.id,
               'course', JSON_OBJECT(
                 'id', c.id,
-                'title', c.original_course_name
+                'title', c.title
               )
             )
           ),

@@ -64,7 +64,7 @@ export const getOneLocationAllotment = (req: Request, res: Response) => {
 };
 
 export default {
-  ...controllers("project_info", "id"),
+  ...controllers("project", "id"),
   getOneLocationAllotment,
   getGroupsByProject,
 };
