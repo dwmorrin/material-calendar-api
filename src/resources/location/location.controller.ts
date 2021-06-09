@@ -65,8 +65,7 @@ SELECT
   )) AS 'projectHours'
 FROM
   virtual_week v
-  JOIN project p ON p.studio_id = v.studio_id
-  JOIN project_allotment pa ON pa.project_id = p.id
+  JOIN project_allotment pa ON pa.studio_id = v.studio_id
 WHERE
   v.studio_id = ?
 GROUP BY v.id

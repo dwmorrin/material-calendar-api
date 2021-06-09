@@ -134,7 +134,18 @@ CREATE TABLE `course` (
   `title` varchar(128) DEFAULT NULL,
   `instructor` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `course_project` (
+  `course_id` int NOT NULL,
+  `project_id` int NOT NULL,
+  PRIMARY KEY (`course_id`,`project_id`),
+  KEY `FK_course_project_project` (`project_id`),
+  CONSTRAINT `FK_course_project_course` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`),
+  CONSTRAINT `FK_course_project_project` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -339,58 +350,38 @@ CREATE TABLE `message_receiver` (
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `project` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) DEFAULT NULL,
+  `title` varchar(255) DEFAULT NULL,
   `studio_time` int DEFAULT NULL,
   `studio_balance` int DEFAULT NULL,
   `group_hours` decimal(18,2) DEFAULT NULL,
-  `is_open` tinyint DEFAULT '1',
-  `course_id` int DEFAULT NULL,
-  `section_id` int DEFAULT NULL,
+  `open` tinyint DEFAULT NULL,
   `book_start` date DEFAULT NULL,
-  `book_end` date DEFAULT NULL,
   `start` date DEFAULT NULL,
   `end` date DEFAULT NULL,
-  `start_index` int DEFAULT NULL,
   `brief` varchar(255) DEFAULT NULL,
   `description` text,
   `bgcolor` varchar(10) DEFAULT NULL,
   `font_color` varchar(10) DEFAULT NULL,
-  `parent_id` int DEFAULT NULL,
-  `studio_id` int DEFAULT NULL,
   `group_size` int DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `course_id_idx` (`course_id`),
-  KEY `section_id_idx` (`section_id`),
-  KEY `parent_id_idx` (`parent_id`),
-  KEY `studio_id_idx` (`studio_id`),
-  CONSTRAINT `project_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `project_parent_id_project_id` FOREIGN KEY (`parent_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `project_section_id_section_id` FOREIGN KEY (`section_id`) REFERENCES `section` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `project_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=74 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `project_allotment` (
   `project_id` int NOT NULL DEFAULT '0',
-  `start` date NOT NULL DEFAULT '0000-00-00',
+  `studio_id` int NOT NULL,
+  `start` date NOT NULL DEFAULT '1000-01-01',
   `end` date DEFAULT NULL,
   `start_index` int DEFAULT NULL,
   `end_index` int DEFAULT NULL,
   `hour` int DEFAULT NULL,
   `bgcolor` varchar(10) DEFAULT NULL,
   `font_color` varchar(10) DEFAULT NULL,
-  PRIMARY KEY (`project_id`,`start`),
+  PRIMARY KEY (`project_id`,`studio_id`,`start`),
+  KEY `FK_project_allotment_studio` (`studio_id`),
+  CONSTRAINT `FK_project_allotment_studio` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`),
   CONSTRAINT `project_allotment_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `project_group` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `project_id` int NOT NULL,
-  `group_id` int NOT NULL,
-  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -398,7 +389,10 @@ CREATE TABLE `project_group` (
 CREATE TABLE `project_studio` (
   `project_id` int NOT NULL,
   `studio_id` int NOT NULL,
-  PRIMARY KEY (`project_id`,`studio_id`)
+  PRIMARY KEY (`project_id`,`studio_id`),
+  KEY `FK_project_studio_studio` (`studio_id`),
+  CONSTRAINT `FK_project_studio_project` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`),
+  CONSTRAINT `FK_project_studio_studio` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -489,18 +483,6 @@ CREATE TABLE `student_group` (
   KEY `student_group_group_id_rm_group_id` (`group_id`),
   CONSTRAINT `student_group_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `student_group_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `student_project_hours` (
-  `student_id` int NOT NULL DEFAULT '0',
-  `project_id` int NOT NULL DEFAULT '0',
-  `hours` int DEFAULT NULL,
-  PRIMARY KEY (`student_id`,`project_id`),
-  KEY `student_project_hours_project_id_project_id` (`project_id`),
-  CONSTRAINT `student_project_hours_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `student_project_hours_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -638,7 +620,7 @@ CREATE TABLE `weekday_hour` (
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `full_calendar` AS with `equipment_list` as (select `r`.`booking_id` AS `booking_id`,`e`.`model_id` AS `model_id`,json_object('name',(case when ((`e`.`manufacturer` is not null) and (`e`.`model` is not null)) then concat(`e`.`manufacturer`,' ',`e`.`model`) else `e`.`description` end),'quantity',sum(`r`.`quantity`),'items',json_arrayagg(json_object('id',`e`.`id`,'quantity',`r`.`quantity`))) AS `gear` from (`equipment_reservation` `r` left join `equipment` `e` on((`e`.`id` = `r`.`equipment_id`))) group by `e`.`model_id`) select `a`.`id` AS `id`,`a`.`start` AS `start`,`a`.`end` AS `end`,`s`.`name` AS `studio`,(case when (`g`.`name` is null) then `a`.`description` else `g`.`name` end) AS `description`,(case when (`g`.`name` is not null) then group_concat(distinct concat(`u`.`first_name`,' ',`u`.`last_name`) separator ', ') else NULL end) AS `students`,group_concat(distinct `u`.`email` separator ', ') AS `email`,`b`.`contact_phone` AS `phone`,`p`.`name` AS `project`,`b`.`format_analog` AS `tape`,`b`.`format_dolby` AS `dolby`,`b`.`living_room` AS `live room`,`b`.`purpose` AS `purpose`,`b`.`guests` AS `guests`,`b`.`cancel_request` AS `cancel_request`,`b`.`cancel_request_time` AS `cancel_request_time`,`b`.`cancel_request_comment` AS `cancel_request_comment`,(case when (`el`.`gear` is not null) then json_objectagg(ifnull(`el`.`model_id`,'0'),`el`.`gear`) else NULL end) AS `gear`,`a`.`bookable` AS `open`,`s`.`id` AS `studioId`,`b`.`id` AS `reservationId`,`p`.`id` AS `projectId`,`g`.`id` AS `projectGroupId`,`b`.`notes` AS `notes` from (((((((`allotment` `a` left join `booking` `b` on(((`a`.`id` = `b`.`allotment_id`) and (`b`.`confirmed` = 1)))) left join `rm_group` `g` on((`b`.`group_id` = `g`.`id`))) left join `student_group` `sg` on((`g`.`id` = `sg`.`group_id`))) left join `user` `u` on((`sg`.`student_id` = `u`.`id`))) left join `studio` `s` on((`a`.`studio_id` = `s`.`id`))) left join `equipment_list` `el` on((`el`.`booking_id` = `b`.`id`))) left join `project` `p` on((`p`.`id` = `g`.`project_id`))) where (`s`.`name` <> 'Staff Only') group by `a`.`id` order by `studio`,`a`.`start` */;
+/*!50001 VIEW `full_calendar` AS with `equipment_list` as (select `r`.`booking_id` AS `booking_id`,`e`.`model_id` AS `model_id`,json_object('name',(case when ((`e`.`manufacturer` is not null) and (`e`.`model` is not null)) then concat(`e`.`manufacturer`,' ',`e`.`model`) else `e`.`description` end),'quantity',sum(`r`.`quantity`),'items',json_arrayagg(json_object('id',`e`.`id`,'quantity',`r`.`quantity`))) AS `gear` from (`equipment_reservation` `r` left join `equipment` `e` on((`e`.`id` = `r`.`equipment_id`))) group by `e`.`model_id`) select `a`.`id` AS `id`,`a`.`start` AS `start`,`a`.`end` AS `end`,`s`.`name` AS `studio`,(case when (`g`.`name` is null) then `a`.`description` else `g`.`name` end) AS `description`,(case when (`g`.`name` is not null) then group_concat(distinct concat(`u`.`first_name`,' ',`u`.`last_name`) separator ', ') else NULL end) AS `students`,group_concat(distinct `u`.`email` separator ', ') AS `email`,`b`.`contact_phone` AS `phone`,`p`.`title` AS `project`,`b`.`format_analog` AS `tape`,`b`.`format_dolby` AS `dolby`,`b`.`living_room` AS `live room`,`b`.`purpose` AS `purpose`,`b`.`guests` AS `guests`,`b`.`cancel_request` AS `cancel_request`,`b`.`cancel_request_time` AS `cancel_request_time`,`b`.`cancel_request_comment` AS `cancel_request_comment`,(case when (`el`.`gear` is not null) then json_objectagg(ifnull(`el`.`model_id`,'0'),`el`.`gear`) else NULL end) AS `gear`,`a`.`bookable` AS `open`,`s`.`id` AS `studioId`,`b`.`id` AS `reservationId`,`p`.`id` AS `projectId`,`g`.`id` AS `projectGroupId`,`b`.`notes` AS `notes` from (((((((`allotment` `a` left join `booking` `b` on(((`a`.`id` = `b`.`allotment_id`) and (`b`.`confirmed` = 1)))) left join `rm_group` `g` on((`b`.`group_id` = `g`.`id`))) left join `student_group` `sg` on((`g`.`id` = `sg`.`group_id`))) left join `user` `u` on((`sg`.`student_id` = `u`.`id`))) left join `studio` `s` on((`a`.`studio_id` = `s`.`id`))) left join `equipment_list` `el` on((`el`.`booking_id` = `b`.`id`))) left join `project` `p` on((`p`.`id` = `g`.`project_id`))) where (`s`.`name` <> 'Staff Only') group by `a`.`id` order by `studio`,`a`.`start` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
