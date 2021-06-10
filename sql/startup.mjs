@@ -19,16 +19,38 @@ const {
   MYSQL_PASSWORD = "",
   MYSQL_DATABASE = "",
   MYSQL_HOST = "",
+  NET_ID = "",
+  ADMIN_PASSWORD = "",
+  ADMIN_FIRST_NAME = "",
+  ADMIN_LAST_NAME = "",
+  ADMIN_EMAIL = "",
 } = process.env;
 if (![MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE].every(String)) {
   fatal(".env variables not set");
 }
 
-try {
-  prompt.get(schema, initializeDatabase);
-} catch (error) {
-  fatal(error);
-}
+if (
+  [
+    NET_ID,
+    ADMIN_PASSWORD,
+    ADMIN_FIRST_NAME,
+    ADMIN_LAST_NAME,
+    ADMIN_EMAIL,
+  ].every(String)
+) {
+  initializeDatabase(undefined, {
+    user: NET_ID,
+    password: ADMIN_PASSWORD,
+    first: ADMIN_FIRST_NAME,
+    last: ADMIN_LAST_NAME,
+    email: ADMIN_EMAIL,
+  });
+} else
+  try {
+    prompt.get(schema, initializeDatabase);
+  } catch (error) {
+    fatal(error);
+  }
 
 /**
  * @param error error from prompt
