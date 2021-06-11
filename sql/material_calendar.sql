@@ -6,20 +6,18 @@ CREATE TABLE `allotment` (
   `id` int NOT NULL AUTO_INCREMENT,
   `start` datetime DEFAULT NULL,
   `end` datetime DEFAULT NULL,
-  `slots` int DEFAULT NULL,
   `studio_id` int DEFAULT NULL,
   `bookable` tinyint DEFAULT '1',
   `description` text,
-  `locked` tinyint DEFAULT '0',
-  `lock_id` int DEFAULT NULL,
+  `lock_user_id` int DEFAULT NULL,
   `locked_time` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `start_studio_idx` (`start`,`studio_id`),
   KEY `studio_id_idx` (`studio_id`),
-  KEY `user_foreign_key` (`lock_id`),
+  KEY `user_foreign_key` (`lock_user_id`),
   CONSTRAINT `allotment_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `user_foreign_key` FOREIGN KEY (`lock_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB AUTO_INCREMENT=4100 DEFAULT CHARSET=latin1;
+  CONSTRAINT `user_foreign_key` FOREIGN KEY (`lock_user_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=4101 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -474,7 +472,7 @@ CREATE TABLE `semester` (
   `end` date DEFAULT NULL,
   `active` tinyint DEFAULT '1',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -503,7 +501,17 @@ CREATE TABLE `studio` (
   `sun_hour` smallint DEFAULT NULL,
   `equipment_reservation` tinyint DEFAULT '1',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `studio_hours` (
+  `studio_id` int NOT NULL,
+  `date` date NOT NULL,
+  `hours` int NOT NULL,
+  PRIMARY KEY (`studio_id`,`date`),
+  CONSTRAINT `FK_studio_hours_studio` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -529,7 +537,7 @@ CREATE TABLE `user` (
   `last_login` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=4151 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=4152 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -567,25 +575,6 @@ CREATE TABLE `week_name` (
   CONSTRAINT `week_name_semester_semester_id` FOREIGN KEY (`semester`) REFERENCES `semester` (`id`),
   CONSTRAINT `week_name_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `weekday_hour` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `hour` int DEFAULT NULL,
-  `week_date` date DEFAULT NULL,
-  `semester_id` int DEFAULT NULL,
-  `studio_id` int DEFAULT NULL,
-  `grid_index` int DEFAULT NULL,
-  `start` time DEFAULT NULL,
-  `end` time DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `week_date_idx` (`semester_id`,`studio_id`,`week_date`),
-  KEY `semester_id_idx` (`semester_id`),
-  KEY `studio_id_idx` (`studio_id`),
-  CONSTRAINT `weekday_hour_semester_id_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`),
-  CONSTRAINT `weekday_hour_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2356 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!50001 DROP VIEW IF EXISTS `category_path`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;

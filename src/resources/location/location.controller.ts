@@ -8,19 +8,13 @@ const queryFn = (where = "") => `
     s.id,
     s.name AS title,
     s.location AS groupId,
-    IF(wh.id IS NOT NULL,
-      JSON_ARRAYAGG(JSON_OBJECT(
-        'id', wh.id,
-        'date', wh.week_date,
-        'hours', wh.hour,
-        'start', wh.start,
-        'end', wh.end
-      )),
-      JSON_ARRAY()
-	) AS hours
+    JSON_ARRAYAGG(JSON_OBJECT(
+      'date', wh.date,
+      'hours', wh.hours
+    )) AS hours
   FROM
     studio s
-    LEFT JOIN weekday_hour wh ON s.id = wh.studio_id
+    LEFT JOIN studio_hours wh ON s.id = wh.studio_id
   ${where}
   GROUP BY s.id
 `;
@@ -49,10 +43,10 @@ SELECT
   v.studio_id AS locationId,
   (
     SELECT
-      SUM(IF(w.week_date BETWEEN v2.start AND v2.end, w.hour, 0)) as hours
+      SUM(IF(w.date BETWEEN v2.start AND v2.end, w.hours, 0)) as hours
     FROM
       virtual_week v2
-      JOIN weekday_hour w ON w.studio_id = v2.studio_id
+      JOIN studio_hours w ON w.studio_id = v2.studio_id
     WHERE
       v2.studio_id = ? AND v.id = v2.id
     GROUP BY
@@ -79,8 +73,8 @@ export const getVirtualWeeks = (req: Request, res: Response): Query =>
   );
 
 const replaceHoursQuery = `
-REPLACE INTO weekday_hour
-  (hour, week_date, semester_id, studio_id, start, end)
+REPLACE INTO studio_hours
+  (studio_id, date, hours)
 VALUES ?
 `;
 
