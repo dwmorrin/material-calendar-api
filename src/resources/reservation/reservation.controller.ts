@@ -30,14 +30,13 @@ const query = `
     booking
 `;
 
-const flattenEquipment = (bookingId: number) => (equipment: {
-  id: number;
-  quantity: number;
-}): (string | number | boolean)[] => [
-  equipment.id,
-  bookingId,
-  equipment.quantity,
-];
+const flattenEquipment =
+  (bookingId: number) =>
+  (equipment: {
+    id: number;
+    quantity: number;
+  }): (string | number | boolean)[] =>
+    [equipment.id, bookingId, equipment.quantity];
 
 const insertManyQuery = `
   REPLACE INTO equipment_reservation
@@ -74,9 +73,22 @@ export const getOne = (req: Request, res: Response) =>
 export const getMany = (req: Request, res: Response) =>
   pool.query(query, onResult({ req, res, dataMapFn: inflate }).read);
 
+export const removeOne = (req: Request, res: Response) => {
+  pool.query(
+    "delete from equipment_reservation where equipment_reservation.booking_id=?;",
+    [req.params.id]
+  );
+  pool.query(
+    "delete from booking where booking.id=?;",
+    [req.params.id],
+    onResult({ req, res }).delete
+  );
+};
+
 export default {
   ...controllers("booking", "id"),
   getOne,
   getMany,
   reserveEquipment,
+  removeOne,
 };
