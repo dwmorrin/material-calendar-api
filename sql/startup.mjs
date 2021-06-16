@@ -102,9 +102,30 @@ async function initializeDatabase(error, responses) {
       last,
       email,
     }),
-    (error) => {
-      if (error) fatal(error);
-      else console.log("user added");
+    (error, results) => {
+      if (error) return fatal(error);
+      console.log("user added");
+      const userId = results.insertId;
+      connection.query(
+        insertWalkInProjectQuery(),
+        (error,
+        (results) => {
+          const projectId = results.insertId;
+          insertNewGroupQuery({ first, last, projectId }),
+            (error, results) => {
+              if (error) return fatal(error);
+              console.log("group added");
+              const groupId = results.insertId;
+              connection.query(
+                insertNewUserProjectQuery({ userId, groupId }),
+                (error) => {
+                  if (error) return fatal(error);
+                  console.log("user connected to group");
+                }
+              );
+            };
+        })
+      );
     }
   );
   connection.end();
@@ -126,4 +147,34 @@ function insertNewUserQuery({ user, password, first, last, email }) {
     ) VALUES (
       '${user}', '${password}', '${first}', '${last}', '${email}', 1
     )`;
+}
+
+function insertNewGroupQuery({ first, last, projectId }) {
+  return `
+    INSERT INTO rm_group (
+      name, project_id, status, group_size
+    ) VALUES (
+      '${first} ${last}', ${projectId}, 1, 1
+    )
+  `;
+}
+
+function insertNewUserProjectQuery({ userId, groupId }) {
+  return `
+    INSERT INTO student_group (
+      student_id, group_id 
+    ) VALUES (
+      ${userId}, ${groupId}
+    )
+  `;
+}
+
+function insertWalkInProjectQuery() {
+  return `
+    INSERT INTO project (
+      title, studio_time, group_hours, open, start, book_start, end, group_size
+    ) VALUES (
+      'Walk-in', 99999, 999.00, 1, '2000-01-01', '2000-01-01', '2100-01-01', 1
+    )
+  `;
 }

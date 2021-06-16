@@ -52,9 +52,19 @@ export const userCourseQuery = (id = "") => `
     c.title;
 `;
 
-export const userProjectQuery = (id = "") => `
+export const userProjectQuery = (id = ""): string => `
   SELECT
-    p.*
+    p.id,
+    p.title,
+    '{"title": "", "id": -1}' AS course,
+    p.start,
+    p.end,
+    p.book_start AS 'reservationStart',
+    '[]' AS allotments,
+    '[]' AS locationIds,
+    p.open,
+    p.group_size as groupSize,
+    p.group_hours AS 'groupAllottedHours'
   FROM
     project p
     INNER JOIN rm_group rg ON rg.project_id = p.id

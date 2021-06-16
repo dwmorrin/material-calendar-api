@@ -63,8 +63,31 @@ export const getOneLocationAllotment = (req: Request, res: Response) => {
   );
 };
 
+export const getMany = (req: Request, res: Response): void => {
+  pool.query(
+    `
+    SELECT
+      id,
+      title,
+      '{"title": "", "id": -1}' AS course,
+      start,
+      end,
+      book_start AS 'reservationStart',
+      '[]' AS allotments,
+      '[]' AS locationIds,
+      open,
+      group_size as groupSize,
+      group_hours AS 'groupAllottedHours'
+    FROM
+      project
+  `,
+    onResult({ req, res, dataMapFn: inflate }).read
+  );
+};
+
 export default {
   ...controllers("project", "id"),
+  getMany,
   getOneLocationAllotment,
   getGroupsByProject,
 };
