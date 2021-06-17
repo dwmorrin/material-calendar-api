@@ -78,20 +78,20 @@ REPLACE INTO studio_hours
 VALUES ?
 `;
 
-const flattenHours = (hours: { [k: string]: string | number }) => [
-  hours.hours,
-  hours.date,
-  hours.semesterId,
-  hours.locationId,
-  hours.start,
-  hours.end,
-];
+const flattenHours =
+  (locationId: string | number) =>
+  ({ date, hours }: { [k: string]: string | number }) =>
+    [locationId, date, hours];
 
 export const createOrUpdateHours = (req: Request, res: Response): Query =>
-  pool.query(replaceHoursQuery, [req.body.map(flattenHours)], (err, data) => {
-    if (err) return res.status(500).json(error500(err, req.query.context));
-    res.status(201).json({ data, context: req.query.context });
-  });
+  pool.query(
+    replaceHoursQuery,
+    [req.body.map(flattenHours(req.params.id))],
+    (err, data) => {
+      if (err) return res.status(500).json(error500(err, req.query.context));
+      res.status(201).json({ data, context: req.query.context });
+    }
+  );
 
 const adapter = ({
   title,
