@@ -1,3 +1,5 @@
+import * as project from "../project/project.query";
+
 export const groupQueryFn = (where = "") => `
 SELECT
   g.id,
@@ -53,20 +55,7 @@ export const userCourseQuery = (id = "") => `
 `;
 
 export const userProjectQuery = (id = ""): string => `
-  SELECT
-    p.id,
-    p.title,
-    '{"title": "", "id": -1}' AS course,
-    p.start,
-    p.end,
-    p.book_start AS 'reservationStart',
-    '[]' AS allotments,
-    '[]' AS locationIds,
-    p.open,
-    p.group_size as groupSize,
-    p.group_hours AS 'groupAllottedHours'
-  FROM
-    project p
+  ${project.getManyQuery}
     INNER JOIN rm_group rg ON rg.project_id = p.id
     INNER JOIN student_group sg ON sg.group_id = rg.id
     INNER JOIN user u ON u.id = sg.student_id 
