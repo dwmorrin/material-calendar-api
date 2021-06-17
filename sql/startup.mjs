@@ -106,29 +106,28 @@ async function initializeDatabase(error, responses) {
       if (error) return fatal(error);
       console.log("user added");
       const userId = results.insertId;
-      connection.query(
-        insertWalkInProjectQuery(),
-        (error,
-        (results) => {
-          const projectId = results.insertId;
+      connection.query(insertWalkInProjectQuery(), (error, results) => {
+        if (error) return fatal(error);
+        const projectId = results.insertId;
+        connection.query(
           insertNewGroupQuery({ first, last, projectId }),
-            (error, results) => {
-              if (error) return fatal(error);
-              console.log("group added");
-              const groupId = results.insertId;
-              connection.query(
-                insertNewUserProjectQuery({ userId, groupId }),
-                (error) => {
-                  if (error) return fatal(error);
-                  console.log("user connected to group");
-                }
-              );
-            };
-        })
-      );
+          (error, results) => {
+            if (error) return fatal(error);
+            console.log("group added");
+            const groupId = results.insertId;
+            connection.query(
+              insertNewUserProjectQuery({ userId, groupId }),
+              (error) => {
+                if (error) return fatal(error);
+                console.log("user connected to group");
+                connection.end();
+              }
+            );
+          }
+        );
+      });
     }
   );
-  connection.end();
 }
 
 function encrypt(plaintext) {
