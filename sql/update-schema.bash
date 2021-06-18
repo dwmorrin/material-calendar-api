@@ -5,7 +5,7 @@ mysqldump "${1:?Please use database name as argument}" --compact --no-data > "$o
 t1=tmpfile1
 t2=tmpfile2
 # not using `sed -i` due to non-portability
-sed 's/DEFINER=[^*]*\*/\*/g' "$o" >"$t1"
+sed 's/DEFINER=[^*]*\*/\*/g; s/AUTO_INCREMENT=[0-9]*//g' "$o" >"$t1"
 # wrap output in these SQL commands to disable foreign key checks during import
 # this avoid a ERROR 1824 from tables needing to reference foreign keys before they are created
 {

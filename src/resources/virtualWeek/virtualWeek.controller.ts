@@ -15,14 +15,31 @@ FROM
 
 const getManyQuery = `
 SELECT
-  id,
-  start,
-  end,
-  studio_id AS locationId,
-  -1 AS 'locationHours',
-  -1 AS 'projectHours'
+  vw.id,
+  vw.start,
+  vw.end,
+  vw.studio_id AS locationId,
+  IFNULL(
+    (
+      SELECT SUM(sh.hours)
+      FROM studio_hours sh
+      WHERE vw.studio_id = sh.studio_id
+      AND sh.date BETWEEN vw.start and vw.end
+    ),
+    0
+  ) AS 'locationHours',
+  IFNULL(
+    (
+      SELECT SUM(pa.hours)
+      FROM project_allotment pa
+      WHERE vw.studio_id = pa.studio_id
+      AND pa.start >= vw.start
+      AND pa.end <= vw.end
+    ),
+    0
+  ) AS 'projectHours'
 FROM
-  virtual_week
+  virtual_week vw
 `;
 
 export const getOne = (req: Request, res: Response): Query =>

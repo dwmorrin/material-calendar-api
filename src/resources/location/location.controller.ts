@@ -54,7 +54,7 @@ SELECT
   ) AS 'locationHours',
   SUM(IF(
 	pa.start = v.start AND pa.end = v.end,
-    pa.hour,
+    pa.hours,
     0
   )) AS 'projectHours'
 FROM

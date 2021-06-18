@@ -22,7 +22,7 @@ export const getManyQuery = `
 		'locationId', pa.studio_id,
 		'start', pa.start,
 		'end', pa.end,
-		'hours', pa.hour
+		'hours', pa.hours
 	    )
 	  )
 	  FROM project_allotment pa
