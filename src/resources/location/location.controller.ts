@@ -26,7 +26,7 @@ export const getOne = (req: Request, res: Response): Query =>
   pool.query(
     queryFn("WHERE s.id = ?"),
     [req.params.id],
-    onResult({ req, res, take: 1 }).read
+    onResult({ req, res, take: 1, dataMapFn: inflate }).read
   );
 
 export const getDefaultId = (req: Request, res: Response): Query =>
