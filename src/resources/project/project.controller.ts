@@ -133,7 +133,7 @@ export const createOne = (req: Request, res: Response): void => {
     projectLocations: { [k: string]: string | number }[]
   ) {
     pool.query(
-      `REPLACE INTO project_studio (project_id, studio_id) VALUES ?`,
+      `REPLACE INTO project_studio_hours (project_id, studio_id) VALUES ?`,
       [projectLocations],
       (error) => {
         if (error) return onError(error);

@@ -330,8 +330,6 @@ CREATE TABLE `message_receiver` (
 CREATE TABLE `project` (
   `id` int NOT NULL AUTO_INCREMENT,
   `title` varchar(255) DEFAULT NULL,
-  `studio_time` int DEFAULT NULL,
-  `studio_balance` int DEFAULT NULL,
   `group_hours` decimal(18,2) DEFAULT NULL,
   `open` tinyint DEFAULT NULL,
   `book_start` date DEFAULT NULL,
@@ -365,9 +363,10 @@ CREATE TABLE `project_allotment` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `project_studio` (
+CREATE TABLE `project_studio_hours` (
   `project_id` int NOT NULL,
   `studio_id` int NOT NULL,
+  `hours` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`project_id`,`studio_id`),
   KEY `FK_project_studio_studio` (`studio_id`),
   CONSTRAINT `FK_project_studio_project` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`),
