@@ -42,10 +42,10 @@ export const getManyQuery = `
           FROM project_studio_hours ps where ps.project_id = p.id
 	),
 	'[]'
-      ) AS locationIds,
-      p.open,
-      p.group_size as groupSize,
-      p.group_hours AS 'groupAllottedHours'
-    FROM
-      project p
+      ) AS locationHours,
+    p.open,
+    p.group_size as groupSize,
+    p.group_hours AS 'groupAllottedHours'
+  FROM
+    project p
   `;

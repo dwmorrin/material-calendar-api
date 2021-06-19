@@ -1,8 +1,12 @@
 import { Request, Response } from "express";
-import pool, { error500, inflate } from "../../utils/db";
+import pool, { error500, inflate, mapKeysToBool } from "../../utils/db";
 import { controllers, onResult } from "../../utils/crud";
 import { MysqlError } from "mysql";
 import { getManyQuery } from "./project.query";
+
+const makeOpenBool = mapKeysToBool("open");
+const inflateAndOpenBool = (data: Record<string, unknown>) =>
+  inflate(makeOpenBool(data));
 
 const groupQuery = (where = "") => `
 SELECT
@@ -66,7 +70,10 @@ export const getOneLocationAllotment = (req: Request, res: Response) => {
 };
 
 export const getMany = (req: Request, res: Response): void => {
-  pool.query(getManyQuery, onResult({ req, res, dataMapFn: inflate }).read);
+  pool.query(
+    getManyQuery,
+    onResult({ req, res, dataMapFn: inflateAndOpenBool }).read
+  );
 };
 
 export const createOne = (req: Request, res: Response): void => {
@@ -75,7 +82,7 @@ export const createOne = (req: Request, res: Response): void => {
     end,
     groupAllottedHours,
     groupSize,
-    locationIds,
+    locationHours,
     open,
     reservationStart,
     start,
@@ -91,18 +98,24 @@ export const createOne = (req: Request, res: Response): void => {
     title,
   };
 
-  const locationIdsMap =
-    (projectId: string | number) => (locationId: string | number) =>
-      [projectId, locationId];
+  interface locationHours {
+    locationId: number;
+    hours: number;
+  }
+
+  const locationHoursMap =
+    (projectId: string | number) =>
+    ({ locationId, hours }: locationHours) =>
+      [projectId, locationId, hours];
 
   pool.query(`INSERT INTO project SET ?`, [project], (error, results) => {
     if (error) return onError(error);
     const projectId = results.insertId;
-    const projectLocations = locationIds.map(locationIdsMap(projectId));
+    const projectLocations = locationHours.map(locationHoursMap(projectId));
     if (Number(course?.id) > 0) {
       createCourseProjectAndProjectLocations(projectId, projectLocations);
     } else {
-      if (locationIds.length)
+      if (locationHours.length)
         createProjectLocations(projectId, projectLocations);
       else onSuccess(projectId);
     }
@@ -117,7 +130,7 @@ export const createOne = (req: Request, res: Response): void => {
       [{ course_id: course.id, project_id: projectId }],
       (error) => {
         if (error) return onError(error);
-        if (locationIds.length)
+        if (locationHours.length)
           createProjectLocations(projectId, projectLocations);
         else onSuccess(projectId);
       }
@@ -133,7 +146,7 @@ export const createOne = (req: Request, res: Response): void => {
     projectLocations: { [k: string]: string | number }[]
   ) {
     pool.query(
-      `REPLACE INTO project_studio_hours (project_id, studio_id) VALUES ?`,
+      `REPLACE INTO project_studio_hours (project_id, studio_id, hours) VALUES ?`,
       [projectLocations],
       (error) => {
         if (error) return onError(error);

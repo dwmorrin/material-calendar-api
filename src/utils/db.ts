@@ -21,15 +21,15 @@ export const inflate = (data = {}): {} => map(jsonParseSafe, data);
  * @param obj data from MySQL
  * @param keys array of string keys to map to bool
  */
-export const mapKeysToBool = (...keys: string[]) => (
-  obj: { [key: string]: unknown } = {}
-) => ({
-  ...obj,
-  ...keys.reduce(
-    (result, key) => (key in obj ? { ...result, [key]: !!obj[key] } : result),
-    {}
-  ),
-});
+export const mapKeysToBool =
+  (...keys: string[]) =>
+  (obj: { [key: string]: unknown } = {}) => ({
+    ...obj,
+    ...keys.reduce(
+      (result, key) => (key in obj ? { ...result, [key]: !!obj[key] } : result),
+      {}
+    ),
+  });
 
 /**
  * turns column_name => columnName
