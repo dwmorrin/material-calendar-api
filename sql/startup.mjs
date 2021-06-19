@@ -108,18 +108,19 @@ async function initializeDatabase(error, responses) {
       const userId = results.insertId;
       connection.query(insertWalkInProjectQuery(), (error, results) => {
         if (error) return fatal(error);
+        console.log("walk-in project added");
         const projectId = results.insertId;
         connection.query(
           insertNewGroupQuery({ first, last, projectId }),
           (error, results) => {
             if (error) return fatal(error);
-            console.log("group added");
+            console.log("user's walk-in group added");
             const groupId = results.insertId;
             connection.query(
               insertNewUserProjectQuery({ userId, groupId }),
               (error) => {
                 if (error) return fatal(error);
-                console.log("user connected to group");
+                console.log("user connected to walk-in group");
                 connection.end();
               }
             );
@@ -171,9 +172,9 @@ function insertNewUserProjectQuery({ userId, groupId }) {
 function insertWalkInProjectQuery() {
   return `
     INSERT INTO project (
-      title, studio_time, group_hours, open, start, book_start, end, group_size
+      title, group_hours, open, start, book_start, end, group_size
     ) VALUES (
-      'Walk-in', 99999, 999.00, 1, '2000-01-01', '2000-01-01', '2100-01-01', 1
+      'Walk-in', 999.00, 1, '2000-01-01', '2000-01-01', '2100-01-01', 1
     )
   `;
 }
