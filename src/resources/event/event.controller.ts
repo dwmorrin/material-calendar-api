@@ -10,7 +10,8 @@ const query = `
     end,
     JSON_OBJECT(
       'id', studioId,
-      'title', studio
+      'title', studio,
+      'restriction', (select studio.restriction from studio where studio.id=studioId)
     ) AS location,
     description AS title,
     open AS reservable,

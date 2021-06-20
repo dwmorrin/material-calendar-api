@@ -90,7 +90,8 @@ export const userQueryFn = (where = "") => `
               )
             )
           ),
-          JSON_ARRAY()) AS projects
+          JSON_ARRAY()) AS projects, 
+          u.restriction as restriction
   FROM
       user u
           LEFT JOIN

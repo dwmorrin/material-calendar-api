@@ -21,6 +21,7 @@ interface User {
   name: { first: string; middle: string; last: string };
   contact: { email: string[] };
   roles: string[];
+  restriction: number;
   // projects -> requires more complex handler
 }
 
@@ -31,6 +32,7 @@ interface LegacyUser {
   last_name: string;
   email: string;
   user_type: number;
+  restriction: number;
 }
 
 export const adapter = (user: User): LegacyUser => ({
@@ -40,6 +42,7 @@ export const adapter = (user: User): LegacyUser => ({
   last_name: user.name.last,
   email: user.contact.email[0],
   user_type: roleToInt(user.roles[0]),
+  restriction: user.restriction,
 });
 
 export default adapter;
