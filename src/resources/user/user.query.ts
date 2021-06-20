@@ -82,7 +82,7 @@ export const userQueryFn = (where = "") => `
           JSON_ARRAYAGG(
             JSON_OBJECT(
               'id', rg.project_id,
-              'title', c.title,
+              'title', p.title,
               'groupId', rg.id,
               'course', JSON_OBJECT(
                 'id', c.id,
@@ -100,6 +100,8 @@ export const userQueryFn = (where = "") => `
       rm_group rg ON rg.id = sg.group_id
           LEFT JOIN
       course c ON c.id = rg.course_id
+          LEFT JOIN
+      project p ON rg.project_id = p.id
   ${where}
   GROUP BY u.id
 `;
