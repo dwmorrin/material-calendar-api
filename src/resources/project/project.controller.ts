@@ -76,12 +76,13 @@ export const getMany = (req: Request, res: Response): void => {
   );
 };
 
-export const createOne = (req: Request, res: Response): void => {
+export const createOrUpdateOne = (req: Request, res: Response): void => {
   const {
     course,
     end,
     groupAllottedHours,
     groupSize,
+    id,
     locationHours,
     open,
     reservationStart,
@@ -108,9 +109,15 @@ export const createOne = (req: Request, res: Response): void => {
     ({ locationId, hours }: locationHours) =>
       [projectId, locationId, hours];
 
-  pool.query(`INSERT INTO project SET ?`, [project], (error, results) => {
+  const creating = id < 1;
+
+  const query = creating
+    ? `INSERT INTO project SET ?`
+    : `UPDATE project SET ? WHERE id = ?`;
+
+  pool.query(query, creating ? [project] : [project, id], (error, results) => {
     if (error) return onError(error);
-    const projectId = results.insertId;
+    const projectId = creating ? results.insertId : id;
     const projectLocations = locationHours.map(locationHoursMap(projectId));
     if (Number(course?.id) > 0) {
       createCourseProjectAndProjectLocations(projectId, projectLocations);
@@ -126,7 +133,7 @@ export const createOne = (req: Request, res: Response): void => {
     projectLocations: { [k: string]: string | number }[]
   ) {
     pool.query(
-      `INSERT INTO course_project SET ?`,
+      `${creating ? "INSERT" : "REPLACE"} INTO course_project SET ?`,
       [{ course_id: course.id, project_id: projectId }],
       (error) => {
         if (error) return onError(error);
@@ -165,8 +172,9 @@ export const createOne = (req: Request, res: Response): void => {
 
 export default {
   ...controllers("project", "id"),
-  createOne,
+  createOne: createOrUpdateOne,
   getMany,
   getOneLocationAllotment,
   getGroupsByProject,
+  updateOne: createOrUpdateOne,
 };
