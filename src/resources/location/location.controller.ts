@@ -8,11 +8,15 @@ const queryFn = (where = "") => `
     s.id,
     s.name AS title,
     s.location AS groupId,
-    JSON_ARRAYAGG(JSON_OBJECT(
-      'date', wh.date,
-      'hours', wh.hours
-    )) AS hours,
-    s.restriction as restriction
+    IF (
+      wh.date IS NULL,
+      '[]',
+      JSON_ARRAYAGG(JSON_OBJECT(
+        'date', wh.date,
+        'hours', wh.hours
+      ))
+    ) AS hours,
+    s.restriction AS restriction
   FROM
     studio s
     LEFT JOIN studio_hours wh ON s.id = wh.studio_id
