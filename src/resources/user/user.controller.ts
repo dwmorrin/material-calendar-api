@@ -9,6 +9,20 @@ import {
 } from "./user.query";
 import adapter from "./user.adapter";
 
+export const joinGroup = (req: Request, res: Response) =>
+  pool.query(
+    "INSERT INTO student_group SET student_id=?, group_id=?",
+    [req.params.id, req.params.groupId],
+    onResult({ req, res }).create
+  );
+
+export const leaveGroup = (req: Request, res: Response) =>
+  pool.query(
+    "DELETE FROM student_group WHERE student_id=? AND group_id=?",
+    [req.params.id, req.params.groupId],
+    onResult({ req, res }).delete
+  );
+
 export const getGroups = (req: Request, res: Response) =>
   pool.query(groupQueryFn(), onResult({ req, res, dataMapFn: inflate }).read);
 
@@ -83,4 +97,6 @@ export default {
   getGroupsForOne,
   getOneGroup,
   getProjects,
+  joinGroup,
+  leaveGroup,
 };
