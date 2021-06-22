@@ -4,6 +4,7 @@ import controller from "./project.controller";
 const router = Router();
 
 router.get("/:id/allotments", controller.getOneLocationAllotment);
+router.put("/:id/allotments", controller.updateAllotment);
 router.get("/:id/groups", controller.getGroupsByProject);
 
 router.delete("/:id", controller.removeOne);

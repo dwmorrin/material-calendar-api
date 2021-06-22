@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import pool, { error500, inflate, mapKeysToBool } from "../../utils/db";
 import { controllers, onResult } from "../../utils/crud";
-import { MysqlError } from "mysql";
+import { MysqlError, Query } from "mysql";
 import { getManyQuery } from "./project.query";
 
 const makeOpenBool = mapKeysToBool("open");
@@ -46,15 +46,14 @@ FROM
   ) r ON g.id = r.id
   ${where}
 `;
-export const getGroupsByProject = (req: Request, res: Response) => {
+export const getGroupsByProject = (req: Request, res: Response): Query =>
   pool.query(
     groupQuery("WHERE g.projectId = ?"),
     [req.params.id],
     onResult({ req, res, dataMapFn: inflate }).read
   );
-};
 
-export const getOneLocationAllotment = (req: Request, res: Response) => {
+export const getOneLocationAllotment = (req: Request, res: Response): Query =>
   pool.query(
     `
       SELECT
@@ -67,7 +66,6 @@ export const getOneLocationAllotment = (req: Request, res: Response) => {
     [req.params.id],
     onResult({ req, res, dataMapFn: inflate, take: 1 }).read
   );
-};
 
 export const getMany = (req: Request, res: Response): void => {
   pool.query(
@@ -170,11 +168,35 @@ export const createOrUpdateOne = (req: Request, res: Response): void => {
   }
 };
 
+export const updateAllotment = (req: Request, res: Response): Query =>
+  pool.query(
+    `REPLACE INTO project_allotment (
+      project_id, studio_id, start, end, hours
+     ) VALUES ?`,
+    [
+      [
+        [
+          req.body.projectId,
+          req.body.locationId,
+          req.body.start,
+          req.body.end,
+          req.body.hours,
+        ],
+      ],
+    ],
+    (error: MysqlError | null): Response => {
+      if (error)
+        return res.status(500).json(error500(error, req.query.context));
+      return res.status(201).json({});
+    }
+  );
+
 export default {
   ...controllers("project", "id"),
   createOne: createOrUpdateOne,
   getMany,
   getOneLocationAllotment,
   getGroupsByProject,
+  updateAllotment,
   updateOne: createOrUpdateOne,
 };
