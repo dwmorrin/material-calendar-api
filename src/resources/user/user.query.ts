@@ -1,6 +1,6 @@
 import * as project from "../project/project.query";
 
-export const groupQueryFn = (where = "") => `
+export const groupQueryFn = (where = ""): string => `
 SELECT
   g.id,
   g.projectId,
@@ -39,15 +39,14 @@ FROM
   ${where}
 `;
 
-export const userCourseQuery = (id = "") => `
+export const userCourseQuery = (id = ""): string => `
   SELECT
     c.id,
     c.title
   FROM
     course c
-    INNER JOIN rm_group rg ON rg.course_id = c.id
-    INNER JOIN student_group sg ON sg.group_id = rg.id
-    INNER JOIN user u ON u.id = sg.student_id
+    INNER JOIN roster r ON r.course_id = c.id
+    INNER JOIN user u ON u.id = r.student_id
   WHERE
     u.user_id = "${id}"
   GROUP BY
@@ -56,14 +55,14 @@ export const userCourseQuery = (id = "") => `
 
 export const userProjectQuery = (id = ""): string => `
   ${project.getManyQuery}
-    INNER JOIN rm_group rg ON rg.project_id = p.id
-    INNER JOIN student_group sg ON sg.group_id = rg.id
-    INNER JOIN user u ON u.id = sg.student_id 
+    INNER JOIN course_project cp ON cp.project_id = p.id
+    INNER JOIN roster r ON r.course_id = cp.course_id
+    INNER JOIN user u ON u.id = r.student_id 
   WHERE u.user_id = "${id}"
   group by p.id
 `;
 
-export const userQueryFn = (where = "") => `
+export const userQueryFn = (where = ""): string => `
   SELECT 
       u.id,
       u.user_id AS username,
