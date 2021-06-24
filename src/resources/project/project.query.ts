@@ -19,10 +19,11 @@ export const getManyQuery = `
           SELECT
 	  JSON_ARRAYAGG(
 	    JSON_OBJECT(
-		'locationId', vw.studio_id,
-		'start', vw.start,
-		'end', vw.end,
-		'hours', ph.hours
+        'locationId', vw.studio_id,
+        'virtualWeekId', vw.id,
+        'start', vw.start,
+        'end', vw.end,
+        'hours', ph.hours
 	    )
 	  )
 	  FROM project_virtual_week_hours ph
