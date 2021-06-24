@@ -59,7 +59,7 @@ export const getOneLocationAllotment = (req: Request, res: Response): Query =>
       SELECT
         *
       FROM
-        project_allotment
+        project_virtual_week_hours
       WHERE
         project_id = ?
      `,
@@ -170,20 +170,10 @@ export const createOrUpdateOne = (req: Request, res: Response): void => {
 
 export const updateAllotment = (req: Request, res: Response): Query =>
   pool.query(
-    `REPLACE INTO project_allotment (
-      project_id, studio_id, start, end, hours
+    `REPLACE INTO project_virtual_week_hours (
+      project_id, virtual_week_id, hours
      ) VALUES ?`,
-    [
-      [
-        [
-          req.body.projectId,
-          req.body.locationId,
-          req.body.start,
-          req.body.end,
-          req.body.hours,
-        ],
-      ],
-    ],
+    [[[req.body.projectId, req.body.virtualWeekId, req.body.hours]]],
     (error: MysqlError | null): Response => {
       if (error)
         return res.status(500).json(error500(error, req.query.context));

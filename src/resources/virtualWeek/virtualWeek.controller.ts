@@ -31,10 +31,8 @@ SELECT
   IFNULL(
     (
       SELECT SUM(pa.hours)
-      FROM project_allotment pa
-      WHERE vw.studio_id = pa.studio_id
-      AND pa.start >= vw.start
-      AND pa.end <= vw.end
+      FROM project_virtual_week_hours pa
+      WHERE pa.virtual_week_id = vw.id
     ),
     0
   ) AS 'projectHours'

@@ -19,14 +19,15 @@ export const getManyQuery = `
           SELECT
 	  JSON_ARRAYAGG(
 	    JSON_OBJECT(
-		'locationId', pa.studio_id,
-		'start', pa.start,
-		'end', pa.end,
-		'hours', pa.hours
+		'locationId', vw.studio_id,
+		'start', vw.start,
+		'end', vw.end,
+		'hours', ph.hours
 	    )
 	  )
-	  FROM project_allotment pa
-	  WHERE pa.project_id = p.id
+	  FROM project_virtual_week_hours ph
+    LEFT JOIN virtual_week vw on ph.virtual_week_id = vw.id
+	  WHERE ph.project_id = p.id
 	),
 	'[]'
       ) AS allotments,

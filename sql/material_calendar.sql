@@ -17,7 +17,7 @@ CREATE TABLE `allotment` (
   KEY `user_foreign_key` (`lock_user_id`),
   CONSTRAINT `allotment_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `user_foreign_key` FOREIGN KEY (`lock_user_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -75,7 +75,7 @@ CREATE TABLE `booking` (
   CONSTRAINT `booking_checkout_id_user_id` FOREIGN KEY (`checkout_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `booking_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `booking_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -118,7 +118,7 @@ CREATE TABLE `category` (
   `title` text,
   `parent_id` int DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -163,7 +163,7 @@ CREATE TABLE `equipment` (
   `notes` text,
   `restriction` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -177,7 +177,8 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `category`,
  1 AS `tags`,
  1 AS `consumable`,
- 1 AS `reservations`*/;
+ 1 AS `reservations`,
+ 1 AS `restriction`*/;
 SET character_set_client = @saved_cs_client;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -276,7 +277,7 @@ CREATE TABLE `invitation` (
   CONSTRAINT `invitation_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `invitation_invitor_user_id` FOREIGN KEY (`invitor`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `invitation_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -293,7 +294,7 @@ CREATE TABLE `invitee` (
   KEY `invitation_id_idx` (`invitation_id`),
   CONSTRAINT `invitee_invitation_id_invitation_id` FOREIGN KEY (`invitation_id`) REFERENCES `invitation` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `invitee_invitee_user_id` FOREIGN KEY (`invitee`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -338,29 +339,9 @@ CREATE TABLE `project` (
   `end` date DEFAULT NULL,
   `brief` varchar(255) DEFAULT NULL,
   `description` text,
-  `bgcolor` varchar(10) DEFAULT NULL,
-  `font_color` varchar(10) DEFAULT NULL,
   `group_size` int DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `project_allotment` (
-  `project_id` int NOT NULL DEFAULT '0',
-  `studio_id` int NOT NULL,
-  `start` date NOT NULL DEFAULT '1000-01-01',
-  `end` date DEFAULT NULL,
-  `start_index` int DEFAULT NULL,
-  `end_index` int DEFAULT NULL,
-  `hours` int DEFAULT NULL,
-  `bgcolor` varchar(10) DEFAULT NULL,
-  `font_color` varchar(10) DEFAULT NULL,
-  PRIMARY KEY (`project_id`,`studio_id`,`start`),
-  KEY `FK_project_allotment_studio` (`studio_id`),
-  CONSTRAINT `FK_project_allotment_studio` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`),
-  CONSTRAINT `project_allotment_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -373,6 +354,18 @@ CREATE TABLE `project_studio_hours` (
   CONSTRAINT `FK_project_studio_project` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`),
   CONSTRAINT `FK_project_studio_studio` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `project_virtual_week_hours` (
+  `project_id` int NOT NULL,
+  `virtual_week_id` int NOT NULL,
+  `hours` int DEFAULT '0',
+  PRIMARY KEY (`project_id`,`virtual_week_id`),
+  KEY `FK_project_allotment_virtual_week` (`virtual_week_id`),
+  CONSTRAINT `FK_project_allotment_virtual_week` FOREIGN KEY (`virtual_week_id`) REFERENCES `virtual_week` (`id`),
+  CONSTRAINT `project_allotment_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -414,7 +407,7 @@ CREATE TABLE `roster` (
   CONSTRAINT `roster_section_id_section_id` FOREIGN KEY (`section_id`) REFERENCES `section` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `roster_semester_id_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `roster_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -440,7 +433,7 @@ CREATE TABLE `section` (
   PRIMARY KEY (`id`),
   KEY `course_id_idx` (`course_id`),
   CONSTRAINT `section_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -523,12 +516,10 @@ CREATE TABLE `user` (
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `virtual_week` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `start` date DEFAULT NULL,
-  `end` date DEFAULT NULL,
-  `start_index` int DEFAULT NULL,
-  `end_index` int DEFAULT NULL,
-  `studio_id` int DEFAULT NULL,
-  `semester` int DEFAULT NULL,
+  `start` date NOT NULL,
+  `end` date NOT NULL,
+  `studio_id` int NOT NULL,
+  `semester` int NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `start_studio_idx` (`start`,`studio_id`),
   KEY `studio_id_idx` (`studio_id`),

@@ -58,13 +58,13 @@ SELECT
       v2.id
   ) AS 'locationHours',
   SUM(IF(
-	pa.start = v.start AND pa.end = v.end,
+	pa.virtual_week_id = v.id,
     pa.hours,
     0
   )) AS 'projectHours'
 FROM
   virtual_week v
-  JOIN project_allotment pa ON pa.studio_id = v.studio_id
+  JOIN project_virtual_week_hours pa ON pa.virtual_week_id = v.id
 WHERE
   v.studio_id = ?
 GROUP BY v.id
