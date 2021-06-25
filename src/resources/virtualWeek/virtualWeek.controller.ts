@@ -60,9 +60,17 @@ export const createOne = (req: Request, res: Response): Query =>
     onResult({ req, res }).create
   );
 
+export const updateOne = (req: Request, res: Response): Query =>
+  pool.query(
+    `UPDATE virtual_week SET ? WHERE id = ?`,
+    [{ start: req.body.start, end: req.body.end }, req.body.id],
+    onResult({ req, res }).update
+  );
+
 export default {
   ...controllers("virtual_week", "id"),
   createOne,
   getMany,
   getOne,
+  updateOne,
 };
