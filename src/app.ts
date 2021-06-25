@@ -10,6 +10,7 @@ import { login } from "./utils/login";
 
 // configure express
 const app = express();
+app.disable("x-powered-by");
 app.set("port", process.env.PORT || 5000);
 
 // configure global logging
