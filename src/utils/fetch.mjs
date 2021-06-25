@@ -9,12 +9,12 @@
  * uses the project's .env file for auto-configuration
  * TODO add authentication options (cookies, jwt, etc)
  */
-const { program } = require("commander");
-const dotenv = require("dotenv");
-const dotenvExpand = require("dotenv-expand");
-const http = require("http");
+import { program } from "commander";
+import { config } from "dotenv";
+import dotenvExpand from "dotenv-expand";
+import { request } from "http";
 
-dotenvExpand(dotenv.config({ path: ".env" }));
+dotenvExpand(config({ path: ".env" }));
 
 program
   .version("0.0.1")
@@ -77,7 +77,7 @@ const onResponse = (res) => {
     }
   });
 };
-const req = http.request(options, onResponse);
+const req = request(options, onResponse);
 
 req.on("error", console.error);
 
