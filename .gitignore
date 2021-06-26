@@ -1,6 +1,7 @@
 # Secrets
 .env
 database-backups/**/*
+*data.json
 
 # Dependencies
 node_modules

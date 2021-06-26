@@ -102,32 +102,49 @@ async function initializeDatabase(error, responses) {
       last,
       email,
     }),
-    (error, results) => {
-      if (error) return fatal(error);
-      console.log("user added");
-      const userId = results.insertId;
-      connection.query(insertWalkInProjectQuery(), (error, results) => {
-        if (error) return fatal(error);
-        console.log("walk-in project added");
-        const projectId = results.insertId;
-        connection.query(
-          insertNewGroupQuery({ first, last, projectId }),
-          (error, results) => {
-            if (error) return fatal(error);
-            console.log("user's walk-in group added");
-            const groupId = results.insertId;
-            connection.query(
-              insertNewUserProjectQuery({ userId, groupId }),
-              (error) => {
-                if (error) return fatal(error);
-                console.log("user connected to walk-in group");
-                connection.end();
-              }
-            );
-          }
-        );
-      });
-    }
+    then(insertWalkInProject, { connection, first, last, log: "user added" })
+  );
+}
+
+function then(onSuccess, props) {
+  return (error, results) => {
+    if (error) return fatal(error);
+    if (props.log) console.log(props.log);
+    onSuccess(results, props);
+  };
+}
+
+function insertWalkInProject(results, { connection, first, last }) {
+  const userId = results.insertId;
+  connection.query(
+    insertWalkInProjectQuery(),
+    then(insertProjectGroup, {
+      connection,
+      first,
+      last,
+      userId,
+      log: "walk-in project added",
+    })
+  );
+}
+
+function insertProjectGroup(results, { connection, first, last, userId }) {
+  const projectId = results.insertId;
+  connection.query(
+    insertNewGroupQuery({ first, last, projectId }),
+    then(connectUserToGroup, {
+      connection,
+      userId,
+      log: "user's walk-in group added",
+    })
+  );
+}
+
+function connectUserToGroup(results, { connection, userId }) {
+  const groupId = results.insertId;
+  connection.query(
+    insertNewUserProjectQuery({ userId, groupId }),
+    then(() => connection.end(), { log: "user connected to walk-in group" })
   );
 }
 
