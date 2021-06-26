@@ -22,25 +22,26 @@ function insertRecords(schema) {
     password: schema.password,
     database: schema.database,
   });
-  const onInsert = makeOnInsert(schema, pool);
+  // end pool after all records have been inserted
+  const onInsert = withCountInserts(schema, () => pool.end());
   Object.entries(schema.tables).forEach(([table, records]) => {
     records.forEach((record) => {
-      pool.query(`INSERT INTO ${table} SET ?`, [record], onInsert);
+      pool.query(`INSERT INTO ?? SET ?`, [table, record], onInsert);
     });
   });
 }
 
 /**
  * Queries run in parallel, so if we know how many records there are,
- * we can terminate the connection when all records have been read.
+ * we can execute a callback after all records have been read.
  */
-function makeOnInsert(schema, pool) {
+function withCountInserts(schema, cb) {
   let inserts = 0;
   const totalInserts = countRecords(schema);
   return (error) => {
     ++inserts;
     if (error) console.error(error);
-    if (inserts === totalInserts) pool.end();
+    if (inserts === totalInserts) cb();
   };
 }
 

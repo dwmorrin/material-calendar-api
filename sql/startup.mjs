@@ -95,13 +95,17 @@ async function initializeDatabase(error, responses) {
     database: MYSQL_DATABASE,
   });
   connection.query(
-    insertNewUserQuery({
-      user,
-      password: encrypt(password),
-      first,
-      last,
-      email,
-    }),
+    "INSERT INTO user SET ?",
+    [
+      {
+        user_id: user,
+        password: encrypt(password),
+        first_name: first,
+        last_name: last,
+        email: email,
+        user_type: 1,
+      },
+    ],
     then(insertWalkInProject, { connection, first, last, log: "user added" })
   );
 }
@@ -117,7 +121,17 @@ function then(onSuccess, props) {
 function insertWalkInProject(results, { connection, first, last }) {
   const userId = results.insertId;
   connection.query(
-    insertWalkInProjectQuery(),
+    "INSERT INTO project SET ?",
+    [
+      {
+        title: "Walk-in",
+        group_hours: 999,
+        open: 1,
+        start: "2000-01-01",
+        end: "9999-12-31",
+        group_size: 1,
+      },
+    ],
     then(insertProjectGroup, {
       connection,
       first,
@@ -131,7 +145,15 @@ function insertWalkInProject(results, { connection, first, last }) {
 function insertProjectGroup(results, { connection, first, last, userId }) {
   const projectId = results.insertId;
   connection.query(
-    insertNewGroupQuery({ first, last, projectId }),
+    "INSERT INTO rm_group SET ?",
+    [
+      {
+        name: `${first} ${last}`,
+        project_id: projectId,
+        status: 1,
+        group_size: 1,
+      },
+    ],
     then(connectUserToGroup, {
       connection,
       userId,
@@ -143,7 +165,8 @@ function insertProjectGroup(results, { connection, first, last, userId }) {
 function connectUserToGroup(results, { connection, userId }) {
   const groupId = results.insertId;
   connection.query(
-    insertNewUserProjectQuery({ userId, groupId }),
+    "INSERT INTO student_group SET ? ",
+    [{ student_id: userId, group_id: groupId }],
     then(() => connection.end(), { log: "user connected to walk-in group" })
   );
 }
@@ -155,43 +178,4 @@ function encrypt(plaintext) {
 function fatal(error) {
   console.error(error);
   process.exit(1);
-}
-
-function insertNewUserQuery({ user, password, first, last, email }) {
-  return `
-    INSERT INTO user (
-      user_id, password, first_name, last_name, email, user_type
-    ) VALUES (
-      '${user}', '${password}', '${first}', '${last}', '${email}', 1
-    )`;
-}
-
-function insertNewGroupQuery({ first, last, projectId }) {
-  return `
-    INSERT INTO rm_group (
-      name, project_id, status, group_size
-    ) VALUES (
-      '${first} ${last}', ${projectId}, 1, 1
-    )
-  `;
-}
-
-function insertNewUserProjectQuery({ userId, groupId }) {
-  return `
-    INSERT INTO student_group (
-      student_id, group_id 
-    ) VALUES (
-      ${userId}, ${groupId}
-    )
-  `;
-}
-
-function insertWalkInProjectQuery() {
-  return `
-    INSERT INTO project (
-      title, group_hours, open, start, book_start, end, group_size
-    ) VALUES (
-      'Walk-in', 999.00, 1, '2000-01-01', '2000-01-01', '2100-01-01', 1
-    )
-  `;
 }
