@@ -3,6 +3,7 @@
  */
 import { readFile } from "fs";
 import { createPool } from "mysql";
+import { addMonths, formatISO9075 } from "date-fns";
 
 /**
  * A table name mapped to an array of table records.
@@ -50,9 +51,37 @@ function insertRecords(schema) {
   const onInsert = withCountTo(totalRecords, () => pool.end());
   Object.entries(schema.tables).forEach(([table, records]) => {
     records.forEach((record) => {
-      pool.query(`INSERT INTO ?? SET ?`, [table, record], onInsert);
+      pool.query(
+        `INSERT INTO ?? SET ?`,
+        [table, replaceVariableDates(record)],
+        onInsert
+      );
     });
   });
+}
+
+/**
+ * @param {Record<string, unknown>} record
+ * @returns {Record<string, unknown>}
+ */
+function replaceVariableDates(record) {
+  const replaced = {};
+  for (const key in record) {
+    let value = record[key];
+    if (typeof value !== "string") continue;
+    if (value.startsWith("$")) {
+      value = value.slice(1);
+      if (value === "NOW")
+        replaced[key] = formatISO9075(new Date(), { representation: "date" });
+      if (value.startsWith("MONTHS")) {
+        const months = Number(value.slice(6));
+        replaced[key] = formatISO9075(addMonths(new Date(), months), {
+          representation: "date",
+        });
+      }
+    }
+  }
+  return { ...record, ...replaced };
 }
 
 /**
