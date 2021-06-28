@@ -88,31 +88,34 @@ export const getUsersByProject = (req: Request, res: Response) => {
 
 export const getInvitations = (req: Request, res: Response): void => {
   pool.query(
-    `select inv.id as id,
-    inv.project_id as project,
-    JSON_OBJECT('id',
-           inv.invitor,
-           'name',
-           JSON_OBJECT('first',
-            uin.first_name,
-            'last',
-            uin.last_name)) as invitor,
-            JSON_ARRAYAGG(JSON_OBJECT('id',
-           iv.invitee,
-           'name',
-           JSON_OBJECT('first',
-            uiv.first_name,
-            'last',
-            uiv.last_name),
-            'accepted',
-            iv.accepted,'rejected',iv.rejected)) AS invitees,
-            (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
-            rm.id as group_id
-            from invitation inv left join invitee iv on inv.id=iv.invitation_id 
-            left join user uiv on uiv.id=iv.invitee
-            left join user uin on uin.id=inv.invitor
-            left join rm_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
-            where inv.project_id=? and (iv.invitee=? or inv.invitor=?) group by inv.id;`,
+    `
+  SELECT
+    inv.id AS id,
+    inv.project_id AS project,
+    JSON_OBJECT(
+      'id', inv.invitor,
+      'name', JSON_OBJECT('first', uin.first_name, 'last', uin.last_name)
+    ) AS invitor,
+    JSON_ARRAYAGG(
+      JSON_OBJECT(
+        'id', iv.invitee,
+        'name', JSON_OBJECT('first', uiv.first_name, 'last', uiv.last_name),
+        'accepted', iv.accepted,
+        'rejected', iv.rejected)
+      ) AS invitees,
+    (
+      SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)
+    ) as confirmed,
+    rm.id AS group_id
+    FROM invitation inv left join invitee iv on inv.id=iv.invitation_id 
+      LEFT JOIN user uiv ON uiv.id=iv.invitee
+      LEFT JOIN user uin ON uin.id=inv.invitor
+      LEFT JOIN rm_group rm
+        ON uin.id=rm.creator AND inv.project_id=rm.project_id
+      WHERE
+        inv.project_id=? AND (iv.invitee=? OR inv.invitor=?)
+      GROUP BY inv.id
+    `,
     [req.params.id, req.params.user_id, req.params.user_id],
     onResult({ req, res, dataMapFn: inflateAndOpenBool }).read
   );
