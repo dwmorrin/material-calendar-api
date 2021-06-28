@@ -13,7 +13,8 @@ const jsonParseSafe = (strOrJSON: string) =>
  * Expands records that have JSON fields.
  * @param data a single record returned from MySQL
  */
-export const inflate = (data = {}): {} => map(jsonParseSafe, data);
+export const inflate = (data = {}): Record<string, unknown> =>
+  map(jsonParseSafe, data);
 
 /**
  * Helper function to translate MySQL values (TINYINT) to JS booleans.
@@ -23,7 +24,7 @@ export const inflate = (data = {}): {} => map(jsonParseSafe, data);
  */
 export const mapKeysToBool =
   (...keys: string[]) =>
-  (obj: { [key: string]: unknown } = {}) => ({
+  (obj: Record<string, unknown> = {}): Record<string, unknown> => ({
     ...obj,
     ...keys.reduce(
       (result, key) => (key in obj ? { ...result, [key]: !!obj[key] } : result),
@@ -36,7 +37,7 @@ export const mapKeysToBool =
  * @param str snake_case style string
  * @returns camelCase style string
  */
-export const snakeToCamel = (str: string) =>
+export const snakeToCamel = (str: string): string =>
   str.replace(/(_[a-z])/g, (underscoreLetter) =>
     underscoreLetter.toUpperCase().replace("_", "")
   );
@@ -45,7 +46,10 @@ export const snakeToCamel = (str: string) =>
  * returns generic JSON response for MySQL errors for production
  * and the raw MySQL errors for development
  */
-export const error500 = (rawDbError: MysqlError, context: unknown) => {
+export const error500 = (
+  rawDbError: MysqlError,
+  context: unknown
+): Record<string, unknown> => {
   console.error(rawDbError);
   return process.env.NODE_ENV === "development"
     ? {

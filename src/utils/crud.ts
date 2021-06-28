@@ -1,13 +1,23 @@
+/**
+ * Create, Read, Update, Delete (CRUD) generic handlers.
+ * For use with simple CRUD operations, or as templates when writing custom
+ * CRUD handlers.
+ */
 import { Request, Response } from "express";
 import pool, { error500, inflate } from "./db";
-import { MysqlError } from "mysql";
+import { MysqlError, Query } from "mysql";
 
 export interface MySQLResponseHandler {
   req: Request;
   res: Response;
-  dataMapFn?: (datum: {}) => {}; // defaults to identity fn
+  dataMapFn?: (datum: Record<string, unknown>) => Record<string, unknown>;
   take?: number; // will return dataArray.slice(0, take) if defined
 }
+
+type CrudHandler = (
+  error: MysqlError | null,
+  data: Record<string, unknown>[] & { insertId?: number; affectedRows?: number }
+) => Response;
 
 /**
  * Handler for MySQL query result.  Takes a config object and returns
@@ -19,29 +29,29 @@ export const onResult = ({
   res,
   dataMapFn = (data) => data,
   take,
-}: MySQLResponseHandler) => ({
-  read: (error: MysqlError | null, data: {}[]) =>
+}: MySQLResponseHandler): { [k: string]: CrudHandler } => ({
+  read: (error, data) =>
     error
       ? res.status(500).json(error500(error, req.query.context))
       : res.status(200).json({
           data: data.map(dataMapFn).slice(0, take || data.length),
           context: req.query.context,
         }),
-  create: (error: MysqlError | null, data: { insertId: number }) =>
+  create: (error, data) =>
     error
       ? res.status(500).json(error500(error, req.query.context))
       : res.status(201).json({
           data: { ...req.body, id: data.insertId },
           context: req.query.context,
         }),
-  delete: (error: MysqlError | null, data: { affectedRows: number }) =>
+  delete: (error, data) =>
     error
       ? res.status(500).json(error500(error, req.query.context))
       : res.status(200).json({
           data: data.affectedRows,
           context: req.query.context,
         }),
-  update: (error: MysqlError | null) =>
+  update: (error) =>
     error
       ? res.status(500).json(error500(error, req.query.context))
       : res.status(201).json({
@@ -50,53 +60,55 @@ export const onResult = ({
         }),
 });
 
-export const createOne = (table: string) => (req: Request, res: Response) =>
-  pool.query(
-    "INSERT INTO ?? SET ?",
-    [table, req.body],
-    onResult({ req, res }).create
-  );
+export const createOne =
+  (table: string) =>
+  (req: Request, res: Response): Query =>
+    pool.query(
+      "INSERT INTO ?? SET ?",
+      [table, req.body],
+      onResult({ req, res }).create
+    );
 
-export const getMany = (table: string) => (req: Request, res: Response) =>
-  pool.query(
-    "SELECT * FROM ??",
-    [table],
-    onResult({ req, res, dataMapFn: inflate }).read
-  );
+export const getMany =
+  (table: string) =>
+  (req: Request, res: Response): Query =>
+    pool.query(
+      "SELECT * FROM ??",
+      [table],
+      onResult({ req, res, dataMapFn: inflate }).read
+    );
 
-export const getOne = (table: string, key: string) => (
-  req: Request,
-  res: Response
-) =>
-  pool.query(
-    "SELECT * FROM ?? WHERE ?? = ?",
-    [table, key, req.params.id],
-    onResult({ req, res, dataMapFn: inflate, take: 1 }).read
-  );
+export const getOne =
+  (table: string, key: string) =>
+  (req: Request, res: Response): Query =>
+    pool.query(
+      "SELECT * FROM ?? WHERE ?? = ?",
+      [table, key, req.params.id],
+      onResult({ req, res, dataMapFn: inflate, take: 1 }).read
+    );
 
-export const removeOne = (table: string, key: string) => (
-  req: Request,
-  res: Response
-) => {
-  pool.query(
-    "DELETE FROM ?? WHERE ?? = ?",
-    [table, key, req.params.id],
-    onResult({ req, res }).delete
-  );
-};
+export const removeOne =
+  (table: string, key: string) =>
+  (req: Request, res: Response): Query =>
+    pool.query(
+      "DELETE FROM ?? WHERE ?? = ?",
+      [table, key, req.params.id],
+      onResult({ req, res }).delete
+    );
 
-export const updateOne = (table: string, key: string) => (
-  req: Request,
-  res: Response
-) => {
-  pool.query(
-    "UPDATE ?? SET ? WHERE ?? = ?",
-    [table, req.body, key, req.params.id],
-    onResult({ req, res }).update
-  );
-};
+export const updateOne =
+  (table: string, key: string) =>
+  (req: Request, res: Response): Query =>
+    pool.query(
+      "UPDATE ?? SET ? WHERE ?? = ?",
+      [table, req.body, key, req.params.id],
+      onResult({ req, res }).update
+    );
 
-export const controllers = (table: string, key: string) => ({
+export const controllers = (
+  table: string,
+  key: string
+): Record<string, (req: Request, res: Response) => Query> => ({
   createOne: createOne(table),
   getMany: getMany(table),
   getOne: getOne(table, key),
