@@ -275,12 +275,11 @@ CREATE TABLE `group_request` (
 CREATE TABLE `invitation` (
   `id` int NOT NULL AUTO_INCREMENT,
   `invitor` int DEFAULT NULL,
-  `group_id` int DEFAULT NULL,
   `hash` varchar(32) DEFAULT NULL,
   `message` text,
   `project_id` int DEFAULT NULL,
-  `created` datetime NOT NULL,
-  `updated_at` datetime NOT NULL,
+  `created` datetime NOT NULL  DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL  DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `invitor_idx` (`invitor`),
   KEY `group_id_idx` (`group_id`),
@@ -293,18 +292,17 @@ CREATE TABLE `invitation` (
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `invitee` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `invitation_id` int DEFAULT NULL,
-  `invitee` int DEFAULT NULL,
-  `status` tinyint DEFAULT '1',
-  `sent_timestamp` datetime NOT NULL,
-  `updated_at` datetime NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `invitation_invitee_idx` (`invitation_id`,`invitee`,`status`),
+  `invitation_id` int NOT NULL,
+  `invitee` int NOT NULL,
+  `accepted` int DEFAULT '0',
+  `rejected` int DEFAULT '0',
+  `sent_timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`invitation_id`,`invitee`),
+  UNIQUE KEY `invitation_invitee_idx` (`invitation_id`,`invitee`,`accepted`),
   KEY `invitee_idx` (`invitee`),
   KEY `invitation_id_idx` (`invitation_id`),
-  CONSTRAINT `invitee_invitation_id_invitation_id` FOREIGN KEY (`invitation_id`) REFERENCES `invitation` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `invitee_invitee_user_id` FOREIGN KEY (`invitee`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+  CONSTRAINT `id` FOREIGN KEY (`invitation_id`) REFERENCES `invitation` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;

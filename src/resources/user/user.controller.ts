@@ -9,11 +9,30 @@ import {
 } from "./user.query";
 import adapter from "./user.adapter";
 
+export const createGroup = (req: Request, res: Response) =>
+  pool.query(
+    "insert into rm_group (project_id, course_id, creator, status, group_type, group_size) select invitation.project_id,course.id,invitation.invitor as creator,1 as status,1 as group_type,count(invitee.accepted)+1 as group_size from invitation left join invitee on invitation.id=invitee.invitation_id left join project on invitation.project_id=project.id left join course_project on project.id=course_project.project_id left join course on course_project.course_id=course.id left join user on invitation.invitor=user.id where invitation.id=?",
+    [req.params.invitation_id],
+    onResult({ req, res }).create
+  );
+
 export const joinGroup = (req: Request, res: Response) =>
   pool.query(
-    "INSERT INTO student_group SET student_id=?, group_id=?",
-    [req.params.id, req.params.groupId],
+    "replace into student_group (SELECT invitee.invitee as student_id, ? as group_id FROM invitee left join invitation on invitation.id=invitee.invitation_id where invitation_id=? and invitee.accepted=1 UNION DISTINCT SELECT invitation.invitor AS student_id, ? as group_id FROM invitation where invitation.id=?)",
+    [
+      req.params.groupId,
+      req.params.invitation_id,
+      req.params.groupId,
+      req.params.invitation_id,
+    ],
     onResult({ req, res }).create
+  );
+
+export const removeOneGroup = (req: Request, res: Response) =>
+  pool.query(
+    "DELETE FROM rm_group WHERE id=?",
+    [req.params.groupId],
+    onResult({ req, res }).delete
   );
 
 export const leaveGroup = (req: Request, res: Response) =>
@@ -87,6 +106,8 @@ export const removeOne = (req: Request, res: Response) =>
   );
 
 export default {
+  createGroup,
+  removeOneGroup,
   createOne,
   getOne,
   updateOne,

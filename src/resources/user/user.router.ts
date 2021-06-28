@@ -6,11 +6,11 @@ const router = Router();
 // User Groups
 router.get("/groups", controller.getGroups);
 router.get("/groups/:id", controller.getOneGroup);
-//router.post("/groups/:id", controller.createOneGroup);
-//router.delete("/groups/:id", controller.removeOneGroup);
+router.post("/groups/:invitation_id", controller.createGroup);
+router.delete("/groups/:groupId", controller.removeOneGroup);
 
 // Joining Groups
-router.post("/:id/groups/:groupId/", controller.joinGroup);
+router.post("/groups/:groupId/invitation/:invitation_id", controller.joinGroup);
 router.delete("/:id/groups/:groupId/", controller.leaveGroup);
 
 // Get collections by username
