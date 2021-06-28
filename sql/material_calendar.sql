@@ -342,7 +342,6 @@ CREATE TABLE `message_receiver` (
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `project` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `semester_id` int NOT NULL,
   `title` varchar(255) DEFAULT NULL,
   `group_hours` decimal(18,2) DEFAULT NULL,
   `open` tinyint DEFAULT NULL,
@@ -352,9 +351,7 @@ CREATE TABLE `project` (
   `brief` varchar(255) DEFAULT NULL,
   `description` text,
   `group_size` int DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK_project_semester` (`semester_id`),
-  CONSTRAINT `FK_project_semester` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;

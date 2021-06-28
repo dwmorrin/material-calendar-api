@@ -141,7 +141,6 @@ function insertActiveSemester({ results, connection, first, last, userId }) {
     [{ semester_id: semesterId }],
     then(insertWalkInProject, {
       connection,
-      semesterId,
       userId,
       first,
       last,
@@ -150,12 +149,11 @@ function insertActiveSemester({ results, connection, first, last, userId }) {
   );
 }
 
-function insertWalkInProject({ connection, first, last, userId, semesterId }) {
+function insertWalkInProject({ connection, first, last, userId }) {
   connection.query(
     "INSERT INTO project SET ?",
     [
       {
-        semester_id: semesterId,
         title: "Walk-in",
         group_hours: 999,
         open: 1,
