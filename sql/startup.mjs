@@ -12,6 +12,7 @@ import { config } from "dotenv";
 import dotenvExpand from "dotenv-expand";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenvExpand(config({ path: join(__dirname, "..", ".env") }));
+import { addMonths, formatISO9075 } from "date-fns";
 
 // get mysql connection info from .env
 const {
@@ -106,24 +107,55 @@ async function initializeDatabase(error, responses) {
         user_type: 1,
       },
     ],
-    then(insertWalkInProject, { connection, first, last, log: "user added" })
+    then(insertSemester, { connection, first, last, log: "user added" })
   );
 }
 
-function then(onSuccess, props) {
-  return (error, results) => {
-    if (error) return fatal(error);
-    if (props.log) console.log(props.log);
-    onSuccess(results, props);
-  };
+function insertSemester({ results, connection, first, last }) {
+  const userId = results.insertId;
+  connection.query(
+    "INSERT INTO semester SET ?",
+    [
+      {
+        name: "Default",
+        start: formatISO9075(new Date(), { representation: "date" }),
+        end: formatISO9075(addMonths(new Date(), 3), {
+          respresentation: "date",
+        }),
+      },
+    ],
+    then(insertActiveSemester, {
+      connection,
+      userId,
+      first,
+      last,
+      log: "semester added",
+    })
+  );
 }
 
-function insertWalkInProject(results, { connection, first, last }) {
-  const userId = results.insertId;
+function insertActiveSemester({ results, connection, first, last, userId }) {
+  const semesterId = results.insertId;
+  connection.query(
+    "INSERT INTO active_semester SET ?",
+    [{ semester_id: semesterId }],
+    then(insertWalkInProject, {
+      connection,
+      semesterId,
+      userId,
+      first,
+      last,
+      log: "semester active",
+    })
+  );
+}
+
+function insertWalkInProject({ connection, first, last, userId, semesterId }) {
   connection.query(
     "INSERT INTO project SET ?",
     [
       {
+        semester_id: semesterId,
         title: "Walk-in",
         group_hours: 999,
         open: 1,
@@ -142,7 +174,7 @@ function insertWalkInProject(results, { connection, first, last }) {
   );
 }
 
-function insertProjectGroup(results, { connection, first, last, userId }) {
+function insertProjectGroup({ results, connection, first, last, userId }) {
   const projectId = results.insertId;
   connection.query(
     "INSERT INTO rm_group SET ?",
@@ -162,7 +194,7 @@ function insertProjectGroup(results, { connection, first, last, userId }) {
   );
 }
 
-function connectUserToGroup(results, { connection, userId }) {
+function connectUserToGroup({ results, connection, userId }) {
   const groupId = results.insertId;
   connection.query(
     "INSERT INTO student_group SET ? ",
@@ -178,4 +210,12 @@ function encrypt(plaintext) {
 function fatal(error) {
   console.error(error);
   process.exit(1);
+}
+
+function then(cb, props) {
+  return (error, results) => {
+    if (error) fatal(error);
+    if (props.log) console.log(props.log);
+    cb({ ...props, results });
+  };
 }

@@ -2,6 +2,17 @@ SET @OLD_FOREIGN_KEY_CHECKS = @@FOREIGN_KEY_CHECKS;
 SET FOREIGN_KEY_CHECKS = 0;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `active_semester` (
+  `id` tinyint NOT NULL DEFAULT '1',
+  `semester_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FK_active_semester_semester` (`semester_id`),
+  CONSTRAINT `FK_active_semester_semester` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`),
+  CONSTRAINT `active_semester_only_one` CHECK ((`id` = 1))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `allotment` (
   `id` int NOT NULL AUTO_INCREMENT,
   `start` datetime DEFAULT NULL,
@@ -134,7 +145,7 @@ CREATE TABLE `course` (
   `title` varchar(128) DEFAULT NULL,
   `instructor` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -331,6 +342,7 @@ CREATE TABLE `message_receiver` (
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `project` (
   `id` int NOT NULL AUTO_INCREMENT,
+  `semester_id` int NOT NULL,
   `title` varchar(255) DEFAULT NULL,
   `group_hours` decimal(18,2) DEFAULT NULL,
   `open` tinyint DEFAULT NULL,
@@ -340,7 +352,9 @@ CREATE TABLE `project` (
   `brief` varchar(255) DEFAULT NULL,
   `description` text,
   `group_size` int DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `FK_project_semester` (`semester_id`),
+  CONSTRAINT `FK_project_semester` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -442,7 +456,6 @@ CREATE TABLE `semester` (
   `name` varchar(32) DEFAULT NULL,
   `start` date DEFAULT NULL,
   `end` date DEFAULT NULL,
-  `active` tinyint DEFAULT '1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -473,7 +486,7 @@ CREATE TABLE `studio` (
   `sun_hour` smallint DEFAULT NULL,
   `restriction` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -526,7 +539,7 @@ CREATE TABLE `virtual_week` (
   KEY `semester_idx` (`semester_id`),
   CONSTRAINT `virtual_week_semester_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`),
   CONSTRAINT `virtual_week_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
