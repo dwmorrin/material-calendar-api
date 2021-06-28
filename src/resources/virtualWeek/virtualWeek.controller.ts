@@ -98,11 +98,33 @@ export const splitOne = (req: Request, res: Response): Response | undefined => {
   );
 };
 
+export const joinTwo = (req: Request, res: Response): Response | undefined => {
+  const [joined, toDelete] = req.body;
+  if (!joined || !toDelete)
+    return res.status(400).json({
+      error: { message: "missing new virtual weeks in request body" },
+    });
+  pool.query(
+    `UPDATE virtual_week SET ? WHERE id = ?`,
+    [{ start: joined.start, end: joined.end }, joined.id],
+    (error) => {
+      if (error)
+        return res.status(500).json(error500(error, req.query.context));
+      pool.query(
+        `DELETE FROM virtual_week WHERE id = ?`,
+        [toDelete.id],
+        onResult({ req, res }).update
+      );
+    }
+  );
+};
+
 export default {
   ...controllers("virtual_week", "id"),
   createOne,
   getMany,
   getOne,
+  joinTwo,
   splitOne,
   updateOne,
 };
