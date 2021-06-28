@@ -108,7 +108,10 @@ export const updateOne =
 export const controllers = (
   table: string,
   key: string
-): Record<string, (req: Request, res: Response) => Query> => ({
+): Record<
+  "createOne" | "getMany" | "getOne" | "removeOne" | "updateOne",
+  (req: Request, res: Response) => Query
+> => ({
   createOne: createOne(table),
   getMany: getMany(table),
   getOne: getOne(table, key),
