@@ -19,6 +19,11 @@ type CrudHandler = (
   data: Record<string, unknown>[] & { insertId?: number; affectedRows?: number }
 ) => Response;
 
+export const useErrorHandler =
+  (req: Request, res: Response): ((e: MysqlError) => Response) =>
+  (error) =>
+    res.status(500).json(error500(error, req.query.context));
+
 /**
  * Handler for MySQL query result.  Takes a config object and returns
  * an object with 4 functions, one for each CRUD operation.
@@ -32,28 +37,28 @@ export const onResult = ({
 }: MySQLResponseHandler): { [k: string]: CrudHandler } => ({
   read: (error, data) =>
     error
-      ? res.status(500).json(error500(error, req.query.context))
+      ? useErrorHandler(req, res)(error)
       : res.status(200).json({
           data: data.map(dataMapFn).slice(0, take || data.length),
           context: req.query.context,
         }),
   create: (error, data) =>
     error
-      ? res.status(500).json(error500(error, req.query.context))
+      ? useErrorHandler(req, res)(error)
       : res.status(201).json({
           data: { ...req.body, id: data.insertId },
           context: req.query.context,
         }),
   delete: (error, data) =>
     error
-      ? res.status(500).json(error500(error, req.query.context))
+      ? useErrorHandler(req, res)(error)
       : res.status(200).json({
           data: data.affectedRows,
           context: req.query.context,
         }),
   update: (error) =>
     error
-      ? res.status(500).json(error500(error, req.query.context))
+      ? useErrorHandler(req, res)(error)
       : res.status(201).json({
           data: { ...req.body },
           context: req.query.context,
