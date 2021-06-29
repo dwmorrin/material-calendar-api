@@ -112,6 +112,21 @@ export const createOne = (req: Request, res: Response): void => {
   );
 };
 
+// returns sum of event hours in a location
+export const sumHours = (req: Request, res: Response): Query =>
+  pool.query(
+    `SELECT
+      id AS locationId,
+      DATE(start) as date,
+      SUM(TIMESTAMPDIFF(HOUR, start, end)) AS hours
+    FROM allotment
+    WHERE studio_id = ?
+    GROUP BY YEAR(start), MONTH(start), DAY(start)
+    `,
+    [req.params.id],
+    onResult({ req, res }).read
+  );
+
 export default {
   ...controllers("studio", "id"),
   createOne,
@@ -120,4 +135,5 @@ export default {
   getOne,
   getDefaultId,
   getVirtualWeeks,
+  sumHours,
 };
