@@ -27,6 +27,13 @@ ADMIN_EMAIL=OPTIONAL_web_app_admin
 The app does not handle authorization; it just expects a `netId` property to be in the request
 headers. If `NODE_ENV=development` is set, then the `netId` will just be set to the provided `NET_ID` from the .env file.
 
+If the `netId` is some other header, add to .env
+
+```
+AUTH_METHOD=CUSTOM_HEADER
+AUTH_CUSTOM_HEADER=my-net-id
+```
+
 The .env entries starting with ADMIN\_ are optional. They are used by the database startup script.
 If filled out, the script will use those values; otherwise the script will run interactively to get those values.
 
