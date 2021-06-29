@@ -9,7 +9,7 @@ const query = `
     purpose AS description,
     allotment_id AS eventId,
     group_id AS groupId,
-    project_id AS projectId,
+    IFNULL (0, project_id) AS projectId,
     guests,
     IF(
       cancel_request = 1,
