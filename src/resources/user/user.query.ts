@@ -48,7 +48,7 @@ export const userCourseQuery = (id = ""): string => `
     INNER JOIN roster r ON r.course_id = c.id
     INNER JOIN user u ON u.id = r.student_id
   WHERE
-    u.user_id = "${id}"
+    u.id = "${id}"
   GROUP BY
     c.title;
 `;
@@ -58,7 +58,7 @@ export const userProjectQuery = (id = ""): string => `
     INNER JOIN course_project cp ON cp.project_id = p.id
     INNER JOIN roster r ON r.course_id = cp.course_id
     INNER JOIN user u ON u.id = r.student_id 
-  WHERE u.user_id = "${id}"
+  WHERE u.id = "${id}"
   group by p.id)
   UNION
   (${project.getManyQuery} WHERE p.title = "Walk-in" )
