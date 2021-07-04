@@ -8,51 +8,6 @@ const makeOpenBool = mapKeysToBool("open");
 const inflateAndOpenBool = (data: Record<string, unknown>) =>
   inflate(makeOpenBool(data));
 
-const groupQuery = (where = "") => `
-SELECT
-  g.id,
-  g.projectId,
-  g.members,
-  IF(r.reservedHours IS NULL, 0, r.reservedHours) AS reservedHours
-FROM
-  (
-    SELECT
-      rg.id,
-      rg.project_id AS projectId,
-      JSON_ARRAYAGG(
-        JSON_OBJECT(
-          'username', u.user_id,
-          'name', JSON_OBJECT('first', u.first_name,'last',u.last_name)
-        )
-      ) AS members
-    FROM
-      user u
-      INNER JOIN student_group sg ON sg.student_id = u.id
-      INNER JOIN rm_group rg ON rg.id = sg.group_id
-    GROUP BY
-      rg.id
-  ) g
-  LEFT JOIN
-  (
-    SELECT
-      rg.id,
-      CAST(SUM(TIME_TO_SEC(TIMEDIFF(a.end, a.start))) / 3600 AS DECIMAL(8,2)) as reservedHours
-    FROM
-      rm_group rg
-	  INNER JOIN booking b on b.group_id = rg.id
-      INNER JOIN allotment a on a.id = b.allotment_id
-    GROUP BY
-      rg.id
-  ) r ON g.id = r.id
-  ${where}
-`;
-export const getGroupsByProject = (req: Request, res: Response): Query =>
-  pool.query(
-    groupQuery("WHERE g.projectId = ?"),
-    [req.params.id],
-    onResult({ req, res, dataMapFn: inflate }).read
-  );
-
 export const getUsersByProject = (req: Request, res: Response) => {
   pool.query(
     `
@@ -84,113 +39,6 @@ export const getUsersByProject = (req: Request, res: Response) => {
     [req.params.id],
     onResult({ req, res, dataMapFn: inflate }).read
   );
-};
-
-export const getInvitations = (req: Request, res: Response): void => {
-  pool.query(
-    `
-  SELECT
-    inv.id AS id,
-    inv.project_id AS project,
-    JSON_OBJECT(
-      'id', inv.invitor,
-      'name', JSON_OBJECT('first', uin.first_name, 'last', uin.last_name)
-    ) AS invitor,
-    JSON_ARRAYAGG(
-      JSON_OBJECT(
-        'id', iv.invitee,
-        'name', JSON_OBJECT('first', uiv.first_name, 'last', uiv.last_name),
-        'accepted', iv.accepted,
-        'rejected', iv.rejected)
-      ) AS invitees,
-    (
-      SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)
-    ) as confirmed,
-    rm.id AS group_id
-    FROM invitation inv left join invitee iv on inv.id=iv.invitation_id 
-      LEFT JOIN user uiv ON uiv.id=iv.invitee
-      LEFT JOIN user uin ON uin.id=inv.invitor
-      LEFT JOIN rm_group rm
-        ON uin.id=rm.creator AND inv.project_id=rm.project_id
-      WHERE
-        inv.project_id=? AND (iv.invitee=? OR inv.invitor=?)
-      GROUP BY inv.id
-    `,
-    [req.params.id, req.params.user_id, req.params.user_id],
-    onResult({ req, res, dataMapFn: inflateAndOpenBool }).read
-  );
-};
-
-export const createInvitations = (req: Request, res: Response): void => {
-  pool.query(
-    `insert into invitation (project_id,invitor) VALUES (?,?)`,
-    [req.params.id, req.body.invitor, req.body.invitor],
-    (error, results) => {
-      if (error) return onError(error);
-      pool.query(
-        `replace into invitee (invitation_id,invitee) VALUES ?`,
-        [createInvitees(results.insertId, req.body.invitees)],
-        onResult({ req, res }).update
-      );
-    }
-  );
-  function onError(error: MysqlError) {
-    res.status(500).json(error500(error, req.query.context));
-  }
-  function createInvitees(invitationId: number, invitees: []) {
-    return invitees.map((invitee) => [invitationId, invitee]);
-  }
-};
-
-export const updateInvitation = (req: Request, res: Response): void => {
-  if (req.body.rejected) {
-    pool.query(
-      `update invitee set accepted=0, rejected=1 where invitation_id=? and invitee=?`,
-      [req.params.invitation_id, req.body.userId],
-      onResult({ req, res, dataMapFn: inflateAndOpenBool }).update
-    );
-  }
-  if (req.body.accepted) {
-    pool.query(
-      `update invitee set accepted=1, rejected=0 where invitation_id=? and invitee=?`,
-      [req.params.invitation_id, req.body.userId],
-      onResult({ req, res, dataMapFn: inflateAndOpenBool }).update
-    );
-  }
-};
-
-export const removeInvitation = (req: Request, res: Response): void => {
-  pool.query(
-    `delete from invitation where id=?`,
-    [req.params.invitation_id],
-    onResult({ req, res }).delete
-  );
-};
-
-export const formGroup = (req: Request, res: Response): void => {
-  pool.query(
-    `replace into rm_group (project_id, course_id, creator, status, group_type, group_size) 
-    select invitation.project_id,course.id,invitation.invitor as creator,1 as status,1 as 
-    group_type,count(invitee.accepted)+1 as group_size 
-    from invitation 
-    left join invitee on invitation.id=invitee.invitation_id 
-    left join project on invitation.project_id=project.id 
-    left join course_project on project.id=course_project.project_id 
-    left join course on course_project.course_id=course.id 
-    where invitation.id=? and invitee.accepted=1`,
-    [req.params.id],
-    (error, results) => {
-      if (error) return onError(error);
-      pool.query(
-        `replace into invitee (invitation_id,invitee) VALUES ?`,
-        [req.params.id],
-        onResult({ req, res }).update
-      );
-    }
-  );
-  function onError(error: MysqlError) {
-    res.status(500).json(error500(error, req.query.context));
-  }
 };
 
 export const getOneLocationAllotment = (req: Request, res: Response): Query =>
@@ -326,12 +174,7 @@ export default {
   createOne: createOrUpdateOne,
   getMany,
   getOneLocationAllotment,
-  getGroupsByProject,
   getUsersByProject,
   updateAllotment,
   updateOne: createOrUpdateOne,
-  getInvitations,
-  createInvitations,
-  updateInvitation,
-  removeInvitation,
 };
