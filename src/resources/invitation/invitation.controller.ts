@@ -19,18 +19,51 @@ export const getInvitations = (req: Request, res: Response): Query =>
             'last',
             uin.last_name)) as invitor,
             JSON_ARRAYAGG(JSON_OBJECT('id',
-           iv.invitee,
+           vt.invitee,
            'name',
            JSON_OBJECT('first',
             uiv.first_name,
             'last',
             uiv.last_name),
             'accepted',
-            iv.accepted,'rejected',iv.rejected)) AS invitees,
+            vt.accepted,'rejected',vt.rejected)) AS invitees,
             (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
             rm.id as group_id
             from invitation inv left join invitee iv on inv.id=iv.invitation_id 
-            left join user uiv on uiv.id=iv.invitee
+            left join invitee vt on vt.invitation_id=inv.id
+            left join user uiv on uiv.id=vt.invitee
+            left join user uin on uin.id=inv.invitor
+            left join rm_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
+            where (iv.invitee=? or inv.invitor=?) group by inv.id;`,
+    [req.params.userId, req.params.userId],
+    onResult({ req, res, dataMapFn: inflateAndOpenBool }).read
+  );
+
+export const getInvitationsByProject = (req: Request, res: Response): Query =>
+  pool.query(
+    `select inv.id as id,
+    inv.project_id as project,
+    JSON_OBJECT('id',
+           inv.invitor,
+           'name',
+           JSON_OBJECT('first',
+            uin.first_name,
+            'last',
+            uin.last_name)) as invitor,
+            JSON_ARRAYAGG(JSON_OBJECT('id',
+           vt.invitee,
+           'name',
+           JSON_OBJECT('first',
+            uiv.first_name,
+            'last',
+            uiv.last_name),
+            'accepted',
+            vt.accepted,'rejected',vt.rejected)) AS invitees,
+            (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
+            rm.id as group_id
+            from invitation inv left join invitee iv on inv.id=iv.invitation_id 
+            left join invitee vt on vt.invitation_id=inv.id
+            left join user uiv on uiv.id=vt.invitee
             left join user uin on uin.id=inv.invitor
             left join rm_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
             where inv.project_id=? and (iv.invitee=? or inv.invitor=?) group by inv.id;`,
@@ -85,6 +118,7 @@ export const removeInvitation = (req: Request, res: Response): Query =>
 
 export default {
   getInvitations,
+  getInvitationsByProject,
   createInvitations,
   updateInvitation,
   removeInvitation,
