@@ -1,11 +1,6 @@
 import { Request, Response } from "express";
 import pool, { mapKeysToBool } from "../../utils/db";
-import {
-  controllers,
-  MySQLResponseHandler,
-  onResult,
-  useErrorHandler,
-} from "../../utils/crud";
+import { controllers, onResult, useErrorHandler } from "../../utils/crud";
 import { MysqlError, Query, queryCallback } from "mysql";
 import { getActive, getSemester } from "./semester.query";
 
