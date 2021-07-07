@@ -22,10 +22,10 @@ app.use(morgan(process.env.NODE_ENV === "development" ? "dev" : "combined"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// application routing
-app.use("/", authentication);
-app.use("/", authorization); // adds res.locals.user and res.locals.admin
+// auth
+app.use(authentication, authorization); // adds res.locals.authId
 
+// application routing
 app.use("/login", login);
 app.use("/api", apiRouter);
 

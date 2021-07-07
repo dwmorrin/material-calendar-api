@@ -9,7 +9,7 @@ export const error403 = Object.freeze({
 });
 
 /**
- * If user ID exists in the database, adds to res.locals:
+ * If user ID exists in the database, adds
  * res.locals.user: {id, userId, userType} and
  * res.locals.admin: boolean
  * {@link http://expressjs.com/en/api.html#res.locals}
@@ -19,10 +19,10 @@ const authorization = (
   res: Response,
   next: NextFunction
 ): void => {
-  // use netId header to look up user in the database
+  // assumes authentication has already added res.locals.authId
   pool.query(
     "SELECT id, user_id, user_type FROM user WHERE user_id = ?",
-    [req.headers.netId],
+    [res.locals.authId],
     (error, results) => {
       if (error)
         return res.status(500).json(error500(error, req.params.context));
