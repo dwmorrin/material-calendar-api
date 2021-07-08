@@ -2,6 +2,7 @@ import { controllers, onResult } from "../../utils/crud";
 import { Request, Response } from "express";
 import pool, { error500, mapKeysToBool, inflate } from "../../utils/db";
 import { compose } from "ramda";
+import { Query } from "mysql";
 
 const query = `
   SELECT 
@@ -36,10 +37,10 @@ const query = `
 
 const process = compose(mapKeysToBool("reservable"), inflate);
 
-const getMany = (req: Request, res: Response) =>
+const getMany = (req: Request, res: Response): Query =>
   pool.query(query, onResult({ req, res, dataMapFn: process }).read);
 
-const getOne = (req: Request, res: Response) =>
+const getOne = (req: Request, res: Response): Query =>
   pool.query(
     query + "WHERE id = ?",
     [req.params.id],
@@ -68,7 +69,7 @@ const replaceManyQuery = `
   VALUES ?
 `;
 
-const createOrUpdateMany = (req: Request, res: Response) =>
+const createMany = (req: Request, res: Response): Query =>
   pool.query(replaceManyQuery, [req.body.map(flattenEvent)], (err) => {
     const { context } = req.query;
     if (err) return res.status(500).json(error500(err, context));
@@ -78,9 +79,34 @@ const createOrUpdateMany = (req: Request, res: Response) =>
     });
   });
 
+const updateOne = (req: Request, res: Response): void => {
+  pool.query(
+    `UPDATE allotment SET ? WHERE id = ?`,
+    [
+      {
+        start: req.body.start,
+        end: req.body.end,
+        studio_id: req.body.locationId,
+        bookable: req.body.reservable,
+        description: req.body.title,
+      },
+      req.params.id,
+    ],
+    (err) => {
+      const { context } = req.query;
+      if (err) return res.status(500).json(error500(err, context));
+      res.status(201).json({
+        data: { ...req.body },
+        context,
+      });
+    }
+  );
+};
+
 export default {
   ...controllers("allotment", "id"),
+  createMany,
   getMany,
   getOne,
-  createOrUpdateMany,
+  updateOne,
 };
