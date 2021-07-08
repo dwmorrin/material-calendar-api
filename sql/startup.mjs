@@ -117,7 +117,7 @@ function insertSemester({ results, connection, first, last }) {
     "INSERT INTO semester SET ?",
     [
       {
-        name: "Default",
+        title: "Default",
         start: formatISO9075(new Date(), { representation: "date" }),
         end: formatISO9075(addMonths(new Date(), 3), {
           respresentation: "date",
