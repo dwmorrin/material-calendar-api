@@ -12,7 +12,6 @@ import { config } from "dotenv";
 import dotenvExpand from "dotenv-expand";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenvExpand(config({ path: join(__dirname, "..", ".env") }));
-import { addMonths, formatISO9075 } from "date-fns";
 
 // get mysql connection info from .env
 const {
@@ -25,6 +24,9 @@ const {
   ADMIN_FIRST_NAME = "",
   ADMIN_LAST_NAME = "",
   ADMIN_EMAIL = "",
+  SEMESTER_TITLE = "",
+  SEMESTER_START = "",
+  SEMESTER_END = "",
 } = process.env;
 if (![MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE].every(String)) {
   fatal(".env variables not set");
@@ -37,6 +39,9 @@ if (
     ADMIN_FIRST_NAME,
     ADMIN_LAST_NAME,
     ADMIN_EMAIL,
+    SEMESTER_TITLE,
+    SEMESTER_START,
+    SEMESTER_END,
   ].every(String)
 ) {
   initializeDatabase(undefined, {
@@ -45,6 +50,9 @@ if (
     first: ADMIN_FIRST_NAME,
     last: ADMIN_LAST_NAME,
     email: ADMIN_EMAIL,
+    semesterTitle: SEMESTER_TITLE,
+    semesterStart: SEMESTER_START,
+    semesterEnd: SEMESTER_END,
   });
 } else
   try {
@@ -60,7 +68,16 @@ if (
  */
 async function initializeDatabase(error, responses) {
   if (error) fatal(error);
-  const { user, password, first, last, email } = responses;
+  const {
+    user,
+    password,
+    first,
+    last,
+    email,
+    semesterTitle,
+    semesterStart,
+    semesterEnd,
+  } = responses;
   const mysqlCli = `mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD}`;
   // using mysql utility to prepare database for mysqljs lib
   const mysqlCmd = (statement) => `${mysqlCli} -e "${statement}"`;
@@ -107,21 +124,35 @@ async function initializeDatabase(error, responses) {
         user_type: 1,
       },
     ],
-    then(insertSemester, { connection, first, last, log: "user added" })
+    then(insertSemester, {
+      connection,
+      first,
+      last,
+      semesterTitle,
+      semesterStart,
+      semesterEnd,
+      log: "user added",
+    })
   );
 }
 
-function insertSemester({ results, connection, first, last }) {
+function insertSemester({
+  results,
+  connection,
+  first,
+  last,
+  semesterTitle,
+  semesterStart,
+  semesterEnd,
+}) {
   const userId = results.insertId;
   connection.query(
     "INSERT INTO semester SET ?",
     [
       {
-        title: "Default",
-        start: formatISO9075(new Date(), { representation: "date" }),
-        end: formatISO9075(addMonths(new Date(), 3), {
-          respresentation: "date",
-        }),
+        title: semesterTitle,
+        start: semesterStart,
+        end: semesterEnd,
       },
     ],
     then(insertActiveSemester, {
