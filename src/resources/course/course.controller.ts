@@ -5,11 +5,14 @@ import { Query } from "mysql";
 
 const query = `
   SELECT
-    id,
-    title,
-    instructor
+    c.id,
+    c.title,
+    c.catalog_id AS catalogId,
+    s.title AS section,
+    s.instructor
   FROM
-    course
+    course c
+    INNER JOIN section s ON s.course_id = c.id
 `;
 
 export const getMany = (req: Request, res: Response): Query =>

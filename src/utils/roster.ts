@@ -5,17 +5,18 @@ import { onResult } from "../utils/crud";
 
 const query = `
   SELECT
-    json_object(
+    JSON_OBJECT(
       'title', c.title,
-      'instructor', c.instructor
+      'instructor', s.instructor
     ) as course,
-    json_object(
-      'name', json_object('first', u.first_name, 'last', u.last_name),
+    JSON_OBJECT(
+      'name', JSON_OBJECT('first', u.first_name, 'last', u.last_name),
       'id', u.id
-    ) as student
+    ) AS student
   FROM
-    roster r left join user u on r.student_id = u.id
-    left join course c on r.course_id = c.id
+    roster r LEFT JOIN user u ON r.student_id = u.id
+    LEFT JOIN course c ON r.course_id = c.id
+    LEFT JOIN section s ON s.course_id = c.id
 `;
 
 const getMany = (req: Request, res: Response) =>

@@ -143,9 +143,9 @@ SET character_set_client = @saved_cs_client;
 CREATE TABLE `course` (
   `id` int NOT NULL AUTO_INCREMENT,
   `title` varchar(128) DEFAULT NULL,
-  `instructor` varchar(50) DEFAULT NULL,
+  `catalog_id` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -434,12 +434,13 @@ CREATE TABLE `scheduler_sheet` (
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `section` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(80) DEFAULT NULL,
   `course_id` int DEFAULT NULL,
+  `title` varchar(50) NOT NULL,
+  `instructor` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `course_id_idx` (`course_id`),
   CONSTRAINT `section_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
