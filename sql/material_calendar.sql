@@ -142,9 +142,10 @@ SET character_set_client = @saved_cs_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `course` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `title` varchar(128) DEFAULT NULL,
-  `catalog_id` varchar(50) DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  `title` varchar(128) NOT NULL,
+  `catalog_id` varchar(50) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_course` (`title`,`catalog_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
