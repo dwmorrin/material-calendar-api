@@ -1,5 +1,6 @@
 import { Router } from "express";
 import backupRouter from "./utils/backup";
+import mailRouter from "./utils/mailer";
 import categoryRouter from "./resources/category/category.router";
 import courseRouter from "./resources/course/course.router";
 import equipmentRouter from "./resources/equipment/equipment.router";
@@ -25,6 +26,7 @@ router.use("/events", eventRouter);
 router.use("/groups", groupRouter);
 router.use("/invitations", invitationRouter);
 router.use("/locations", locationRouter);
+router.use("/mail", mailRouter);
 router.use("/projects", projectRouter);
 router.use("/reservations", reservationRouter);
 router.use("/rosters", rosterRouter);
