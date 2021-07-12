@@ -2,6 +2,7 @@
 .env
 database-backups/**/*
 *data.json
+*data.tsv
 
 # Dependencies
 node_modules
