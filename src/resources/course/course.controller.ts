@@ -18,7 +18,20 @@ const query = `
 export const getMany = (req: Request, res: Response): Query =>
   pool.query(query, onResult({ req, res }).read);
 
+export const createOne = (req: Request, res: Response): Query =>
+  pool.query(
+    "INSERT INTO course (title, catalog_id) VALUES ?",
+    [
+      {
+        title: req.body.title,
+        catalog_id: req.body.catalogId,
+      },
+    ],
+    onResult({ req, res }).create
+  );
+
 export default {
   ...controllers("course", "id"),
+  createOne,
   getMany,
 };
