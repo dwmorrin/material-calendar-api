@@ -53,7 +53,7 @@ function insertRecords(schema) {
     records.forEach((record) => {
       pool.query(
         `INSERT INTO ?? SET ?`,
-        [table, replaceVariableDates(record)],
+        [table, replaceVariableDates(record, schema.defaults)],
         onInsert
       );
     });
@@ -64,16 +64,17 @@ function insertRecords(schema) {
  * @param {Record<string, unknown>} record
  * @returns {Record<string, unknown>}
  */
-function replaceVariableDates(record) {
+function replaceVariableDates(record, defaults = {}) {
   const replaced = {};
   for (const key in record) {
     let value = record[key];
     if (typeof value !== "string") continue;
     if (value.startsWith("$")) {
       value = value.slice(1);
-      if (value === "NOW")
+      if (value === "DEFAULT") replaced[key] = defaults[key];
+      else if (value === "NOW")
         replaced[key] = formatISO9075(new Date(), { representation: "date" });
-      if (value.startsWith("MONTHS")) {
+      else if (value.startsWith("MONTHS")) {
         const months = Number(value.slice(6));
         replaced[key] = formatISO9075(addMonths(new Date(), months), {
           representation: "date",
