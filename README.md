@@ -18,28 +18,54 @@ MYSQL_PASSWORD=password
 MYSQL_DATABASE=calendar
 MYSQL_BACKUP_DIR=/my/backup/dir
 NET_ID=username_to_login_with_for_development
-ADMIN_PASSWORD=OPTIONAL_web_app_admin_password
-ADMIN_FIRST_NAME=OPTIONAL_web_app_admin
-ADMIN_LAST_NAME=OPTIONAL_web_app_admin
-ADMIN_EMAIL=OPTIONAL_web_app_admin
 ```
 
-The app does not handle authorization; it just expects a `netId` property to be in the request
-headers. If `NODE_ENV=development` is set, then the `netId` will just be set to the provided `NET_ID` from the .env file.
+Optional values used by startup script:
 
-If the `netId` is some other header, add to .env
+```
+ADMIN_PASSWORD=web_app_admin_password
+ADMIN_FIRST_NAME=web_app_admin
+ADMIN_LAST_NAME=web_app_admin
+ADMIN_EMAIL=web_app_admin
+SEMESTER_TITLE=title
+SEMESTER_START=2000-01-01
+SEMESTER_END=2000-12-31
+```
+
+## Authentication
+
+An authentication method must be selected in `src/utils/authentication.ts`.
+The method must set `res.locals.authId` to a string matching a username in the
+MySQL database's user table.
+
+If `NODE_ENV` is set to development, then the authentication ID will be retrieved
+from the .env file.
+
+For production with an external authentication that can inject the auth ID into
+the requeset headers, add the following entries to .env:
 
 ```
 AUTH_METHOD=CUSTOM_HEADER
 AUTH_CUSTOM_HEADER=my-net-id
 ```
 
-The .env entries starting with ADMIN\_ are optional. They are used by the database startup script.
-If filled out, the script will use those values; otherwise the script will run interactively to get those values.
+Otherwise, add an additional case or default handler in `authentication.ts` for
+your environment.
+
+## Authorization
+
+Authorization is done on each request by looking up the user's information
+immediately after authentication and attaching the authorization info to the
+response object as `res.locals.user` and `res.locals.admin`.
+
+All responses should have `res.locals.user` with basic user information and
+`res.locals.admin` will a boolean value indicataing that the user is an admin.
+
+See `src/utils/authorization.ts` for details.
 
 ## Run
 
-`npm run watch` will use `tsc` to build and `nodemon` to refresh `node` on save.
+`yarn watch` will use `tsc` to build and `nodemon` to refresh `node` on save.
 
 ## Credits
 
