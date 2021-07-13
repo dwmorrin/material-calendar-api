@@ -6,14 +6,12 @@
   "main": "app.js",
   "scripts": {
     "test": "jest",
-    "watch": "concurrently -k -p \"[{name}]\" -n \"TypeScript,Node\" -c \"cyan.bold,green.bold\" \"tsc -w\" \"nodemon dist/server.js\"",
-    "haraka": "haraka -c ./haraka"
+    "watch": "concurrently -k -p \"[{name}]\" -n \"TypeScript,Node\" -c \"cyan.bold,green.bold\" \"tsc -w\" \"nodemon dist/server.js\""
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@types/cookie-session": "^2.0.42",
-    "Haraka": "^2.8.27",
     "bcrypt": "^5.0.1",
     "cookie-session": "^1.4.0",
     "date-fns": "^2.22.1",
@@ -23,7 +21,6 @@
     "get-stdin": "^9.0.0",
     "morgan": "^1.10.0",
     "mysql": "^2.18.1",
-    "nodemailer": "^6.6.2",
     "prompt": "^1.1.0",
     "ramda": "^0.27.0",
     "socket.io": "^2.3.0"
@@ -39,7 +36,6 @@
     "@types/morgan": "^1.9.0",
     "@types/mysql": "^2.15.13",
     "@types/node": "^13.13.5",
-    "@types/nodemailer": "^6.4.4",
     "@types/ramda": "github:types/npm-ramda#dist",
     "@types/socket.io": "^2.1.6",
     "@typescript-eslint/eslint-plugin": "^4.24.0",
