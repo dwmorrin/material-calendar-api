@@ -18,9 +18,8 @@ MYSQL_PASSWORD=password
 MYSQL_DATABASE=calendar
 MYSQL_BACKUP_DIR=/my/backup/dir
 NET_ID=username_to_login_with_for_development
-EMAIL_USER=user
-EMAIL_PASSWORD=password
 EMAIL_FROM="Booking App <admin@booking.app>"
+EMAIL_PORT=25
 ```
 
 Optional values used by startup script:
@@ -68,9 +67,9 @@ See `src/utils/authorization.ts` for details.
 
 ## Emailing
 
-Emailing uses nodemailer to send mail using the credentials defined in .env
-with `EMAIL_USER` and `EMAIL_PASSWORD`.
-Requires a SMTP server running locally.
+Emailing uses nodemailer to send mail. Requires a SMTP server running locally.
+Default port is 25. Port and "from" field can be set with .env using
+`EMAIL_PORT` and `EMAIL_FROM`.
 
 ## Run
 

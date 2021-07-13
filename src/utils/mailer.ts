@@ -20,12 +20,9 @@ function send({ to = "", subject = "", text = "", html = "" }) {
   nodemailer
     .createTransport({
       host: "localhost",
-      port: 3025,
+      port: Number(process.env.EMAIL_PORT) || 25,
       secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
+      tls: { rejectUnauthorized: false },
     })
     .sendMail(html ? { ...mail, html } : mail);
 }
