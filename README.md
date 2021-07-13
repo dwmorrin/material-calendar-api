@@ -71,6 +71,16 @@ Emailing uses nodemailer to send mail. Requires a SMTP server running locally.
 Default port is 25. Port and "from" field can be set with .env using
 `EMAIL_PORT` and `EMAIL_FROM`.
 
+For local testing, a docker container works nicely to log the emails:
+
+```sh
+docker pull ghusta/fakesmtp
+mkdir /tmp/fakemail
+# set .env EMAIL_PORT=2525
+docker run -d -p 2525:25 -v /tmp/fakemail:/var/mail ghusta/fakesmtp:2.0
+# hit the email API, then inspect emails sent at /tmp/fakemail
+```
+
 ## Run
 
 `yarn watch` will use `tsc` to build and `nodemon` to refresh `node` on save.
