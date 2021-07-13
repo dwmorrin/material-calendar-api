@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import pool, { inflate } from "../../utils/db";
 import { onResult } from "../../utils/crud";
 import { userCourseQuery, userProjectQuery, userQueryFn } from "./user.query";
-import adapter from "./user.adapter";
 import { Query } from "mysql";
 
 export const getCourses = (req: Request, res: Response) =>
@@ -32,14 +31,19 @@ export const getMany = (req: Request, res: Response): Query =>
 export const createOne = (req: Request, res: Response): Query =>
   pool.query(
     "INSERT INTO user SET ?",
-    adapter(req.body),
+    [{ ...req.body }],
     onResult({ req, res }).create
   );
 
 export const updateOne = (req: Request, res: Response): Query =>
   pool.query(
     "UPDATE user SET ? WHERE id = ?",
-    [adapter(req.body), req.params.id],
+    [
+      {
+        ...req.body,
+      },
+      req.params.id,
+    ],
     onResult({ req, res }).update
   );
 

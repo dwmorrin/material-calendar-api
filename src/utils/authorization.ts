@@ -21,7 +21,12 @@ const authorization = (
 ): void => {
   // assumes authentication has already added res.locals.authId
   pool.query(
-    "SELECT id, user_id, user_type FROM user WHERE user_id = ?",
+    `SELECT
+      u.id, u.user_id, JSON_ARRAYAGG(r.title) as roles
+    FROM user u
+      INNER JOIN user_role ur ON ur.user_id = u.id
+      INNER JOIN role r ON ur.role_id = r.id
+    WHERE u.user_id = ?`,
     [res.locals.authId],
     (error, results) => {
       if (error)
@@ -31,9 +36,9 @@ const authorization = (
       res.locals.user = {
         id: user.id,
         userId: user.user_id,
-        userType: user.user_type,
+        roles: JSON.parse(user.roles),
       };
-      res.locals.admin = user.user_type > 1;
+      res.locals.admin = user.roles.includes("admin");
       return next();
     }
   );

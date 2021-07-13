@@ -3,43 +3,35 @@ import pool, { error500, inflate, mapKeysToBool } from "../../utils/db";
 import { controllers, onResult } from "../../utils/crud";
 import { MysqlError, Query } from "mysql";
 import { getManyQuery } from "./project.query";
+import { userQueryFn } from "../user/user.query";
 
 const makeOpenBool = mapKeysToBool("open");
 const inflateAndOpenBool = (data: Record<string, unknown>) =>
   inflate(makeOpenBool(data));
 
-export const getUsersByProject = (req: Request, res: Response) => {
+const getUsersByProject = (req: Request, res: Response): Query =>
   pool.query(
-    `
-    SELECT 
-    u.id,
-    u.user_id AS username,
-    JSON_OBJECT('first',
-            u.first_name,
-            'last',
-            u.last_name) AS name,
-    JSON_ARRAY(CASE u.user_type
-                WHEN 1 THEN 'admin'
-                WHEN 2 THEN 'admin'
-                WHEN 3 THEN 'user'
-                WHEN 4 THEN 'staff'
-            END) AS roles,
-    JSON_OBJECT('email', JSON_ARRAY(u.email)) AS contact,
-        u.restriction as restriction
-        from
-  roster r 
-  left join user u on r.student_id=u.id 
-  left join course_project cp on 
-    cp.course_id=r.course_id
-  left join project p on 
-    p.id=cp.project_id
-  where p.id=?
-  group by u.id;
-     `,
+    `SELECT 
+      u.id
+    FROM
+      roster r 
+      LEFT JOIN user u ON r.student_id = u.id 
+      LEFT JOIN course_project cp ON cp.course_id = r.course_id
+      LEFT JOIN project p ON p.id = cp.project_id
+    WHERE p.id = ?`,
     [req.params.id],
-    onResult({ req, res, dataMapFn: inflate }).read
+    (error, results) => {
+      if (error)
+        return res.status(500).json(error500(error, req.params.context));
+      if (results.length)
+        pool.query(
+          userQueryFn("WHERE u.id IN (?)"),
+          [(results as { id: number }[]).map(({ id }) => id)],
+          onResult({ req, res, dataMapFn: inflate }).read
+        );
+      else res.status(200).json({ data: [], context: req.query.context });
+    }
   );
-};
 
 export const getOneLocationAllotment = (req: Request, res: Response): Query =>
   pool.query(

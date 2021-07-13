@@ -121,10 +121,9 @@ async function initializeDatabase(error, responses) {
         first_name: first,
         last_name: last,
         email: email,
-        user_type: 1,
       },
     ],
-    then(insertSemester, {
+    then(insertAdminRole, {
       connection,
       first,
       last,
@@ -133,6 +132,21 @@ async function initializeDatabase(error, responses) {
       semesterEnd,
       log: "user added",
     })
+  );
+}
+
+function insertAdminRole(props) {
+  props.connection.query(
+    "INSERT INTO role (title) VALUES ('admin')",
+    then(insertUserRole, { ...props, log: "admin role added" })
+  );
+}
+
+function insertUserRole(props) {
+  props.connection.query(
+    "INSERT INTO user_role (user_id, role_id) VALUES (1, 1)",
+    then(insertSemester),
+    { ...props, log: "user has admin role" }
   );
 }
 
