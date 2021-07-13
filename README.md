@@ -7,7 +7,7 @@ This is the backend to a calendar app for scheduling events in locations.
 
 `yarn` to install dependencies.
 
-Create a .env file:
+Create a .env file with credentials for MySQL and email:
 
 ```
 PORT=3001
@@ -18,6 +18,9 @@ MYSQL_PASSWORD=password
 MYSQL_DATABASE=calendar
 MYSQL_BACKUP_DIR=/my/backup/dir
 NET_ID=username_to_login_with_for_development
+EMAIL_USER=user
+EMAIL_PASSWORD=password
+EMAIL_FROM="Booking App <admin@booking.app>"
 ```
 
 Optional values used by startup script:
@@ -62,6 +65,12 @@ All responses should have `res.locals.user` with basic user information and
 `res.locals.admin` will a boolean value indicataing that the user is an admin.
 
 See `src/utils/authorization.ts` for details.
+
+## Emailing
+
+Emailing uses nodemailer to send mail using the credentials defined in .env
+with `EMAIL_USER` and `EMAIL_PASSWORD`.
+Requires a SMTP server running locally.
 
 ## Run
 
