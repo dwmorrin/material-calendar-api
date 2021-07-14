@@ -526,7 +526,7 @@ CREATE TABLE `user` (
   `last_login` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `restriction` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
+  UNIQUE KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
