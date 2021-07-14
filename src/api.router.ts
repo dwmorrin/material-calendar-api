@@ -10,7 +10,7 @@ import locationRouter from "./resources/location/location.router";
 import mailRouter from "./utils/mailer";
 import projectRouter from "./resources/project/project.router";
 import reservationRouter from "./resources/reservation/reservation.router";
-import rosterRouter from "./utils/roster";
+import rosterRouter from "./utils/roster/roster.router";
 import semesterRouter from "./resources/semester/semester.router";
 import tagRouter from "./resources/tag/tag.router";
 import userRouter from "./resources/user/user.router";

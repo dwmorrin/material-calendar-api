@@ -1,7 +1,3 @@
-import { Request, Response, Router } from "express";
-import pool, { inflate } from "../utils/db";
-import { onResult } from "../utils/crud";
-
 const query = `
   SELECT
     JSON_OBJECT(
@@ -24,11 +20,4 @@ const query = `
     LEFT JOIN section s ON s.course_id = c.id
 `;
 
-const getMany = (req: Request, res: Response) =>
-  pool.query(query, onResult({ req, res, dataMapFn: inflate }).read);
-
-const router = Router();
-
-router.get("/", getMany);
-
-export default router;
+export default query;

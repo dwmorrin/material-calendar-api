@@ -3,7 +3,7 @@ import pool from "../../utils/db";
 import { controllers, onResult } from "../../utils/crud";
 import { Query } from "mysql";
 
-const query = `
+export const query = `
   SELECT
     c.id,
     c.title,
