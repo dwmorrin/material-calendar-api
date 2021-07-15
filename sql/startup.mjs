@@ -111,6 +111,7 @@ async function initializeDatabase(error, responses) {
     user: MYSQL_USER,
     password: MYSQL_PASSWORD,
     database: MYSQL_DATABASE,
+    multipleStatements: true,
   });
   connection.query(
     "INSERT INTO user SET ?",
@@ -123,7 +124,7 @@ async function initializeDatabase(error, responses) {
         email: email,
       },
     ],
-    then(insertAdminRole, {
+    then(insertRoles, {
       connection,
       first,
       last,
@@ -135,31 +136,32 @@ async function initializeDatabase(error, responses) {
   );
 }
 
-function insertAdminRole(props) {
+function insertRoles(props) {
+  const { results } = props;
+  const userId = results.insertId;
   props.connection.query(
-    "INSERT INTO role (title) VALUES ('admin')",
-    then(insertUserRole, { ...props, log: "admin role added" })
+    `INSERT INTO role (title) VALUES ('admin');
+     INSERT INTO role (title) VALUES ('user');`,
+    then(insertUserRole, { ...props, userId, log: "admin role added" })
   );
 }
 
 function insertUserRole(props) {
   props.connection.query(
     "INSERT INTO user_role (user_id, role_id) VALUES (1, 1)",
-    then(insertSemester),
-    { ...props, log: "user has admin role" }
+    then(insertSemester, { ...props, log: "user has admin role" })
   );
 }
 
 function insertSemester({
-  results,
   connection,
   first,
   last,
   semesterTitle,
   semesterStart,
   semesterEnd,
+  userId,
 }) {
-  const userId = results.insertId;
   connection.query(
     "INSERT INTO semester SET ?",
     [
@@ -203,6 +205,7 @@ function insertWalkInProject({ connection, first, last, userId }) {
         group_hours: 999,
         open: 1,
         start: "2000-01-01",
+        book_start: "2000-01-01",
         end: "9999-12-31",
         group_size: 1,
       },
