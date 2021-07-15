@@ -5,9 +5,10 @@ export const getManyQuery = `
       IFNULL(
         (
           SELECT JSON_OBJECT('id', c.id, 'title', c.title)
-          FROM course_project cp
+          FROM section_project sp
+          INNER JOIN section s ON s.id = sp.section_id
           JOIN course c
-          WHERE cp.project_id = p.id AND cp.course_id = c.id
+          WHERE sp.project_id = p.id AND s.course_id = c.id
         ),
         JSON_OBJECT('id', -1, 'title', '')
       ) AS course,

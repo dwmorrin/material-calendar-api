@@ -16,8 +16,8 @@ export const userCourseQuery = (id = ""): string => `
 
 export const userProjectQuery = (id = ""): string => `
   (${project.getManyQuery}
-    INNER JOIN course_project cp ON cp.project_id = p.id
-    INNER JOIN roster r ON r.course_id = cp.course_id
+    INNER JOIN section_project sp ON sp.project_id = p.id
+    INNER JOIN roster r ON r.section_id = sp.section_id
     INNER JOIN user u ON u.id = r.student_id 
   WHERE u.id = "${id}"
   group by p.id)

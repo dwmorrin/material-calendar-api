@@ -15,9 +15,9 @@ const getUsersByProject = (req: Request, res: Response): Query =>
       u.id
     FROM
       roster r 
-      LEFT JOIN user u ON r.student_id = u.id 
-      LEFT JOIN course_project cp ON cp.course_id = r.course_id
-      LEFT JOIN project p ON p.id = cp.project_id
+      INNER JOIN user u ON r.student_id = u.id 
+      INNER JOIN section_project sp ON sp.section_id = r.course_id
+      INNER JOIN project p ON p.id = sp.project_id
     WHERE p.id = ?`,
     [req.params.id],
     (error, results) => {
@@ -56,7 +56,7 @@ export const getMany = (req: Request, res: Response): void => {
 
 export const createOrUpdateOne = (req: Request, res: Response): void => {
   const {
-    course,
+    section, //! client needs to update for this
     end,
     groupAllottedHours,
     groupSize,
@@ -97,7 +97,7 @@ export const createOrUpdateOne = (req: Request, res: Response): void => {
     if (error) return onError(error);
     const projectId = creating ? results.insertId : id;
     const projectLocations = locationHours.map(locationHoursMap(projectId));
-    if (Number(course?.id) > 0) {
+    if (Number(section?.id) > 0) {
       createCourseProjectAndProjectLocations(projectId, projectLocations);
     } else {
       if (locationHours.length)
@@ -111,8 +111,8 @@ export const createOrUpdateOne = (req: Request, res: Response): void => {
     projectLocations: { [k: string]: string | number }[]
   ) {
     pool.query(
-      `${creating ? "INSERT" : "REPLACE"} INTO course_project SET ?`,
-      [{ course_id: course.id, project_id: projectId }],
+      `${creating ? "INSERT" : "REPLACE"} INTO section_project SET ?`,
+      [{ section_id: section.id, project_id: projectId }],
       (error) => {
         if (error) return onError(error);
         if (locationHours.length)

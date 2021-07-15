@@ -32,6 +32,12 @@ interface Course {
   catalogId: string;
 }
 
+interface CourseSectionProject {
+  course: { id?: number; title: string };
+  section: { id?: number; title: string };
+  project: { id?: number; title: string };
+}
+
 /**
  * Holds intermediate data for the roster import.
  * As data is inserted, any missing IDs are updated.
@@ -69,9 +75,10 @@ function setup(req: Request, res: Response, next: NextFunction): void {
   };
   res.locals.inserts = {
     courses: [],
-    projects: [],
-    users: [],
     sections: [],
+    projects: [],
+    courseSectionProjects: [],
+    users: [],
     roles: [],
   };
   res.locals.updates = {
@@ -216,11 +223,23 @@ function processInputRecords(
   }
 
   const projects = res.locals.projects as { title: string }[];
-  if (!(Project in res.locals.seen.project)) {
-    res.locals.seen.project[Project] = true;
+  const projectKey = Project + Course + Section;
+  if (!(projectKey in res.locals.seen.project)) {
+    res.locals.seen.project[projectKey] = true;
     const project = projects.find(({ title }) => title === Project);
     // if project not found, create new project
-    if (!project) res.locals.inserts.projects.push({ title: Project });
+    if (!project)
+      res.locals.inserts.projects.push({
+        title: Project,
+        section: { title: Section },
+        course: { title: Course },
+      });
+    res.locals.inserts.courseSectionProjects.push({
+      course: { title: Course },
+      section: { title: Section },
+      project: { title: Project },
+    });
+    // we don't have enough info to update projects
   }
 
   // create pending roster records
@@ -269,6 +288,52 @@ function processInserts(req: Request, res: Response, next: NextFunction): void {
           if (r.course.title === course.title) r.course.id = result.insertId;
           return r;
         });
+        // update any projects that reference this course
+        res.locals.inserts.courseSectionProjects = (
+          res.locals.inserts.courseSectionProjects as CourseSectionProject[]
+        ).map((csp) => {
+          if (csp.course.title === course.title)
+            csp.course.id = result.insertId;
+          return csp;
+        });
+        return processInserts(req, res, next);
+      }
+    );
+  } else if (res.locals.inserts.sections.length) {
+    const section = res.locals.inserts.sections.shift();
+    // this query requires all courses to be inserted first
+    pool.query(
+      `INSERT INTO section SET title = ?, instructor = ?, course_id = (
+        SELECT id FROM course WHERE title = ?
+      )`,
+      [section.title, section.instructor, section.courseTitle],
+      (error, result) => {
+        if (error)
+          return next(
+            makeFriendlyMySQLError(
+              error,
+              `inserting section ${section.title} ${section.instructor}`
+            )
+          );
+        // update all the pending records with the new section id
+        res.locals.rosterRecords = (
+          res.locals.rosterRecords as PendingRosterRecord[]
+        ).map((r) => {
+          if (r.course.title === section.courseTitle)
+            r.course.section.id = result.insertId;
+          return r;
+        });
+        // update any projects that reference the section
+        res.locals.inserts.courseSectionProjects = (
+          res.locals.inserts.courseSectionProjects as CourseSectionProject[]
+        ).map((csp) => {
+          if (
+            csp.course.title === section.courseTitle &&
+            csp.section.title === section.title
+          )
+            csp.section.id = result.insertId;
+          return csp;
+        });
         return processInserts(req, res, next);
       }
     );
@@ -290,12 +355,47 @@ function processInserts(req: Request, res: Response, next: NextFunction): void {
           open: true,
         },
       ],
-      (error) => {
+      (error, result) => {
         if (error)
           return next(
             makeFriendlyMySQLError(error, `inserting project ${project.title}`)
           );
-        // projects are independent of roster records; nothing to do here
+        // update course/section/project records with the new project id
+        const { course, section } = project;
+        res.locals.inserts.courseSectionProjects = (
+          res.locals.inserts.courseSectionProjects as CourseSectionProject[]
+        ).map((csp) => {
+          if (
+            csp.course.title === course.title &&
+            csp.section.title === section.title &&
+            csp.project.title === project.title
+          )
+            csp.project.id = result.insertId;
+          return csp;
+        });
+        return processInserts(req, res, next);
+      }
+    );
+  } else if (res.locals.inserts.courseSectionProjects.length) {
+    const csp = res.locals.inserts.courseSectionProjects.shift();
+    pool.query(
+      `INSERT INTO section_project SET ?`,
+      [
+        {
+          project_id: csp.project.id,
+          section_id: csp.section.id,
+        },
+      ],
+      (error) => {
+        if (error) {
+          const { title, course, section } = csp;
+          return next(
+            makeFriendlyMySQLError(
+              error,
+              `linking ${course.title}[${section.title}] to ${title}`
+            )
+          );
+        }
         return processInserts(req, res, next);
       }
     );
@@ -346,32 +446,6 @@ function processInserts(req: Request, res: Response, next: NextFunction): void {
               `inserting role for user ${role.username}`
             )
           );
-        return processInserts(req, res, next);
-      }
-    );
-  } else if (res.locals.inserts.sections.length) {
-    const section = res.locals.inserts.sections.shift();
-    // this query requires all courses to be inserted first
-    pool.query(
-      `INSERT INTO section SET title = ?, instructor = ?, course_id = (
-        SELECT id FROM course WHERE title = ?
-      )`,
-      [section.title, section.instructor, section.courseTitle],
-      (error, result) => {
-        if (error)
-          return next(
-            makeFriendlyMySQLError(
-              error,
-              `inserting section ${section.title} ${section.instructor}`
-            )
-          );
-        res.locals.rosterRecords = (
-          res.locals.rosterRecords as PendingRosterRecord[]
-        ).map((r) => {
-          if (r.course.title === section.courseTitle)
-            r.course.section.id = result.insertId;
-          return r;
-        });
         return processInserts(req, res, next);
       }
     );

@@ -37,7 +37,24 @@ export const removeOneGroup = (req: Request, res: Response): Query =>
 
 export const createGroupFromInvitation = (req: Request, res: Response): Query =>
   pool.query(
-    "insert into rm_group (project_id, course_id, creator, status, group_type, group_size) select invitation.project_id,course.id,invitation.invitor as creator,1 as status,1 as group_type,count(invitee.accepted)+1 as group_size from invitation left join invitee on invitation.id=invitee.invitation_id left join project on invitation.project_id=project.id left join course_project on project.id=course_project.project_id left join course on course_project.course_id=course.id left join user on invitation.invitor=user.id where invitation.id=?",
+    `INSERT INTO rm_group (
+      project_id, course_id, creator, status, group_type, group_size
+    )
+    SELECT
+      invitation.project_id,
+      course.id,
+      invitation.invitor as creator,
+      1 as status,
+      1 as group_type,
+      count(invitee.accepted)+1 as group_size
+    FROM invitation
+      INNER JOIN invitee ON invitation.id = invitee.invitation_id
+      INNER JOIN project ON invitation.project_id = project.id
+      INNER JOIN section_project ON project.id = section_project.project_id
+      INNER JOIN section ON section_project.section_id = section.id
+      INNER JOIN course ON section.course_id = course.id
+      INNER JOIN user ON invitation.invitor = user.id
+    WHERE invitation.id = ?`,
     [req.params.invitationId],
     onResult({ req, res }).create
   );
