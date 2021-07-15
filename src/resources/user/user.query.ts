@@ -1,17 +1,19 @@
 import * as project from "../project/project.query";
 
 export const userCourseQuery = (id = ""): string => `
-  SELECT
-    c.id,
-    c.title
-  FROM
-    course c
-    INNER JOIN roster r ON r.course_id = c.id
-    INNER JOIN user u ON u.id = r.student_id
-  WHERE
-    u.id = "${id}"
-  GROUP BY
-    c.title;
+SELECT
+  c.id,
+  c.title,
+  c.catalog_id as catalogId,
+  s.title as section,
+  s.instructor
+FROM
+  user u
+    INNER JOIN roster r ON r.student_id = u.id
+    INNER JOIN course c ON r.course_id = c.id
+    INNER JOIN section s ON r.section_id = s.id
+WHERE
+  u.id = '${id}'
 `;
 
 export const userProjectQuery = (id = ""): string => `

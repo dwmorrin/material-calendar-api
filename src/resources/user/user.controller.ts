@@ -4,7 +4,7 @@ import { onResult } from "../../utils/crud";
 import { userCourseQuery, userProjectQuery, userQueryFn } from "./user.query";
 import { Query } from "mysql";
 
-export const getCourses = (req: Request, res: Response) =>
+export const getCourses = (req: Request, res: Response): Query =>
   pool.query(
     userCourseQuery(req.params.id),
     [req.params.id],
