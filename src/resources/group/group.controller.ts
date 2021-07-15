@@ -61,7 +61,19 @@ export const createGroupFromInvitation = (req: Request, res: Response): Query =>
 
 export const joinGroup = (req: Request, res: Response): Query =>
   pool.query(
-    "replace into student_group (SELECT invitee.invitee as student_id, ? as group_id FROM invitee left join invitation on invitation.id=invitee.invitation_id where invitation_id=? and invitee.accepted=1 UNION DISTINCT SELECT invitation.invitor AS student_id, ? as group_id FROM invitation where invitation.id=?)",
+    `REPLACE INTO student_group (
+      SELECT
+        invitee.invitee AS student_id,
+        ? AS group_id
+      FROM invitee
+        LEFT JOIN invitation ON invitation.id = invitee.invitation_id
+      WHERE
+        invitation_id = ? AND invitee.accepted = 1
+      UNION DISTINCT SELECT
+        invitation.invitor AS student_id,
+        ? AS group_id
+      FROM invitation where invitation.id = ?
+    )`,
     [
       req.params.groupId,
       req.params.invitationId,
