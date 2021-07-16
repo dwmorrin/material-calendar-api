@@ -12,6 +12,7 @@ import { config } from "dotenv";
 import dotenvExpand from "dotenv-expand";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenvExpand(config({ path: join(__dirname, "..", ".env") }));
+import makeSequencer from "./makeSequencer.mjs";
 
 // get mysql connection info from .env
 const {
@@ -68,16 +69,6 @@ if (
  */
 async function initializeDatabase(error, responses) {
   if (error) fatal(error);
-  const {
-    user,
-    password,
-    first,
-    last,
-    email,
-    semesterTitle,
-    semesterStart,
-    semesterEnd,
-  } = responses;
   const mysqlCli = `mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD}`;
   // using mysql utility to prepare database for mysqljs lib
   const mysqlCmd = (statement) => `${mysqlCli} -e "${statement}"`;
@@ -113,6 +104,23 @@ async function initializeDatabase(error, responses) {
     database: MYSQL_DATABASE,
     multipleStatements: true,
   });
+
+  makeSequencer(connection, responses)(
+    insertUser,
+    insertRoles,
+    insertUserRole,
+    insertSemester,
+    insertActiveSemester,
+    insertWalkInProject,
+    insertProjectGroup,
+    connectUserToGroup,
+    end,
+    errorHandler
+  );
+}
+
+function insertUser(connection, state, next) {
+  const { user, password, first, last, email } = state;
   connection.query(
     "INSERT INTO user SET ?",
     [
@@ -124,44 +132,40 @@ async function initializeDatabase(error, responses) {
         email: email,
       },
     ],
-    then(insertRoles, {
-      connection,
-      first,
-      last,
-      semesterTitle,
-      semesterStart,
-      semesterEnd,
-      log: "user added",
-    })
+    (err, results) => {
+      if (err) return next(err);
+      state.userId = results.insertId;
+      console.log("user added");
+      next();
+    }
   );
 }
 
-function insertRoles(props) {
-  const { results } = props;
-  const userId = results.insertId;
-  props.connection.query(
+function insertRoles(connection, state, next) {
+  connection.query(
     `INSERT INTO role (title) VALUES ('admin');
      INSERT INTO role (title) VALUES ('user');`,
-    then(insertUserRole, { ...props, userId, log: "admin role added" })
+    (err) => {
+      if (err) return next(err);
+      console.log("roles added");
+      next();
+    }
   );
 }
 
-function insertUserRole(props) {
-  props.connection.query(
+function insertUserRole(connection, state, next) {
+  connection.query(
     "INSERT INTO user_role (user_id, role_id) VALUES (1, 1)",
-    then(insertSemester, { ...props, log: "user has admin role" })
+    (err) => {
+      if (err) return next(err);
+      console.log("user has admin role");
+      next();
+    }
   );
 }
 
-function insertSemester({
-  connection,
-  first,
-  last,
-  semesterTitle,
-  semesterStart,
-  semesterEnd,
-  userId,
-}) {
+function insertSemester(connection, state, next) {
+  const { semesterTitle, semesterStart, semesterEnd } = state;
   connection.query(
     "INSERT INTO semester SET ?",
     [
@@ -171,32 +175,29 @@ function insertSemester({
         end: semesterEnd,
       },
     ],
-    then(insertActiveSemester, {
-      connection,
-      userId,
-      first,
-      last,
-      log: "semester added",
-    })
+    (err, results) => {
+      if (err) return next(err);
+      state.semesterId = results.insertId;
+      console.log("semester added");
+      next();
+    }
   );
 }
 
-function insertActiveSemester({ results, connection, first, last, userId }) {
-  const semesterId = results.insertId;
+function insertActiveSemester(connection, state, next) {
+  const { semesterId } = state;
   connection.query(
     "INSERT INTO active_semester SET ?",
     [{ semester_id: semesterId }],
-    then(insertWalkInProject, {
-      connection,
-      userId,
-      first,
-      last,
-      log: "semester active",
-    })
+    (err) => {
+      if (err) return next(err);
+      console.log("active semester added");
+      next();
+    }
   );
 }
 
-function insertWalkInProject({ connection, first, last, userId }) {
+function insertWalkInProject(connection, state, next) {
   connection.query(
     "INSERT INTO project SET ?",
     [
@@ -210,43 +211,61 @@ function insertWalkInProject({ connection, first, last, userId }) {
         group_size: 1,
       },
     ],
-    then(insertProjectGroup, {
-      connection,
-      first,
-      last,
-      userId,
-      log: "walk-in project added",
-    })
+    (err, results) => {
+      if (err) return next(err);
+      state.walkInProjectId = results.insertId;
+      console.log("walk-in project added");
+      next();
+    }
   );
 }
 
-function insertProjectGroup({ results, connection, first, last, userId }) {
-  const projectId = results.insertId;
+function insertProjectGroup(connection, state, next) {
+  const { first, last, walkInProjectId } = state;
   connection.query(
     "INSERT INTO rm_group SET ?",
     [
       {
         name: `${first} ${last}`,
-        project_id: projectId,
+        project_id: walkInProjectId,
         status: 1,
         group_size: 1,
       },
     ],
-    then(connectUserToGroup, {
-      connection,
-      userId,
-      log: "user's walk-in group added",
-    })
+    (err, results) => {
+      if (err) return next(err);
+      state.groupId = results.insertId;
+      console.log("project group added");
+      next();
+    }
   );
 }
 
-function connectUserToGroup({ results, connection, userId }) {
-  const groupId = results.insertId;
+function connectUserToGroup(connection, state, next) {
+  const { userId, groupId } = state;
   connection.query(
     "INSERT INTO student_group SET ? ",
     [{ student_id: userId, group_id: groupId }],
-    then(() => connection.end(), { log: "user connected to walk-in group" })
+    (err) => {
+      if (err) return next(err);
+      console.log("user added to group");
+      next();
+    }
   );
+}
+
+function end(connection, state, next) {
+  connection.end();
+  console.log("DONE (dump of state follows)");
+  console.log(JSON.stringify(state, null, 2));
+}
+
+// just like express, error handler must have arity of 4
+function errorHandler(err, connection, state, next) {
+  connection.end();
+  console.error("Caught an error. Aborting");
+  console.error(state);
+  fatal(err);
 }
 
 function encrypt(plaintext) {
@@ -256,12 +275,4 @@ function encrypt(plaintext) {
 function fatal(error) {
   console.error(error);
   process.exit(1);
-}
-
-function then(cb, props) {
-  return (error, results) => {
-    if (error) fatal(error);
-    if (props.log) console.log(props.log);
-    cb({ ...props, results });
-  };
 }
