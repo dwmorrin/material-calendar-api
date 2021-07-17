@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import dotenvExpand from "dotenv-expand";
 dotenvExpand(dotenv.config({ path: ".env" }));
 
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 
 import apiRouter from "./api.router";
@@ -36,6 +36,29 @@ app.use((req, res) => {
       code: 404,
       message: `nothing found for ${req.method} ${req.originalUrl}`,
     },
+  });
+});
+
+// catch unhandled exceptions
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((error: Error, req: Request, res: Response, _: NextFunction): void => {
+  // eslint-disable-next-line no-console
+  console.error(
+    [
+      "--- UNHANDLED EXCEPTION ---",
+      "** Error message: **",
+      error.message,
+      "** Error stack: **",
+      error.stack,
+      "--- END UNHANDLED EXCEPTION ---",
+    ].join("\n")
+  );
+  res.status(500).json({
+    error:
+      process.env.NODE_ENV === "development"
+        ? { message: error.message, stack: error.stack }
+        : { message: "Something went wrong" },
+    context: req.params.context,
   });
 });
 
