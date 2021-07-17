@@ -5,14 +5,20 @@ import { fileURLToPath } from "url";
 import { createConnection } from "mysql";
 import { prompt, schema } from "./startup-prompt.mjs";
 import { genSaltSync, hashSync } from "bcrypt";
-import { promisify } from "util";
-import { exec as _exec } from "child_process";
-const exec = promisify(_exec);
+import { exec } from "child_process";
 import { config } from "dotenv";
 import dotenvExpand from "dotenv-expand";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenvExpand(config({ path: join(__dirname, "..", ".env") }));
-import makeSequencer from "./makeSequencer.mjs";
+import makeSequencer from "./make-sequencer.mjs";
+
+/**
+ * my.cnf should have the following:
+ *   default_authentication_plugin=mysql_native_password
+ * if not, then use the query below if you get the following error:
+ * errno 1251 ER_NOT_SUPPORT_AUTH_MODE
+ *   ALTER USER '${MYSQL_USER}'@'%' IDENTIFIED WITH mysql_native_password by '${MYSQL_PASSWORD}'
+ */
 
 // get mysql connection info from .env
 const {
@@ -32,6 +38,10 @@ const {
 if (![MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE].every(String)) {
   fatal(".env variables not set");
 }
+
+// setup some strings to call mysql commands
+const mysqlCli = `mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD}`;
+const mysqlCmd = (statement) => `${mysqlCli} -e "${statement}"`;
 
 if (
   [
@@ -55,57 +65,32 @@ if (
     semesterStart: SEMESTER_START,
     semesterEnd: SEMESTER_END,
   });
-} else
+} else {
   try {
     prompt.get(schema, initializeDatabase);
   } catch (error) {
     fatal(error);
   }
+}
 
 /**
  * @param error error from prompt
  * @param responses user's responses from prompt
- * @throws await exec throws errors if exit code not 0
  */
-async function initializeDatabase(error, responses) {
+function initializeDatabase(error, responses) {
   if (error) fatal(error);
-  const mysqlCli = `mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD}`;
-  // using mysql utility to prepare database for mysqljs lib
-  const mysqlCmd = (statement) => `${mysqlCli} -e "${statement}"`;
-
-  /**
-   * my.cnf should have the following:
-   *   default_authentication_plugin=mysql_native_password
-   * if not, then uncomment the lines below if you get the following error:
-   * errno 1251 ER_NOT_SUPPORT_AUTH_MODE
-   */
-  // await exec(
-  //   mysqlCmd(
-  //     `ALTER USER '${MYSQL_USER}'@'%' IDENTIFIED WITH mysql_native_password by '${MYSQL_PASSWORD}'`
-  //   )
-  // );
-
-  // convenient to run this command here; could be done with mysqljs lib
-  await exec(mysqlCmd(`DROP DATABASE IF EXISTS ${MYSQL_DATABASE}`));
-  await exec(mysqlCmd(`CREATE DATABASE ${MYSQL_DATABASE}`));
-  await exec(
-    `${mysqlCli} ${MYSQL_DATABASE} < "${join(
-      __dirname,
-      "material_calendar.sql"
-    )}"`
-  );
-
-  // now we should be able to test/use the mysqljs library
-  // and add an new entry to the "user" table
-  const connection = createConnection({
-    host: MYSQL_HOST,
-    user: MYSQL_USER,
-    password: MYSQL_PASSWORD,
-    database: MYSQL_DATABASE,
-    multipleStatements: true,
-  });
-
-  makeSequencer(connection, responses)(
+  makeSequencer(
+    createConnection({
+      host: MYSQL_HOST,
+      user: MYSQL_USER,
+      password: MYSQL_PASSWORD,
+      database: MYSQL_DATABASE,
+    }),
+    responses
+  )(
+    execMySqlCmd(`DROP DATABASE IF EXISTS ${MYSQL_DATABASE}`),
+    execMySqlCmd(`CREATE DATABASE ${MYSQL_DATABASE}`),
+    execMySqlImport("material_calendar.sql"),
     insertUser,
     insertRoles,
     insertUserRole,
@@ -118,6 +103,31 @@ async function initializeDatabase(error, responses) {
     errorHandler
   );
 }
+
+//---- LIBRARY FUNCTIONS -----
+
+//---- exec utilities -----
+
+function checkError(next) {
+  return (err) => {
+    if (err) return next(err);
+    next();
+  };
+}
+
+function execMySqlCmd(cmd) {
+  return (_, __, next) => exec(mysqlCmd(cmd), checkError(next));
+}
+
+function execMySqlImport(file) {
+  return (_, __, next) =>
+    exec(
+      `${mysqlCli} ${MYSQL_DATABASE} < "${join(__dirname, file)}"`,
+      checkError(next)
+    );
+}
+
+//---- mysql queries -----
 
 function insertUser(connection, state, next) {
   const { user, password, first, last, email } = state;
@@ -141,10 +151,9 @@ function insertUser(connection, state, next) {
   );
 }
 
-function insertRoles(connection, state, next) {
+function insertRoles(connection, _, next) {
   connection.query(
-    `INSERT INTO role (title) VALUES ('admin');
-     INSERT INTO role (title) VALUES ('user');`,
+    "INSERT INTO role (title) VALUES ('admin'), ('user')",
     (err) => {
       if (err) return next(err);
       console.log("roles added");
@@ -153,7 +162,7 @@ function insertRoles(connection, state, next) {
   );
 }
 
-function insertUserRole(connection, state, next) {
+function insertUserRole(connection, _, next) {
   connection.query(
     "INSERT INTO user_role (user_id, role_id) VALUES (1, 1)",
     (err) => {
@@ -254,19 +263,21 @@ function connectUserToGroup(connection, state, next) {
   );
 }
 
-function end(connection, state, next) {
+function end(connection, state) {
   connection.end();
   console.log("DONE (dump of state follows)");
   console.log(JSON.stringify(state, null, 2));
 }
 
 // just like express, error handler must have arity of 4
-function errorHandler(err, connection, state, next) {
+function errorHandler(err, connection, state, _) {
   connection.end();
   console.error("Caught an error. Aborting");
   console.error(state);
   fatal(err);
 }
+
+//--- utilities -----
 
 function encrypt(plaintext) {
   return hashSync(plaintext, genSaltSync(10));
