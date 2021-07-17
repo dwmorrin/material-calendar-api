@@ -1,3 +1,5 @@
+/* eslint no-console: 0 */
+
 // import the database schema and create the initial admin user
 
 import { dirname, join } from "path";
@@ -270,6 +272,7 @@ function end(connection, state) {
 }
 
 // just like express, error handler must have arity of 4
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function errorHandler(err, connection, state, _) {
   connection.end();
   console.error("Caught an error. Aborting");
