@@ -86,7 +86,7 @@ export const joinGroup = (req: Request, res: Response): Query =>
 export const leaveGroup = (req: Request, res: Response): Query =>
   pool.query(
     "DELETE FROM student_group WHERE student_id=? AND group_id=?",
-    [req.params.groupId, req.params.groupId],
+    [req.params.student_id, req.params.groupId],
     onResult({ req, res }).delete
   );
 
