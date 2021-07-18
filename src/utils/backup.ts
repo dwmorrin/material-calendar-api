@@ -14,34 +14,34 @@
 import fs from "fs";
 import path from "path";
 import { exec, spawn } from "child_process";
-import { Request, Response, Router } from "express";
+import { Router } from "express";
+import { EC } from "./types";
 
-const getBackupConfig = () => {
+const withBackupConfig: EC = (_, res, next) => {
   const {
     MYSQL_BACKUP_DIR = "",
     MYSQL_USER = "",
     MYSQL_PASSWORD = "",
     MYSQL_DATABASE = "",
   } = process.env;
+  const configError = "backup not configured; contact admin";
   if (
     [MYSQL_BACKUP_DIR, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE].some(
       (string) => string === ""
     )
   )
-    return null;
-  if (!fs.existsSync(MYSQL_BACKUP_DIR)) return null;
-  return {
+    return next(configError);
+  if (!fs.existsSync(MYSQL_BACKUP_DIR)) return next(configError);
+  res.locals.config = {
     directory: MYSQL_BACKUP_DIR,
     user: MYSQL_USER,
     password: MYSQL_PASSWORD,
     database: MYSQL_DATABASE,
   };
+  next();
 };
 
 //-------- backup.controller ---- //
-
-const error500 = (message: string) => ({ code: 500, message });
-const configError = error500("backup not configured; contact admin");
 
 /**
  * getTimestamp returns a "YYYY-mm-dd_HH:MM:SS" format string in local time
@@ -53,38 +53,25 @@ const getTimestamp = () => {
     .replace("T", "_")
     .split(".")[0];
 };
-const createBackup = (_: Request, res: Response) => {
-  const config = getBackupConfig();
-  if (!config) {
-    return res.status(500).json({ error: configError });
-  }
+
+const createBackup: EC = (_, res, next) => {
+  const { database, directory, password, user } = res.locals.config;
   const filename = `db_backup_${getTimestamp()}.sql`;
-  const wstream = fs.createWriteStream(path.join(config.directory, filename));
-  const mysqldump = spawn("mysqldump", [
+  const stream = fs.createWriteStream(path.join(directory, filename));
+  const schemaFile = spawn("mysqldump", [
     "--single-transaction",
-    `-u${config.user}`,
-    `-p${config.password}`,
-    config.database,
+    `-u${user}`,
+    `-p${password}`,
+    database,
   ]);
 
-  mysqldump.stdout
-    .pipe(wstream)
-    .on("finish", () => {
-      getListOfBackups(_, res);
-    })
-    .on("error", (err) => {
-      res.status(500).json(err);
-    });
+  schemaFile.stdout.pipe(stream).on("finish", next).on("error", next);
 };
 
-const getBackup = (req: Request, res: Response) => {
-  const config = getBackupConfig();
-  if (!config) {
-    return res.status(500).json({ error: configError });
-  }
-
+const getBackup: EC = (req, res) => {
+  const { directory } = res.locals.config;
   const { filename = "" } = req.params;
-  const filepath = path.join(config.directory, filename);
+  const filepath = path.join(directory, filename);
   if (filename === "" || !fs.existsSync(filepath)) {
     return res.status(404).json({
       error: {
@@ -96,14 +83,10 @@ const getBackup = (req: Request, res: Response) => {
   res.download(filepath);
 };
 
-const getListOfBackups = (_: Request, res: Response) => {
-  const config = getBackupConfig();
-  if (!config) {
-    return res.status(500).json({ error: configError });
-  }
-
-  fs.readdir(config.directory, (err, files) => {
-    if (err) return res.status(500).json(err);
+const getListOfBackups: EC = (_, res, next) => {
+  const { directory } = res.locals.config;
+  fs.readdir(directory, (err, files) => {
+    if (err) return next(err);
     return res.status(200).json({ data: files });
   });
 };
@@ -114,15 +97,12 @@ const getListOfBackups = (_: Request, res: Response) => {
  * injection attack.
  * WARNING: this runs the commands DROP DATABASE, CREATE DATABASE then imports
  * the file.  It does not backup first and just sends back err, stdout, stderr
- * for the client to figure out what to do next in case of catostrophic failure.
+ * for the client to figure out what to do next in case of catastrophic failure.
  */
-const restoreFromFilename = (req: Request, res: Response) => {
-  const config = getBackupConfig();
-  if (!config) {
-    return res.status(500).json({ error: configError });
-  }
-  fs.readdir(config.directory, (err, files) => {
-    if (err) return res.status(500).json(err);
+const restoreFromFilename: EC = (req, res, next) => {
+  const { directory } = res.locals.config;
+  fs.readdir(directory, (err, files) => {
+    if (err) return next(err);
     const { filename } = req.params;
     const foundFilename = files.find((f) => f === filename);
     if (!filename || !foundFilename) {
@@ -133,31 +113,59 @@ const restoreFromFilename = (req: Request, res: Response) => {
         },
       });
     }
-    const { user, password, database, directory } = config;
-    const filepath = path.join(directory, foundFilename);
-    const mysqlUserPasswordString = `mysql -u${user} -p${password}`;
-    const dropDbString = `${mysqlUserPasswordString} -e 'DROP DATABASE ${database}'`;
-    const createDbString = `${mysqlUserPasswordString} -e 'CREATE DATABASE ${database}'`;
-    const restoreDbString = `${mysqlUserPasswordString} ${database} < ${filepath}`;
-    exec(dropDbString, (err, stdout, stderr) => {
-      if (err) return res.status(500).json({ err, stdout, stderr });
-      exec(createDbString, (err, stdout, stderr) => {
-        if (err) return res.status(500).json({ err, stdout, stderr });
-        exec(restoreDbString, (err, stdout, stderr) => {
-          if (err) return res.status(500).json({ err, stdout, stderr });
-          res.status(201).json({ data: { stdout, stderr } });
-        });
-      });
-    });
+    res.locals.filename = filename;
+    next();
   });
+};
+
+const execDropDatabase: EC = (_, res, next) => {
+  const { user, password, database } = res.locals.config;
+  exec(
+    `mysql -u${user} -p${password} -e 'DROP DATABASE ${database}'`,
+    (err) => {
+      if (err) return next(err);
+      next();
+    }
+  );
+};
+
+const execCreateDatabase: EC = (_, res, next) => {
+  const { user, password, database } = res.locals.config;
+  exec(
+    `mysql -u${user} -p${password} -e 'CREATE DATABASE ${database}'`,
+    (err) => {
+      if (err) return next(err);
+      next();
+    }
+  );
+};
+
+const execRestoreDatabase: EC = (_, res, next) => {
+  const { user, password, database, directory } = res.locals.config;
+  const filepath = path.join(directory, res.locals.filename);
+  exec(
+    `mysql -u${user} -p${password} ${database} < ${filepath}`,
+    (err, stdout, stderr) => {
+      if (err) return next(err);
+      res.status(201).json({ data: { stdout, stderr } });
+    }
+  );
 };
 
 //----- backup.router -----//
 const router = Router();
 
+router.use(withBackupConfig);
+
 router.get("/", getListOfBackups);
 router.get("/:filename", getBackup);
-router.post("/", createBackup);
-router.post("/restore/:filename", restoreFromFilename);
+router.post("/", createBackup, getListOfBackups);
+router.post(
+  "/restore/:filename",
+  restoreFromFilename,
+  execDropDatabase,
+  execCreateDatabase,
+  execRestoreDatabase
+);
 
 export default router;

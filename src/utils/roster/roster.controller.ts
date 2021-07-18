@@ -1,10 +1,9 @@
-import { Request, Response } from "express";
-import pool, { inflate } from "../db";
-import { onResult } from "../crud";
+import pool from "../db";
+import { addResultsToResponse } from "../crud";
 import query from "./roster.query";
-import { Query } from "mysql";
+import { EC } from "../types";
 
-const getMany = (req: Request, res: Response): Query =>
-  pool.query(query, onResult({ req, res, dataMapFn: inflate }).read);
+const getMany: EC = (_, res, next) =>
+  pool.query(query, addResultsToResponse(res, next));
 
 export default { getMany };

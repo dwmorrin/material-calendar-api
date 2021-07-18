@@ -88,6 +88,13 @@ const pool = mysql.createPool({
   user: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASSWORD,
   database: process.env.MYSQL_DATABASE,
+  typeCast(field, next) {
+    if (field.type === "TINY" && field.length === 1) {
+      return field.string() === "1"; // 1 = true, 0 = false
+    } else {
+      return next();
+    }
+  },
 });
 
 export default pool;

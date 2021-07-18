@@ -1,6 +1,6 @@
-import { Request, Response } from "express";
-import pool, { error500, inflate } from "../../utils/db";
-import { controllers, onResult } from "../../utils/crud";
+import pool from "../../utils/db";
+import { controllers, addResultsToResponse } from "../../utils/crud";
+import { EC } from "../../utils/types";
 
 const query = `
   SELECT
@@ -15,24 +15,22 @@ const query = `
   LEFT JOIN category c ON tag.category = c.id
 `;
 
-export const getMany = (req: Request, res: Response) =>
-  pool.query(query, onResult({ req, res, dataMapFn: inflate }).read);
+export const getMany: EC = (_, res, next) =>
+  pool.query(query, addResultsToResponse(res, next));
 
-export const getByCategory = (req: Request, res: Response) => {
+export const getByCategory: EC = (req, res, next) =>
   pool.query(
     query + "WHERE category.category = ?",
     [req.params.id],
-    onResult({ req, res, dataMapFn: inflate, take: 1 }).read
+    addResultsToResponse(res, next, { one: true })
   );
-};
 
-export const getBySubCategory = (req: Request, res: Response) => {
+export const getBySubCategory: EC = (req, res, next) =>
   pool.query(
     query + "WHERE category.sub_category = ?",
     [req.params.id],
-    onResult({ req, res, dataMapFn: inflate, take: 1 }).read
+    addResultsToResponse(res, next, { one: true })
   );
-};
 
 export default {
   ...controllers("tag", "id"),

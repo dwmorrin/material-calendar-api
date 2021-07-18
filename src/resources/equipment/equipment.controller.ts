@@ -1,15 +1,17 @@
-import { Request, Response } from "express";
-import { controllers, onResult } from "../../utils/crud";
-import pool, { inflate } from "../../utils/db";
+import { controllers, addResultsToResponse } from "../../utils/crud";
+import pool from "../../utils/db";
+import { EC } from "../../utils/types";
 
-const query = "SELECT * FROM equipment_info";
+const query = `
+  SELECT
+    *
+  FROM equipment_info
+  WHERE
+    JSON_SEARCH(equipment_info.category, 'one', ?)
+  GROUP BY id
+`;
 
-export const getByCategory = (req: Request, res: Response) => {
-  pool.query(
-    query + " WHERE JSON_SEARCH(equipment_info.category, 'one', ?) group by id",
-    [req.params.id],
-    onResult({ req, res, dataMapFn: inflate }).read
-  );
-};
+export const getByCategory: EC = (req, res, next) =>
+  pool.query(query, [req.params.id], addResultsToResponse(res, next));
 
 export default { ...controllers("equipment_info", "id"), getByCategory };

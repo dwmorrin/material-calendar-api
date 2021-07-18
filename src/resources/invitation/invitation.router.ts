@@ -1,5 +1,6 @@
 import { Router } from "express";
 import controller from "./invitation.controller";
+import { sendResults } from "../../utils/crud";
 
 const router = Router();
 
@@ -11,5 +12,7 @@ router.get(
 router.post("/", controller.createInvitations);
 router.put("/:invitationId", controller.updateInvitation);
 router.delete("/:invitationId", controller.removeInvitation);
+
+router.use(sendResults);
 
 export default router;

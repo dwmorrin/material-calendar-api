@@ -1,72 +1,56 @@
-import { Request, Response } from "express";
-import pool, { mapKeysToBool } from "../../utils/db";
-import { controllers, onResult, useErrorHandler } from "../../utils/crud";
-import { MysqlError, Query, queryCallback } from "mysql";
+import pool from "../../utils/db";
+import {
+  controllers,
+  addResultsToResponse,
+  CrudAction,
+} from "../../utils/crud";
 import { getActive, getSemester } from "./semester.query";
+import { EC } from "../../utils/types";
 
-const makeActiveBool = mapKeysToBool("active");
+export const getCurrent: EC = (req, res, next) =>
+  pool.query(getActive, addResultsToResponse(res, next, { one: true }));
 
-export const getCurrent = (req: Request, res: Response): Query =>
-  pool.query(
-    getActive,
-    onResult({ req, res, dataMapFn: makeActiveBool, take: 1 }).read
-  );
+export const getMany: EC = (req, res, next) =>
+  pool.query(getSemester, addResultsToResponse(res, next));
 
-export const getMany = (req: Request, res: Response): Query =>
-  pool.query(
-    getSemester,
-    onResult({ req, res, dataMapFn: makeActiveBool }).read
-  );
+const updateActive: EC = (req, res, next) => {
+  if (req.body.active) {
+    const id =
+      req.method === CrudAction.Create
+        ? res.locals.results.insertId
+        : req.params.id;
+    pool.query(
+      "REPLACE INTO active_semester SET id = 1, semester_id = ?",
+      [id],
+      addResultsToResponse(res, next, { key: "ignore" })
+    );
+  } else {
+    next();
+  }
+};
 
-const updateActive = (semesterId: number, cb: queryCallback): Query =>
-  pool.query(
-    "REPLACE INTO active_semester SET id = 1, semester_id = ?",
-    [semesterId],
-    cb
-  );
-
-export const createOne = (req: Request, res: Response): void => {
-  const onError = useErrorHandler(req, res);
+export const createOne: EC = (req, res, next) =>
   pool.query(
     "INSERT INTO semester SET ?",
     [{ title: req.body.title, start: req.body.start, end: req.body.end }],
-    (error, results) => {
-      if (error) return onError(error);
-      const { insertId } = results;
-      const onSuccess = (error: MysqlError | null) =>
-        error
-          ? onError(error)
-          : res.status(201).json({
-              data: { ...req.body, id: insertId },
-              context: req.query.context,
-            });
-      if (req.body.active) updateActive(insertId, onSuccess);
-      else return onSuccess(null);
-    }
+    addResultsToResponse(res, next)
   );
-};
 
-export const updateOne = (req: Request, res: Response): void => {
-  const onError = useErrorHandler(req, res);
+export const updateOne: EC = (req, res, next): void => {
   pool.query(
     "UPDATE semester SET ? WHERE id = ?",
     [
       { title: req.body.title, start: req.body.start, end: req.body.end },
       req.params.id,
     ],
-    (error) => {
-      if (error) onError(error);
-      if (req.body.active)
-        updateActive(Number(req.params.id), onResult({ req, res }).update);
-      else onResult({ req, res }).update(null, []);
-    }
+    addResultsToResponse(res, next)
   );
 };
 
 export default {
   ...controllers("semester", "id"),
-  createOne,
+  createOne: [createOne, updateActive],
   getCurrent,
   getMany,
-  updateOne,
+  updateOne: [updateOne, updateActive],
 };

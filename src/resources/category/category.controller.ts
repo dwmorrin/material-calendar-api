@@ -1,7 +1,6 @@
-import { controllers, onResult } from "../../utils/crud";
-import { Request, Response } from "express";
+import { controllers, addResultsToResponse } from "../../utils/crud";
 import pool from "../../utils/db";
-import { Query } from "mysql";
+import { EC } from "../../utils/types";
 
 const query = `
   SELECT
@@ -12,7 +11,7 @@ const query = `
     category
 `;
 
-export const getMany = (req: Request, res: Response): Query =>
-  pool.query(query, onResult({ req, res }).read);
+export const getMany: EC = (_, res, next) =>
+  pool.query(query, addResultsToResponse(res, next));
 
 export default { ...controllers("category", "id"), getMany };

@@ -1,7 +1,6 @@
-import { Request, Response } from "express";
-import pool, { error500 } from "../../utils/db";
-import { controllers, onResult } from "../../utils/crud";
-import { Query } from "mysql";
+import pool from "../../utils/db";
+import { addResultsToResponse, controllers } from "../../utils/crud";
+import { EC } from "../../utils/types";
 
 const getOneQuery = `
 SELECT
@@ -42,13 +41,13 @@ FROM
   virtual_week vw
 `;
 
-export const getOne = (req: Request, res: Response): Query =>
-  pool.query(getOneQuery, onResult({ req, res, take: 1 }).read);
+export const getOne: EC = (_, res, next) =>
+  pool.query(getOneQuery, addResultsToResponse(res, next, { one: true }));
 
-export const getMany = (req: Request, res: Response): Query =>
-  pool.query(getManyQuery, onResult({ req, res }).read);
+export const getMany: EC = (_, res, next) =>
+  pool.query(getManyQuery, addResultsToResponse(res, next));
 
-export const createOne = (req: Request, res: Response): Query =>
+export const createOne: EC = (req, res, next) =>
   pool.query(
     `INSERT INTO virtual_week SET ?`,
     [
@@ -59,46 +58,48 @@ export const createOne = (req: Request, res: Response): Query =>
         semester_id: req.body.semesterId,
       },
     ],
-    onResult({ req, res }).create
+    addResultsToResponse(res, next)
   );
 
-export const updateOne = (req: Request, res: Response): Query =>
+export const updateOne: EC = (req, res, next) =>
   pool.query(
     `UPDATE virtual_week SET ? WHERE id = ?`,
     [{ start: req.body.start, end: req.body.end }, req.body.id],
-    onResult({ req, res }).update
+    addResultsToResponse(res, next)
   );
 
-export const splitOne = (req: Request, res: Response): Response | undefined => {
+const splitOneUpdate: EC = (req, _, next) => {
   // resize the first virtual week in the body; create the second virtual week
   const [resizedWeek, newWeek] = req.body;
   if (!resizedWeek || !newWeek)
-    return res.status(400).json({
-      error: { message: "missing new virtual weeks in request body" },
-    });
+    return next(new Error("missing new virtual weeks in request body"));
   pool.query(
     `UPDATE virtual_week SET ? WHERE id = ?`,
     [{ start: resizedWeek.start, end: resizedWeek.end }, resizedWeek.id],
     (error) => {
-      if (error)
-        return res.status(500).json(error500(error, req.query.context));
-      pool.query(
-        `INSERT INTO virtual_week SET ?`,
-        [
-          {
-            start: newWeek.start,
-            end: newWeek.end,
-            studio_id: newWeek.locationId,
-            semester_id: newWeek.semesterId,
-          },
-        ],
-        onResult({ req, res }).create
-      );
+      if (error) return next(error);
+      next();
     }
   );
 };
 
-export const joinTwo = (req: Request, res: Response): Response | undefined => {
+const splitOneInsert: EC = (req, res, next) => {
+  const [, newWeek] = req.body;
+  pool.query(
+    `INSERT INTO virtual_week SET ?`,
+    [
+      {
+        start: newWeek.start,
+        end: newWeek.end,
+        studio_id: newWeek.locationId,
+        semester_id: newWeek.semesterId,
+      },
+    ],
+    addResultsToResponse(res, next)
+  );
+};
+
+export const joinTwo: EC = (req, res, next) => {
   const [joined, toDelete] = req.body;
   if (!joined || !toDelete)
     return res.status(400).json({
@@ -108,12 +109,11 @@ export const joinTwo = (req: Request, res: Response): Response | undefined => {
     `UPDATE virtual_week SET ? WHERE id = ?`,
     [{ start: joined.start, end: joined.end }, joined.id],
     (error) => {
-      if (error)
-        return res.status(500).json(error500(error, req.query.context));
+      if (error) next(error);
       pool.query(
         `DELETE FROM virtual_week WHERE id = ?`,
         [toDelete.id],
-        onResult({ req, res }).update
+        addResultsToResponse(res, next)
       );
     }
   );
@@ -125,6 +125,6 @@ export default {
   getMany,
   getOne,
   joinTwo,
-  splitOne,
+  splitOne: [splitOneUpdate, splitOneInsert],
   updateOne,
 };

@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import backupRouter from "./utils/backup";
 import categoryRouter from "./resources/category/category.router";
 import courseRouter from "./resources/course/course.router";

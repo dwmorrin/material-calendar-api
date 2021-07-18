@@ -3,119 +3,101 @@
  * For use with simple CRUD operations, or as templates when writing custom
  * CRUD handlers.
  */
-import { Request, Response } from "express";
-import pool, { error500, inflate } from "./db";
+import { NextFunction, Request, Response } from "express";
+import pool, { inflate } from "./db";
 import { MysqlError, Query } from "mysql";
 
-export interface MySQLResponseHandler {
-  req: Request;
-  res: Response;
-  dataMapFn?: (datum: Record<string, unknown>) => Record<string, unknown>;
-  take?: number; // will return dataArray.slice(0, take) if defined
+export enum CrudAction {
+  Create = "POST",
+  Read = "GET",
+  Update = "PUT",
+  Delete = "DELETE",
 }
 
-type CrudHandler = (
-  error: MysqlError | null,
-  data: Record<string, unknown>[] & { insertId?: number; affectedRows?: number }
-) => Response;
-
-export const useErrorHandler =
-  (req: Request, res: Response): ((e: MysqlError) => Response) =>
-  (error) =>
-    res.status(500).json(error500(error, req.query.context));
-
-/**
- * Handler for MySQL query result.  Takes a config object and returns
- * an object with 4 functions, one for each CRUD operation.
- * Example read: `pool.query(queryString, onResult({req, res}).read)`
- */
-export const onResult = ({
-  req,
-  res,
-  dataMapFn = (data) => data,
-  take,
-}: MySQLResponseHandler): { [k: string]: CrudHandler } => ({
-  read: (error, data) =>
-    error
-      ? useErrorHandler(req, res)(error)
-      : res.status(200).json({
-          data: data.map(dataMapFn).slice(0, take || data.length),
-          context: req.query.context,
-        }),
-  create: (error, data) =>
-    error
-      ? useErrorHandler(req, res)(error)
-      : res.status(201).json({
-          data: { ...req.body, id: data.insertId },
-          context: req.query.context,
-        }),
-  delete: (error, data) =>
-    error
-      ? useErrorHandler(req, res)(error)
-      : res.status(200).json({
-          data: data.affectedRows,
-          context: req.query.context,
-        }),
-  update: (error) =>
-    error
-      ? useErrorHandler(req, res)(error)
-      : res.status(201).json({
-          data: { ...req.body },
-          context: req.query.context,
-        }),
-});
+export const addResultsToResponse =
+  (res: Response, next: NextFunction, { one = false, key = "results" } = {}) =>
+  (error: MysqlError | null, results: Record<string, unknown>[]): void => {
+    if (error) return next(error);
+    res.locals.one = one;
+    res.locals[key] = results;
+    next();
+  };
 
 export const createOne =
   (table: string) =>
-  (req: Request, res: Response): Query =>
+  (req: Request, res: Response, next: NextFunction): Query =>
     pool.query(
       "INSERT INTO ?? SET ?",
       [table, req.body],
-      onResult({ req, res }).create
+      addResultsToResponse(res, next)
     );
 
 export const getMany =
   (table: string) =>
-  (req: Request, res: Response): Query =>
-    pool.query(
-      "SELECT * FROM ??",
-      [table],
-      onResult({ req, res, dataMapFn: inflate }).read
-    );
+  (_: Request, res: Response, next: NextFunction): Query =>
+    pool.query("SELECT * FROM ??", [table], addResultsToResponse(res, next));
 
 export const getOne =
   (table: string, key: string) =>
-  (req: Request, res: Response): Query =>
+  (req: Request, res: Response, next: NextFunction): Query =>
     pool.query(
       "SELECT * FROM ?? WHERE ?? = ?",
       [table, key, req.params.id],
-      onResult({ req, res, dataMapFn: inflate, take: 1 }).read
+      addResultsToResponse(res, next, { one: true })
     );
 
 export const removeOne =
   (table: string, key: string) =>
-  (req: Request, res: Response): Query =>
+  (req: Request, res: Response, next: NextFunction): Query =>
     pool.query(
       "DELETE FROM ?? WHERE ?? = ?",
       [table, key, req.params.id],
-      onResult({ req, res }).delete
+      addResultsToResponse(res, next)
     );
 
 export const updateOne =
   (table: string, key: string) =>
-  (req: Request, res: Response): Query =>
+  (req: Request, res: Response, next: NextFunction): Query =>
     pool.query(
       "UPDATE ?? SET ? WHERE ?? = ?",
       [table, req.body, key, req.params.id],
-      onResult({ req, res }).update
+      addResultsToResponse(res, next)
     );
+
+export function sendResults(req: Request, res: Response): void {
+  const {
+    method,
+    params: { context },
+  } = req;
+  const { one = false, results = {} } = res.locals;
+  switch (method) {
+    case CrudAction.Create:
+      res.status(201).json({
+        data: { ...req.body, id: results.insertId },
+        context,
+      });
+      break;
+    case CrudAction.Read:
+      const data = results.map(inflate);
+      res.status(200).json({ data: one ? data[0] : data, context });
+      break;
+    case CrudAction.Update:
+      res.status(201).json({ data: one ? { ...req.body } : results, context });
+      break;
+    case CrudAction.Delete:
+      res.status(200).json({ data: results.affectedRows, context });
+      break;
+    default:
+      throw new Error("Invalid method " + method);
+  }
+}
 
 export const controllers = (
   table: string,
   key: string
 ): Record<
   "createOne" | "getMany" | "getOne" | "removeOne" | "updateOne",
-  (req: Request, res: Response) => Query
+  (req: Request, res: Response, next: NextFunction) => Query
 > => ({
   createOne: createOne(table),
   getMany: getMany(table),

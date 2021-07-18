@@ -1,7 +1,6 @@
-import { Request, Response } from "express";
 import pool from "../../utils/db";
-import { controllers, onResult } from "../../utils/crud";
-import { Query } from "mysql";
+import { controllers, addResultsToResponse } from "../../utils/crud";
+import { EC } from "../../utils/types";
 
 export const query = `
   SELECT
@@ -15,10 +14,10 @@ export const query = `
     INNER JOIN section s ON s.course_id = c.id
 `;
 
-export const getMany = (req: Request, res: Response): Query =>
-  pool.query(query, onResult({ req, res }).read);
+export const getMany: EC = (_, res, next) =>
+  pool.query(query, addResultsToResponse(res, next));
 
-export const createOne = (req: Request, res: Response): Query =>
+export const createOne: EC = (req, res, next) =>
   pool.query(
     "INSERT INTO course (title, catalog_id) VALUES ?",
     [
@@ -27,7 +26,7 @@ export const createOne = (req: Request, res: Response): Query =>
         catalog_id: req.body.catalogId,
       },
     ],
-    onResult({ req, res }).create
+    addResultsToResponse(res, next)
   );
 
 export default {

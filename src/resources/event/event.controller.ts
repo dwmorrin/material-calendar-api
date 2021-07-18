@@ -1,8 +1,6 @@
-import { controllers, onResult } from "../../utils/crud";
-import { Request, Response } from "express";
-import pool, { error500, mapKeysToBool, inflate } from "../../utils/db";
-import { compose } from "ramda";
-import { Query } from "mysql";
+import { addResultsToResponse, controllers } from "../../utils/crud";
+import pool from "../../utils/db";
+import { EC } from "../../utils/types";
 
 const query = `
   SELECT 
@@ -35,16 +33,14 @@ const query = `
     full_calendar
 `;
 
-const process = compose(mapKeysToBool("reservable"), inflate);
+const getMany: EC = (_, res, next) =>
+  pool.query(query, addResultsToResponse(res, next));
 
-const getMany = (req: Request, res: Response): Query =>
-  pool.query(query, onResult({ req, res, dataMapFn: process }).read);
-
-const getOne = (req: Request, res: Response): Query =>
+const getOne: EC = (req, res, next) =>
   pool.query(
     query + "WHERE id = ?",
     [req.params.id],
-    onResult({ req, res, dataMapFn: process, take: 1 }).read
+    addResultsToResponse(res, next, { one: true })
   );
 
 /**
@@ -69,17 +65,17 @@ const replaceManyQuery = `
   VALUES ?
 `;
 
-const createMany = (req: Request, res: Response): Query =>
+const createMany: EC = (req, res, next) =>
   pool.query(replaceManyQuery, [req.body.map(flattenEvent)], (err) => {
     const { context } = req.query;
-    if (err) return res.status(500).json(error500(err, context));
+    if (err) return next(err);
     res.status(201).json({
       data: "OK",
       context,
     });
   });
 
-const updateOne = (req: Request, res: Response): void => {
+const updateOne: EC = (req, res, next) =>
   pool.query(
     `UPDATE allotment SET ? WHERE id = ?`,
     [
@@ -92,16 +88,8 @@ const updateOne = (req: Request, res: Response): void => {
       },
       req.params.id,
     ],
-    (err) => {
-      const { context } = req.query;
-      if (err) return res.status(500).json(error500(err, context));
-      res.status(201).json({
-        data: { ...req.body },
-        context,
-      });
-    }
+    addResultsToResponse(res, next)
   );
-};
 
 export default {
   ...controllers("allotment", "id"),

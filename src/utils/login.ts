@@ -1,31 +1,30 @@
-import { Request, Response } from "express";
-import pool, { error500, inflate } from "./db";
+import pool, { inflate } from "./db";
 import { userQueryFn } from "../resources/user/user.query";
+import { EC, EEH } from "./types";
+import { addResultsToResponse } from "./crud";
 
-/**
- * Assumes user has already been authenticated and authorization already
- * checked that the user exists in the database.
- */
-const login = (req: Request, res: Response): void => {
-  const handleAuthError = () => {
-    res
-      .status(500)
-      .json({ error: { code: 500, message: "authentication error" }, context });
-  };
-  const { context } = req.query;
-  if (!res.locals?.user?.id) return handleAuthError();
+const getOne: EC = (_, res, next) =>
   pool.query(
     userQueryFn("WHERE u.id = ?"),
     [res.locals.user.id],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json(error500(err, context));
-      }
-      const [user] = rows;
-      if (!user) return handleAuthError();
-      res.json({ data: inflate(user), context });
-    }
+    addResultsToResponse(res, next)
   );
+
+const response: EC = (req, res, next) => {
+  const { context } = req.query;
+  const user = inflate(res.locals.results[0]);
+  if (!user || !user.id) return next(new Error("Not authorized"));
+  res.json({ data: user, context });
 };
 
-export default login;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const handleAuthError: EEH = (err, req, res, next) =>
+  res.status(500).json({
+    error: {
+      code: 500,
+      message: err instanceof Error ? err.message : "authentication error",
+    },
+    context: req.params.context,
+  });
+
+export default [getOne, response, handleAuthError];

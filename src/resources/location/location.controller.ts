@@ -1,7 +1,6 @@
-import { Request, Response } from "express";
-import { Query } from "mysql";
-import { controllers, onResult } from "../../utils/crud";
-import pool, { inflate, error500 } from "../../utils/db";
+import { addResultsToResponse, controllers } from "../../utils/crud";
+import pool from "../../utils/db";
+import { EC } from "../../utils/types";
 
 const queryFn = (where = "") => `
   SELECT
@@ -24,20 +23,20 @@ const queryFn = (where = "") => `
   GROUP BY s.id
 `;
 
-export const getMany = (req: Request, res: Response): Query =>
-  pool.query(queryFn(), onResult({ req, res, dataMapFn: inflate }).read);
+export const getMany: EC = (req, res, next) =>
+  pool.query(queryFn(), addResultsToResponse(res, next));
 
-export const getOne = (req: Request, res: Response): Query =>
+export const getOne: EC = (req, res, next) =>
   pool.query(
     queryFn("WHERE s.id = ?"),
     [req.params.id],
-    onResult({ req, res, take: 1, dataMapFn: inflate }).read
+    addResultsToResponse(res, next, { one: true })
   );
 
-export const getDefaultId = (req: Request, res: Response): Query =>
+export const getDefaultId: EC = (req, res, next) =>
   pool.query(
     "SELECT id FROM studio WHERE id = (SELECT MIN(id) FROM studio)",
-    onResult({ req, res, take: 1 }).read
+    addResultsToResponse(res, next, { one: true })
   );
 
 const calculatedVirtualWeekHoursQuery = `
@@ -70,35 +69,30 @@ WHERE
 GROUP BY v.id
 `;
 
-export const getVirtualWeeks = (req: Request, res: Response): Query =>
+export const getVirtualWeeks: EC = (req, res, next) =>
   pool.query(
     calculatedVirtualWeekHoursQuery,
     [req.params.id, req.params.id],
-    onResult({ req, res }).read
+    addResultsToResponse(res, next)
   );
 
-const replaceHoursQuery = `
-REPLACE INTO studio_hours
-  (studio_id, date, hours)
-VALUES ?
-`;
-
-const flattenHours =
-  (locationId: string | number) =>
-  ({ date, hours }: { [k: string]: string | number }) =>
-    [locationId, date, hours];
-
-export const createOrUpdateHours = (req: Request, res: Response): Query =>
+export const createOrUpdateHours: EC = (req, res, next) =>
   pool.query(
-    replaceHoursQuery,
-    [req.body.map(flattenHours(req.params.id))],
+    "REPLACE INTO studio_hours (studio_id, date, hours) VALUES ?",
+    [
+      (req.body as { date: string; hours: number }[]).map(({ date, hours }) => [
+        req.params.id,
+        date,
+        hours,
+      ]),
+    ],
     (err, data) => {
-      if (err) return res.status(500).json(error500(err, req.query.context));
+      if (err) return next(err);
       res.status(201).json({ data, context: req.query.context });
     }
   );
 
-export const createOne = (req: Request, res: Response): void => {
+export const createOne: EC = (req, res, next): void => {
   pool.query(
     "INSERT INTO studio SET ?",
     [
@@ -108,12 +102,12 @@ export const createOne = (req: Request, res: Response): void => {
         restriction: req.body.restriction,
       },
     ],
-    onResult({ req, res }).create
+    addResultsToResponse(res, next)
   );
 };
 
 // returns sum of event hours in a location
-export const sumHours = (req: Request, res: Response): Query =>
+export const sumHours: EC = (req, res, next) =>
   pool.query(
     `SELECT
       id AS locationId,
@@ -124,7 +118,7 @@ export const sumHours = (req: Request, res: Response): Query =>
     GROUP BY YEAR(start), MONTH(start), DAY(start)
     `,
     [req.params.id],
-    onResult({ req, res }).read
+    addResultsToResponse(res, next)
   );
 
 export default {

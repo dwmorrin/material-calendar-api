@@ -1,13 +1,8 @@
-import { Request, Response } from "express";
-import pool, { error500, inflate, mapKeysToBool } from "../../utils/db";
-import { onResult } from "../../utils/crud";
-import { MysqlError, Query } from "mysql";
+import pool from "../../utils/db";
+import { addResultsToResponse } from "../../utils/crud";
+import { EC } from "../../utils/types";
 
-const makeOpenBool = mapKeysToBool("open");
-const inflateAndOpenBool = (data: Record<string, unknown>) =>
-  inflate(makeOpenBool(data));
-
-export const getInvitations = (req: Request, res: Response): Query =>
+export const getInvitations: EC = (req, res, next) =>
   pool.query(
     `select inv.id as id,
     inv.project_id as project,
@@ -40,10 +35,10 @@ export const getInvitations = (req: Request, res: Response): Query =>
             left join rm_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
             where (iv.invitee=? or inv.invitor=?) group by inv.id;`,
     [req.params.userId, req.params.userId],
-    onResult({ req, res, dataMapFn: inflateAndOpenBool }).read
+    addResultsToResponse(res, next)
   );
 
-export const getInvitationsByProject = (req: Request, res: Response): Query =>
+export const getInvitationsByProject: EC = (req, res, next) =>
   pool.query(
     `select inv.id as id,
     inv.project_id as project,
@@ -76,58 +71,48 @@ export const getInvitationsByProject = (req: Request, res: Response): Query =>
             left join rm_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
             where inv.project_id=? and (iv.invitee=? or inv.invitor=?) group by inv.id;`,
     [req.params.projectId, req.params.userId, req.params.userId],
-    onResult({ req, res, dataMapFn: inflateAndOpenBool }).read
+    addResultsToResponse(res, next)
   );
 
-export const createInvitations = (req: Request, res: Response): void => {
+const createInvitations: EC = (req, res, next) =>
   pool.query(
     `insert into invitation (project_id,invitor) VALUES (?,?)`,
     [req.body.projectId, req.body.invitorId],
-    (error, results) => {
-      if (error) return onError(error);
-      pool.query(
-        `replace into invitee (invitation_id,invitee) VALUES ?`,
-        [createInvitees(results.insertId, req.body.invitees)],
-        onResult({ req, res }).update
-      );
-    }
+    addResultsToResponse(res, next)
   );
-  function onError(error: MysqlError) {
-    res.status(500).json(error500(error, req.query.context));
-  }
-  function createInvitees(invitationId: number, invitees: []) {
-    return invitees.map((invitee) => [invitationId, invitee]);
-  }
+
+const createInvitees: EC = (req, res, next) => {
+  const { results } = res.locals;
+  const { invitees } = req.body;
+  pool.query(
+    `replace into invitee (invitation_id,invitee) VALUES ?`,
+    [(invitees as unknown[]).map((invitee) => [results.insertId, invitee])],
+    addResultsToResponse(res, next)
+  );
 };
 
-export const updateInvitation = (req: Request, res: Response): void => {
-  if (req.body.rejected) {
-    pool.query(
-      `update invitee set accepted=0, rejected=1 where invitation_id=? and invitee=?`,
-      [req.params.invitationId, req.body.userId],
-      onResult({ req, res, dataMapFn: inflateAndOpenBool }).update
-    );
-  }
-  if (req.body.accepted) {
-    pool.query(
-      `update invitee set accepted=1, rejected=0 where invitation_id=? and invitee=?`,
-      [req.params.invitationId, req.body.userId],
-      onResult({ req, res, dataMapFn: inflateAndOpenBool }).update
-    );
-  }
+export const updateInvitation: EC = (req, res, next) => {
+  const { accepted, rejected, userId } = req.body;
+  pool.query(
+    `UPDATE invitee
+      SET accepted = ?, rejected = ?
+      WHERE invitation_id = ? and invitee = ?`,
+    [accepted ? 1 : 0, rejected ? 1 : 0, req.params.invitationId, userId],
+    addResultsToResponse(res, next)
+  );
 };
 
-export const removeInvitation = (req: Request, res: Response): Query =>
+export const removeInvitation: EC = (req, res, next) =>
   pool.query(
     `delete from invitation where id=?`,
     [req.params.invitationId],
-    onResult({ req, res }).delete
+    addResultsToResponse(res, next)
   );
 
 export default {
   getInvitations,
   getInvitationsByProject,
-  createInvitations,
+  createInvitations: [createInvitations, createInvitees],
   updateInvitation,
   removeInvitation,
 };

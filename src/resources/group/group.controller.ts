@@ -1,41 +1,40 @@
-import { Request, Response } from "express";
-import pool, { inflate } from "../../utils/db";
-import { onResult } from "../../utils/crud";
+import pool from "../../utils/db";
+import { addResultsToResponse } from "../../utils/crud";
 import { groupQueryFn } from "./group.query";
-import { Query } from "mysql";
+import { EC } from "../../utils/types";
 
-export const getGroups = (req: Request, res: Response): Query =>
-  pool.query(groupQueryFn(), onResult({ req, res, dataMapFn: inflate }).read);
+export const getGroups: EC = (_, res, next) =>
+  pool.query(groupQueryFn(), addResultsToResponse(res, next));
 
-export const getOneGroup = (req: Request, res: Response): Query =>
+export const getOneGroup: EC = (req, res, next) =>
   pool.query(
     groupQueryFn("WHERE g.id = ?"),
     [req.params.groupId],
-    onResult({ req, res, dataMapFn: inflate, take: 1 }).read
+    addResultsToResponse(res, next, { one: true })
   );
 
-export const getGroupsByUser = (req: Request, res: Response): Query =>
+export const getGroupsByUser: EC = (req, res, next) =>
   pool.query(
     groupQueryFn("WHERE JSON_SEARCH(g.members, 'all', ?)"),
     [req.params.userId],
-    onResult({ req, res, dataMapFn: inflate }).read
+    addResultsToResponse(res, next)
   );
 
-export const getGroupsByProject = (req: Request, res: Response): Query =>
+export const getGroupsByProject: EC = (req, res, next) =>
   pool.query(
     groupQueryFn("WHERE g.projectId = ?"),
     [req.params.projectId],
-    onResult({ req, res, dataMapFn: inflate }).read
+    addResultsToResponse(res, next)
   );
 
-export const removeOneGroup = (req: Request, res: Response): Query =>
+export const removeOneGroup: EC = (req, res, next) =>
   pool.query(
     "DELETE FROM rm_group WHERE id=?",
     [req.params.groupId],
-    onResult({ req, res }).delete
+    addResultsToResponse(res, next)
   );
 
-export const createGroupFromInvitation = (req: Request, res: Response): Query =>
+export const createGroupFromInvitation: EC = (req, res, next) =>
   pool.query(
     `INSERT INTO rm_group (
       project_id, course_id, creator, status, group_type, group_size
@@ -56,10 +55,10 @@ export const createGroupFromInvitation = (req: Request, res: Response): Query =>
       INNER JOIN user ON invitation.invitor = user.id
     WHERE invitation.id = ?`,
     [req.params.invitationId],
-    onResult({ req, res }).create
+    addResultsToResponse(res, next)
   );
 
-export const joinGroup = (req: Request, res: Response): Query =>
+export const joinGroup: EC = (req, res, next) =>
   pool.query(
     `REPLACE INTO student_group (
       SELECT
@@ -80,14 +79,14 @@ export const joinGroup = (req: Request, res: Response): Query =>
       req.params.groupId,
       req.params.invitationId,
     ],
-    onResult({ req, res }).create
+    addResultsToResponse(res, next)
   );
 
-export const leaveGroup = (req: Request, res: Response): Query =>
+export const leaveGroup: EC = (req, res, next) =>
   pool.query(
     "DELETE FROM student_group WHERE student_id=? AND group_id=?",
     [req.params.userId, req.params.groupId],
-    onResult({ req, res }).delete
+    addResultsToResponse(res, next)
   );
 
 export default {

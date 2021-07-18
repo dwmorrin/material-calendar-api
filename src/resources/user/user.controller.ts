@@ -1,41 +1,40 @@
-import { Request, Response } from "express";
-import pool, { inflate } from "../../utils/db";
-import { onResult } from "../../utils/crud";
+import pool from "../../utils/db";
+import { addResultsToResponse } from "../../utils/crud";
 import { userCourseQuery, userProjectQuery, userQueryFn } from "./user.query";
-import { Query } from "mysql";
+import { EC } from "../../utils/types";
 
-export const getCourses = (req: Request, res: Response): Query =>
+export const getCourses: EC = (req, res, next) =>
   pool.query(
     userCourseQuery(req.params.id),
     [req.params.id],
-    onResult({ req, res, dataMapFn: inflate }).read
+    addResultsToResponse(res, next)
   );
 
-export const getProjects = (req: Request, res: Response): Query =>
+export const getProjects: EC = (req, res, next) =>
   pool.query(
     userProjectQuery(req.params.id),
     [req.params.id],
-    onResult({ req, res, dataMapFn: inflate }).read
+    addResultsToResponse(res, next)
   );
 
-export const getOne = (req: Request, res: Response): Query =>
+export const getOne: EC = (req, res, next) =>
   pool.query(
     userQueryFn("WHERE u.id = ?"),
     [req.params.id],
-    onResult({ req, res, dataMapFn: inflate, take: 1 }).read
+    addResultsToResponse(res, next, { one: true })
   );
 
-export const getMany = (req: Request, res: Response): Query =>
-  pool.query(userQueryFn(), onResult({ req, res, dataMapFn: inflate }).read);
+export const getMany: EC = (_, res, next) =>
+  pool.query(userQueryFn(), addResultsToResponse(res, next));
 
-export const createOne = (req: Request, res: Response): Query =>
+export const createOne: EC = (req, res, next) =>
   pool.query(
     "INSERT INTO user SET ?",
     [{ ...req.body }],
-    onResult({ req, res }).create
+    addResultsToResponse(res, next)
   );
 
-export const updateOne = (req: Request, res: Response): Query =>
+export const updateOne: EC = (req, res, next) =>
   pool.query(
     "UPDATE user SET ? WHERE id = ?",
     [
@@ -44,14 +43,14 @@ export const updateOne = (req: Request, res: Response): Query =>
       },
       req.params.id,
     ],
-    onResult({ req, res }).update
+    addResultsToResponse(res, next)
   );
 
-export const removeOne = (req: Request, res: Response): Query =>
+export const removeOne: EC = (req, res, next) =>
   pool.query(
     "DELETE FROM user WHERE id = ?",
     req.params.id,
-    onResult({ req, res }).delete
+    addResultsToResponse(res, next)
   );
 
 export default {

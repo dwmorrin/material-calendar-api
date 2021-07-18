@@ -1,7 +1,6 @@
-import { controllers, onResult } from "../../utils/crud";
-import { Request, Response } from "express";
-import pool, { error500, inflate } from "../../utils/db";
-import { Query } from "mysql";
+import { addResultsToResponse, controllers } from "../../utils/crud";
+import pool from "../../utils/db";
+import { EC } from "../../utils/types";
 
 const query = `
   SELECT
@@ -45,34 +44,30 @@ const insertManyQuery = `
   VALUES ?
 `;
 
-const reserveEquipment = (req: Request, res: Response): Query =>
+const reserveEquipment: EC = (req, res, next) =>
   pool.query(
     insertManyQuery,
     [req.body.map(flattenEquipment(+req.params.id))],
-    (err) => {
-      const { context } = req.query;
-      if (err) return res.status(500).json(error500(err, context));
-      // Remove any quantities that have been set to 0 (simpler implementation than doing a delete where equipment_id + reservation_id match the zeroed item)
-      pool.query(" DELETE FROM equipment_reservation where quantity=0", () =>
-        res.status(201).json({
-          data: { ...req.body },
-          context,
-        })
-      );
-    }
+    addResultsToResponse(res, next)
   );
 
-export const getOne = (req: Request, res: Response): Query =>
+const deleteEquipmentReservationZeros: EC = (_, res, next) =>
+  pool.query(
+    " DELETE FROM equipment_reservation where quantity=0",
+    addResultsToResponse(res, next)
+  );
+
+export const getOne: EC = (req, res, next) =>
   pool.query(
     query + "WHERE id = ?",
     [req.params.id],
-    onResult({ req, res, dataMapFn: inflate, take: 1 }).read
+    addResultsToResponse(res, next, { one: true })
   );
 
-export const getMany = (req: Request, res: Response): Query =>
-  pool.query(query, onResult({ req, res, dataMapFn: inflate }).read);
+export const getMany: EC = (_, res, next) =>
+  pool.query(query, addResultsToResponse(res, next));
 
-export const createOne = (req: Request, res: Response): Query =>
+export const createOne: EC = (req, res, next) =>
   pool.query(
     "INSERT INTO booking SET ?",
     [
@@ -86,10 +81,10 @@ export const createOne = (req: Request, res: Response): Query =>
         notes: req.body.notes,
       },
     ],
-    onResult({ req, res, dataMapFn: inflate }).create
+    addResultsToResponse(res, next)
   );
 
-export const updateOne = (req: Request, res: Response): Query =>
+export const updateOne: EC = (req, res, next) =>
   pool.query(
     "UPDATE booking SET ? WHERE id = ?",
     [
@@ -104,7 +99,7 @@ export const updateOne = (req: Request, res: Response): Query =>
       },
       Number(req.params.id),
     ],
-    onResult({ req, res }).update
+    addResultsToResponse(res, next)
   );
 
 export default {
@@ -113,5 +108,5 @@ export default {
   updateOne,
   getOne,
   getMany,
-  reserveEquipment,
+  reserveEquipment: [reserveEquipment, deleteEquipmentReservationZeros],
 };

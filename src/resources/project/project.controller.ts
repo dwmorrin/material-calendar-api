@@ -1,15 +1,14 @@
-import { Request, Response } from "express";
-import pool, { error500, inflate, mapKeysToBool } from "../../utils/db";
-import { controllers, onResult } from "../../utils/crud";
-import { MysqlError, Query } from "mysql";
+import pool from "../../utils/db";
+import {
+  addResultsToResponse,
+  controllers,
+  CrudAction,
+} from "../../utils/crud";
 import { getManyQuery } from "./project.query";
 import { userQueryFn } from "../user/user.query";
+import { EC } from "../../utils/types";
 
-const makeOpenBool = mapKeysToBool("open");
-const inflateAndOpenBool = (data: Record<string, unknown>) =>
-  inflate(makeOpenBool(data));
-
-const getUsersByProject = (req: Request, res: Response): Query =>
+const getUserIdsBySection: EC = (req, res, next) =>
   pool.query(
     `SELECT 
       u.id
@@ -20,20 +19,21 @@ const getUsersByProject = (req: Request, res: Response): Query =>
       INNER JOIN project p ON p.id = sp.project_id
     WHERE p.id = ?`,
     [req.params.id],
-    (error, results) => {
-      if (error)
-        return res.status(500).json(error500(error, req.params.context));
-      if (results.length)
-        pool.query(
-          userQueryFn("WHERE u.id IN (?)"),
-          [(results as { id: number }[]).map(({ id }) => id)],
-          onResult({ req, res, dataMapFn: inflate }).read
-        );
-      else res.status(200).json({ data: [], context: req.query.context });
-    }
+    addResultsToResponse(res, next)
   );
 
-export const getOneLocationAllotment = (req: Request, res: Response): Query =>
+const getUsersByIdList: EC = (req, res, next) => {
+  const { results } = res.locals;
+  if (results.length)
+    pool.query(
+      userQueryFn("WHERE u.id IN (?)"),
+      [(results as { id: number }[]).map(({ id }) => id)],
+      addResultsToResponse(res, next)
+    );
+  else res.status(200).json({ data: [], context: req.query.context });
+};
+
+export const getOneLocationAllotment: EC = (req, res, next) =>
   pool.query(
     `
       SELECT
@@ -44,29 +44,33 @@ export const getOneLocationAllotment = (req: Request, res: Response): Query =>
         project_id = ?
      `,
     [req.params.id],
-    onResult({ req, res, dataMapFn: inflate, take: 1 }).read
+    addResultsToResponse(res, next, { one: true })
   );
 
-export const getMany = (req: Request, res: Response): void => {
-  pool.query(
-    getManyQuery,
-    onResult({ req, res, dataMapFn: inflateAndOpenBool }).read
-  );
+export const getMany: EC = (req, res, next) => {
+  pool.query(getManyQuery, addResultsToResponse(res, next));
 };
 
-export const createOrUpdateOne = (req: Request, res: Response): void => {
+export const createOrUpdateOne: EC = (req, res, next): void => {
   const {
-    section, //! client needs to update for this
-    end,
-    groupAllottedHours,
-    groupSize,
-    id,
-    locationHours,
-    open,
-    reservationStart,
-    start,
-    title,
-  } = req.body;
+    body: {
+      end,
+      groupAllottedHours,
+      groupSize,
+      id,
+      open,
+      reservationStart,
+      start,
+      title,
+    },
+    method,
+  } = req;
+
+  const query =
+    method === CrudAction.Create
+      ? `INSERT INTO project SET ?`
+      : `UPDATE project SET ? WHERE id = ?`;
+
   const project = {
     book_start: reservationStart,
     end,
@@ -77,96 +81,72 @@ export const createOrUpdateOne = (req: Request, res: Response): void => {
     title,
   };
 
-  interface locationHours {
-    locationId: number;
-    hours: number;
-  }
-
-  const locationHoursMap =
-    (projectId: string | number) =>
-    ({ locationId, hours }: locationHours) =>
-      [projectId, locationId, hours];
-
-  const creating = id < 1;
-
-  const query = creating
-    ? `INSERT INTO project SET ?`
-    : `UPDATE project SET ? WHERE id = ?`;
-
-  pool.query(query, creating ? [project] : [project, id], (error, results) => {
-    if (error) return onError(error);
-    const projectId = creating ? results.insertId : id;
-    const projectLocations = locationHours.map(locationHoursMap(projectId));
-    if (Number(section?.id) > 0) {
-      createCourseProjectAndProjectLocations(projectId, projectLocations);
-    } else {
-      if (locationHours.length)
-        createProjectLocations(projectId, projectLocations);
-      else onSuccess(projectId);
-    }
-  });
-
-  function createCourseProjectAndProjectLocations(
-    projectId: string | number,
-    projectLocations: { [k: string]: string | number }[]
-  ) {
-    pool.query(
-      `${creating ? "INSERT" : "REPLACE"} INTO section_project SET ?`,
-      [{ section_id: section.id, project_id: projectId }],
-      (error) => {
-        if (error) return onError(error);
-        if (locationHours.length)
-          createProjectLocations(projectId, projectLocations);
-        else onSuccess(projectId);
-      }
-    );
-  }
-
-  function onError(error: MysqlError) {
-    res.status(500).json(error500(error, req.query.context));
-  }
-
-  function createProjectLocations(
-    projectId: string | number,
-    projectLocations: { [k: string]: string | number }[]
-  ) {
-    pool.query(
-      `REPLACE INTO project_studio_hours (project_id, studio_id, hours) VALUES ?`,
-      [projectLocations],
-      (error) => {
-        if (error) return onError(error);
-        onSuccess(projectId);
-      }
-    );
-  }
-
-  function onSuccess(projectId: string | number) {
-    res.status(201).json({
-      data: { ...req.body, id: projectId },
-      context: req.query.context,
-    });
-  }
+  pool.query(
+    query,
+    method === CrudAction.Create ? [project] : [project, id],
+    addResultsToResponse(res, next, { one: true, key: "project" })
+  );
 };
 
-export const updateAllotment = (req: Request, res: Response): Query =>
+const createOrUpdateProjectLocationHours: EC = (req, res, next) => {
+  const {
+    body: { id, locationHours },
+    method,
+  } = req;
+  if (!locationHours || locationHours.length) return next();
+  pool.query(
+    `REPLACE INTO project_studio_hours (project_id, studio_id, hours) VALUES ?`,
+    [
+      locationHours.map(({ locationId, hours }: Record<string, unknown>) => [
+        method === CrudAction.Create ? res.locals.project.insertId : id,
+        locationId,
+        hours,
+      ]),
+    ],
+    addResultsToResponse(res, next)
+  );
+};
+
+const createOrUpdateSectionProject: EC = (req, res, next) => {
+  const {
+    body: { id, section },
+    method,
+  } = req;
+  if (!(Number(section?.id) > 0)) return next();
+  pool.query(
+    `${
+      method === CrudAction.Create ? "INSERT" : "REPLACE"
+    } INTO section_project SET ?`,
+    [
+      {
+        section_id: section.id,
+        project_id:
+          method === CrudAction.Create ? res.locals.project.insertId : id,
+      },
+    ],
+    addResultsToResponse(res, next, { one: true })
+  );
+};
+
+export const updateAllotment: EC = (req, res, next) =>
   pool.query(
     `REPLACE INTO project_virtual_week_hours (
       project_id, virtual_week_id, hours
      ) VALUES ?`,
     [[[req.body.projectId, req.body.virtualWeekId, req.body.hours]]],
-    (error: MysqlError | null): Response => {
-      if (error)
-        return res.status(500).json(error500(error, req.query.context));
-      return res.status(201).json({});
-    }
+    addResultsToResponse(res, next)
   );
 
 export default {
   ...controllers("project", "id"),
-  createOne: createOrUpdateOne,
+  createOne: [
+    createOrUpdateOne,
+    createOrUpdateProjectLocationHours,
+    createOrUpdateSectionProject,
+  ],
   getMany,
   getOneLocationAllotment,
-  getUsersByProject,
+  getUsersByProject: [getUserIdsBySection, getUsersByIdList],
   updateAllotment,
   updateOne: createOrUpdateOne,
 };
