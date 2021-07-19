@@ -479,14 +479,6 @@ CREATE TABLE `studio` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
   `location` varchar(255) DEFAULT '',
-  `max_time` decimal(18,2) DEFAULT NULL,
-  `mon_hour` smallint DEFAULT NULL,
-  `tue_hour` smallint DEFAULT NULL,
-  `wed_hour` smallint DEFAULT NULL,
-  `thur_hour` smallint DEFAULT NULL,
-  `fri_hour` smallint DEFAULT NULL,
-  `sat_hour` smallint DEFAULT NULL,
-  `sun_hour` smallint DEFAULT NULL,
   `restriction` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
