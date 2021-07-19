@@ -1,4 +1,4 @@
-import mysql, { MysqlError } from "mysql";
+import mysql from "mysql";
 import { map, tryCatch } from "ramda";
 
 /**
@@ -15,55 +15,6 @@ const jsonParseSafe = (strOrJSON: string) =>
  */
 export const inflate = (data = {}): Record<string, unknown> =>
   map(jsonParseSafe, data);
-
-/**
- * Helper function to translate MySQL values (TINYINT) to JS booleans.
- * Keys given that do not exist in the source object are silently ignored.
- * @param obj data from MySQL
- * @param keys array of string keys to map to bool
- */
-export const mapKeysToBool =
-  (...keys: string[]) =>
-  (obj: Record<string, unknown> = {}): Record<string, unknown> => ({
-    ...obj,
-    ...keys.reduce(
-      (result, key) => (key in obj ? { ...result, [key]: !!obj[key] } : result),
-      {}
-    ),
-  });
-
-/**
- * turns column_name => columnName
- * @param str snake_case style string
- * @returns camelCase style string
- */
-export const snakeToCamel = (str: string): string =>
-  str.replace(/(_[a-z])/g, (underscoreLetter) =>
-    underscoreLetter.toUpperCase().replace("_", "")
-  );
-
-/**
- * returns generic JSON response for MySQL errors for production
- * and the raw MySQL errors for development
- */
-export const error500 = (
-  rawDbError: MysqlError,
-  context: unknown
-): Record<string, unknown> => {
-  console.error(rawDbError);
-  return process.env.NODE_ENV === "development"
-    ? {
-        error: { message: rawDbError.sqlMessage || rawDbError.message },
-        context,
-      }
-    : {
-        error: {
-          code: 500,
-          message: "uh-oh, the server encountered an error, try back later",
-        },
-        context,
-      };
-};
 
 /**
  * Pool reuses connections, up to the connection limit.
