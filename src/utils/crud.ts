@@ -15,6 +15,15 @@ export enum CrudAction {
   Delete = "DELETE",
 }
 
+export const withResource =
+  (key: string, query: string, vars = []): EC =>
+  (_, res, next) =>
+    pool.query(query, vars, (error, results) => {
+      if (error) return next(error);
+      res.locals[key] = results.map(inflate);
+      next();
+    });
+
 export const addResultsToResponse =
   (res: Response, next: NextFunction, { one = false, key = "results" } = {}) =>
   (error: MysqlError | null, results: Record<string, unknown>[]): void => {

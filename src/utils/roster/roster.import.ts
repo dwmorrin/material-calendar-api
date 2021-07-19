@@ -12,7 +12,8 @@
  */
 
 import { NextFunction, Request, Response } from "express";
-import pool, { inflate } from "../db";
+import pool from "../db";
+import { withResource } from "../crud";
 import { query as courseQuery } from "../../resources/course/course.controller";
 import { getActive } from "../../resources/semester/semester.query";
 import { MysqlError } from "mysql";
@@ -158,16 +159,6 @@ function withUserRole(_: Request, res: Response, next: NextFunction): void {
     res.locals.userRoleId = id;
     next();
   });
-}
-
-function withResource(key: string, query: string, vars = []) {
-  return function (_: Request, res: Response, next: NextFunction) {
-    pool.query(query, vars, (error, results) => {
-      if (error) return next(error);
-      res.locals[key] = results.map(inflate);
-      next();
-    });
-  };
 }
 
 function processInputRecords(
