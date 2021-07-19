@@ -5,7 +5,7 @@ import { EC } from "../../utils/types";
 const queryFn = (where = "") => `
   SELECT
     s.id,
-    s.name AS title,
+    s.title,
     s.location AS groupId,
     IF (
       wh.date IS NULL,
@@ -97,7 +97,7 @@ export const createOne: EC = (req, res, next): void => {
     "INSERT INTO studio SET ?",
     [
       {
-        name: req.body.title,
+        title: req.body.title,
         location: req.body.groupId,
         restriction: req.body.restriction,
       },
