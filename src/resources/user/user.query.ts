@@ -39,19 +39,24 @@ export const userQueryFn = (where = ""): string => `
     u.email,
     u.phone,
     u.restriction,
-    IFNULL((
-      SELECT JSON_ARRAYAGG(r.title)
-      FROM role r inner join user_role ur on ur.role_id = r.id
-      WHERE ur.user_id = u.id
-    ), JSON_ARRAY()) as roles,
+    IFNULL (
+      (
+        SELECT JSON_ARRAYAGG(r.title)
+        FROM
+          role r
+          INNER JOIN user_role ur ON ur.role_id = r.id
+        WHERE ur.user_id = u.id
+      ),
+      JSON_ARRAY()
+    ) AS roles,
     (
       SELECT JSON_ARRAYAGG(JSON_OBJECT(
             'id', rg.project_id,
             'title', p.title,
             'groupId', rg.id,
             'course', JSON_OBJECT(
-              'id', c.id,
-              'title', c.title
+              'id', IFNULL (c.id, 0),
+              'title', IFNULL (c.title, '')
             )
           )
       )
