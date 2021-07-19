@@ -18,7 +18,13 @@ import { query as courseQuery } from "../../resources/course/course.controller";
 import { getActive } from "../../resources/semester/semester.query";
 import { MysqlError } from "mysql";
 import { writeFile } from "fs";
-import { userQuery, sectionQuery, rosterInputQuery } from "./roster.query";
+import rosterRecordQuery, {
+  userQuery,
+  sectionQuery,
+  rosterInputQuery,
+} from "./roster.query";
+import { userQueryFn } from "../../resources/user/user.query";
+import { getManyQuery as projectQuery } from "../../resources/project/project.query";
 
 interface RosterRecordInput {
   Course: string;
@@ -547,7 +553,15 @@ function logToFile(req: Request, res: Response, next: NextFunction): void {
  * roster import is done; respond with success
  */
 function successResponder(_: Request, res: Response): void {
-  res.status(201).json({ data: res.locals.report });
+  res.status(201).json({
+    data: {
+      courses: res.locals.courses,
+      projects: res.locals.projects,
+      users: res.locals.users,
+      rosterRecords: res.locals.rosterRecords,
+      report: res.locals.report,
+    },
+  });
 }
 
 function mySqlErrorResponder(
@@ -599,6 +613,10 @@ export default [
   processInserts,
   processUpdates,
   // logToFile,
+  withResource("courses", courseQuery),
+  withResource("projects", projectQuery),
+  withResource("users", userQueryFn()),
+  withResource("rosterRecords", rosterRecordQuery),
   successResponder,
   mySqlErrorResponder,
   errorResponder,
