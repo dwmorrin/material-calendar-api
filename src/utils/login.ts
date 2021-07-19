@@ -31,7 +31,7 @@ const handleAuthError: EEH = (err, req, res, next) =>
       code: 500,
       message: err instanceof Error ? err.message : "authentication error",
     },
-    context: req.params.context,
+    context: req.query.context,
   });
 
 export default [getOne, updateLastLogin, response, handleAuthError];

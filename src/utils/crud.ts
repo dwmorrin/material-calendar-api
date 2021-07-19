@@ -67,7 +67,7 @@ export const updateOne =
 export function sendResults(req: Request, res: Response): void {
   const {
     method,
-    params: { context },
+    query: { context },
   } = req;
   const { one = false, results = {} } = res.locals;
   switch (method) {

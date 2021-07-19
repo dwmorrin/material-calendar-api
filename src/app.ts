@@ -58,7 +58,7 @@ app.use((error: Error, req: Request, res: Response, _: NextFunction): void => {
       process.env.NODE_ENV === "development"
         ? { message: error.message, stack: error.stack }
         : { message: "Something went wrong" },
-    context: req.params.context,
+    context: req.query.context,
   });
 });
 

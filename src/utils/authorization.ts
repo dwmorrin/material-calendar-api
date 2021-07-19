@@ -45,7 +45,7 @@ const onError: EEH = (error, req, res, next) => {
   if (typeof error === "string" && error.includes("not authorized")) {
     res.status(403).json({
       error: { message: "Not authorized" },
-      context: req.params.context,
+      context: req.query.context,
     });
   } else next();
 };
