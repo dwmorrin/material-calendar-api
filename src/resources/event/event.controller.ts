@@ -43,37 +43,31 @@ const getOne: EC = (req, res, next) =>
     addResultsToResponse(res, next, { one: true })
   );
 
-/**
- * mysql does not accept key-value objects for bulk imports;
- * values must be an array of arrays.
- * Adjust the ordering here as needed.
- * @param event Event object
- */
-const flattenEvent = (event: {
-  [k: string]: string | number | boolean;
-}): (string | number | boolean)[] => [
-  event.start,
-  event.end,
-  event.locationId,
-  event.reservable || false,
-  event.title,
-];
-
-const replaceManyQuery = `
-  REPLACE INTO allotment
-    (start, end, studio_id, bookable, description)
-  VALUES ?
-`;
-
 const createMany: EC = (req, res, next) =>
-  pool.query(replaceManyQuery, [req.body.map(flattenEvent)], (err) => {
-    const { context } = req.query;
-    if (err) return next(err);
-    res.status(201).json({
-      data: "OK",
-      context,
-    });
-  });
+  pool.query(
+    `REPLACE INTO allotment (
+      start, end, studio_id, bookable, description
+    ) VALUES ?`,
+    [
+      req.body.map(
+        ({
+          start = "",
+          end = "",
+          locationId = "",
+          reservable = false,
+          title = "",
+        }) => [start, end, locationId, reservable, title]
+      ),
+    ],
+    (err) => {
+      const { context } = req.query;
+      if (err) return next(err);
+      res.status(201).json({
+        data: "OK",
+        context,
+      });
+    }
+  );
 
 const updateOne: EC = (req, res, next) =>
   pool.query(
