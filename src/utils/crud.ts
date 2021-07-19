@@ -29,10 +29,15 @@ export const withResource =
     });
 
 export const addResultsToResponse =
-  (res: Response, next: NextFunction, { one = false, key = "results" } = {}) =>
+  (
+    res: Response,
+    next: NextFunction,
+    { one = false, key = "results", many = false } = {}
+  ) =>
   (error: MysqlError | null, results: Record<string, unknown>[]): void => {
     if (error) return next(error);
     res.locals.one = one;
+    res.locals.many = many;
     res.locals[key] = results;
     next();
   };
@@ -79,7 +84,7 @@ export const updateOne =
     );
 
 export const sendResults: EC = (req, res, next) => {
-  const { one = false, results } = res.locals;
+  const { one = false, many = false, results } = res.locals;
   if (!results) return next();
   const {
     method,
@@ -88,7 +93,7 @@ export const sendResults: EC = (req, res, next) => {
   switch (method) {
     case CrudAction.Create:
       res.status(201).json({
-        data: { ...req.body, id: results.insertId },
+        data: many ? "OK" : { ...req.body, id: results.insertId },
         context,
       });
       break;

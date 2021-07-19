@@ -53,20 +53,13 @@ const createMany: EC = (req, res, next) =>
         ({
           start = "",
           end = "",
-          locationId = "",
+          locationId = 0,
           reservable = false,
           title = "",
         }) => [start, end, locationId, reservable, title]
       ),
     ],
-    (err) => {
-      const { context } = req.query;
-      if (err) return next(err);
-      res.status(201).json({
-        data: "OK",
-        context,
-      });
-    }
+    addResultsToResponse(res, next, { many: true })
   );
 
 const updateOne: EC = (req, res, next) =>

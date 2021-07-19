@@ -19,7 +19,8 @@ app.set("port", process.env.PORT || 5000);
 app.use(morgan(process.env.NODE_ENV === "development" ? "dev" : "combined"));
 
 // express middleware for parsing JSON data
-app.use(express.json());
+// increased limit for large data import files, e.g. events
+app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 // auth
