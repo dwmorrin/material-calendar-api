@@ -8,6 +8,10 @@ import pool, { inflate } from "./db";
 import { MysqlError } from "mysql";
 import { EC } from "./types";
 
+// for use in express routes: ID must be numeric
+// (e.g. /api/users/12345, router.get(`/api/users/${numericId}`))
+export const numericId = ":id(\\d+)";
+
 export enum CrudAction {
   Create = "POST",
   Read = "GET",
@@ -74,12 +78,13 @@ export const updateOne =
       addResultsToResponse(res, next)
     );
 
-export const sendResults: EC = (req, res) => {
+export const sendResults: EC = (req, res, next) => {
+  const { one = false, results } = res.locals;
+  if (!results) return next();
   const {
     method,
     query: { context },
   } = req;
-  const { one = false, results = {} } = res.locals;
   switch (method) {
     case CrudAction.Create:
       res.status(201).json({
