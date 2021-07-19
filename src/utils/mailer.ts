@@ -20,7 +20,7 @@ function send(req: Request, res: Response) {
     })
     .sendMail(html ? { ...mail, html } : mail, (error, info) => {
       if (error) res.status(500).json({ error });
-      else res.status(201).json({ info });
+      else res.status(201).json({ data: info });
     });
 }
 
