@@ -10,6 +10,13 @@ const getOne: EC = (_, res, next) =>
     addResultsToResponse(res, next)
   );
 
+const updateLastLogin: EC = (_, res, next) =>
+  pool.query(
+    "UPDATE user SET last_login = CURRENT_TIMESTAMP WHERE id = ?",
+    [res.locals.user.id],
+    addResultsToResponse(res, next, { key: "ignore" })
+  );
+
 const response: EC = (req, res, next) => {
   const { context } = req.query;
   const user = inflate(res.locals.results[0]);
@@ -27,4 +34,4 @@ const handleAuthError: EEH = (err, req, res, next) =>
     context: req.params.context,
   });
 
-export default [getOne, response, handleAuthError];
+export default [getOne, updateLastLogin, response, handleAuthError];
