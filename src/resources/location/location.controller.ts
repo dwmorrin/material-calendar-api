@@ -23,7 +23,7 @@ const queryFn = (where = "") => `
   GROUP BY s.id
 `;
 
-export const getMany: EC = (req, res, next) =>
+export const getMany: EC = (_, res, next) =>
   pool.query(queryFn(), addResultsToResponse(res, next));
 
 export const getOne: EC = (req, res, next) =>
@@ -33,7 +33,7 @@ export const getOne: EC = (req, res, next) =>
     addResultsToResponse(res, next, { one: true })
   );
 
-export const getDefaultId: EC = (req, res, next) =>
+export const getDefaultId: EC = (_, res, next) =>
   pool.query(
     "SELECT id FROM studio WHERE id = (SELECT MIN(id) FROM studio)",
     addResultsToResponse(res, next, { one: true })

@@ -1,22 +1,24 @@
 import { Router } from "express";
 import controller from "./location.controller";
-import { sendResults } from "../../utils/crud";
+import bulkImport from "./location.import";
+import { numericId, sendResults } from "../../utils/crud";
 
 const router = Router();
 
 router.get("/default", controller.getDefaultId);
 
-router.get("/:id/virtualweeks", controller.getVirtualWeeks);
-router.post("/:id/hours/bulk", controller.createOrUpdateHours);
+router.get(`/${numericId}/virtualweeks`, controller.getVirtualWeeks);
+router.post(`/${numericId}/hours/bulk`, controller.createOrUpdateHours);
 
 // sums the hours of the events scheduled in a location
-router.get("/:id/hours", controller.sumHours);
+router.get(`/${numericId}/hours`, controller.sumHours);
 
-router.delete("/:id", controller.removeOne);
+router.delete(`/${numericId}`, controller.removeOne);
 router.get("/", controller.getMany);
-router.get("/:id", controller.getOne);
+router.get(`/${numericId}`, controller.getOne);
 router.post("/", controller.createOne);
-router.put("/:id", controller.updateOne);
+router.post("/bulk", bulkImport);
+router.put(`/${numericId}`, controller.updateOne);
 
 router.use(sendResults);
 
