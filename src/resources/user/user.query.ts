@@ -9,7 +9,7 @@ SELECT
   s.instructor
 FROM
   user u
-    INNER JOIN roster r ON r.student_id = u.id
+    INNER JOIN roster r ON r.user_id = u.id
     INNER JOIN course c ON r.course_id = c.id
     INNER JOIN section s ON r.section_id = s.id
 WHERE
@@ -20,7 +20,7 @@ export const userProjectQuery = (id = ""): string => `
   (${project.getManyQuery}
     INNER JOIN section_project sp ON sp.project_id = p.id
     INNER JOIN roster r ON r.section_id = sp.section_id
-    INNER JOIN user u ON u.id = r.student_id 
+    INNER JOIN user u ON u.id = r.user_id 
   WHERE u.id = "${id}"
   group by p.id)
   UNION

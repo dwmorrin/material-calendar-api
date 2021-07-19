@@ -483,7 +483,7 @@ function processInserts(req: Request, res: Response, next: NextFunction): void {
     const { user, course } = record;
     pool.query(
       `INSERT INTO roster (
-        student_id, course_id, section_id, semester_id
+        user_id, course_id, section_id, semester_id
       ) VALUES (?, ?, ?, ?)`,
       [user.id, course.id, course.section.id, res.locals.semester.id],
       (error) => {

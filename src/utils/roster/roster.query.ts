@@ -15,7 +15,7 @@ const query = `
       'id', u.id
     ) AS student
   FROM
-    roster r LEFT JOIN user u ON r.student_id = u.id
+    roster r LEFT JOIN user u ON r.user_id = u.id
     LEFT JOIN course c ON r.course_id = c.id
     LEFT JOIN section s ON s.course_id = c.id
 `;
@@ -65,7 +65,7 @@ export const rosterInputQuery = `
   FROM roster r
     JOIN course c on c.id = r.course_id
     JOIN section s on s.id = r.section_id
-    JOIN user u on u.id = r.student_id
+    JOIN user u on u.id = r.user_id
   WHERE r.semester_id = ?
 `;
 

@@ -14,7 +14,7 @@ const getUserIdsBySection: EC = (req, res, next) =>
       u.id
     FROM
       roster r 
-      INNER JOIN user u ON r.student_id = u.id 
+      INNER JOIN user u ON r.user_id = u.id 
       INNER JOIN section_project sp ON sp.section_id = r.course_id
       INNER JOIN project p ON p.id = sp.project_id
     WHERE p.id = ?`,

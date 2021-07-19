@@ -397,21 +397,21 @@ CREATE TABLE `role` (
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `roster` (
-  `roster_id` int NOT NULL AUTO_INCREMENT,
-  `student_id` int DEFAULT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
   `course_id` int DEFAULT NULL,
   `semester_id` int DEFAULT NULL,
   `section_id` int DEFAULT NULL,
-  PRIMARY KEY (`roster_id`),
-  UNIQUE KEY `student_course_idx` (`student_id`,`course_id`,`semester_id`,`section_id`),
-  KEY `student_id_idx` (`student_id`),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `student_course_idx` (`user_id`,`course_id`,`semester_id`,`section_id`),
+  KEY `student_id_idx` (`user_id`),
   KEY `course_id_idx` (`course_id`),
   KEY `semester_id_idx` (`semester_id`),
   KEY `section_id_idx` (`section_id`),
   CONSTRAINT `roster_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `roster_section_id_section_id` FOREIGN KEY (`section_id`) REFERENCES `section` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `roster_semester_id_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `roster_student_id_user_id` FOREIGN KEY (`student_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+  CONSTRAINT `roster_student_id_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -515,16 +515,15 @@ CREATE TABLE `tag` (
 CREATE TABLE `user` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` varchar(20) NOT NULL,
+  `restriction` int NOT NULL DEFAULT '0',
   `password` varchar(128) DEFAULT NULL,
-  `first_name` varchar(50) DEFAULT '',
-  `last_name` varchar(50) DEFAULT '',
-  `middle_name` varchar(50) DEFAULT '',
-  `email` varchar(255) DEFAULT '',
-  `phone` varchar(50) DEFAULT '',
-  `user_type` tinyint(1) DEFAULT NULL,
+  `first_name` varchar(50) NOT NULL DEFAULT '',
+  `last_name` varchar(50) NOT NULL DEFAULT '',
+  `middle_name` varchar(50) NOT NULL DEFAULT '',
+  `email` varchar(255) NOT NULL DEFAULT '',
+  `phone` varchar(50) NOT NULL DEFAULT '',
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `last_login` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `restriction` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
