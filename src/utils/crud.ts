@@ -3,9 +3,10 @@
  * For use with simple CRUD operations, or as templates when writing custom
  * CRUD handlers.
  */
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Response } from "express";
 import pool, { inflate } from "./db";
-import { MysqlError, Query } from "mysql";
+import { MysqlError } from "mysql";
+import { EC } from "./types";
 
 export enum CrudAction {
   Create = "POST",
@@ -24,8 +25,8 @@ export const addResultsToResponse =
   };
 
 export const createOne =
-  (table: string) =>
-  (req: Request, res: Response, next: NextFunction): Query =>
+  (table: string): EC =>
+  (req, res, next) =>
     pool.query(
       "INSERT INTO ?? SET ?",
       [table, req.body],
@@ -33,13 +34,13 @@ export const createOne =
     );
 
 export const getMany =
-  (table: string) =>
-  (_: Request, res: Response, next: NextFunction): Query =>
+  (table: string): EC =>
+  (_, res, next) =>
     pool.query("SELECT * FROM ??", [table], addResultsToResponse(res, next));
 
 export const getOne =
-  (table: string, key: string) =>
-  (req: Request, res: Response, next: NextFunction): Query =>
+  (table: string, key: string): EC =>
+  (req, res, next) =>
     pool.query(
       "SELECT * FROM ?? WHERE ?? = ?",
       [table, key, req.params.id],
@@ -47,8 +48,8 @@ export const getOne =
     );
 
 export const removeOne =
-  (table: string, key: string) =>
-  (req: Request, res: Response, next: NextFunction): Query =>
+  (table: string, key: string): EC =>
+  (req, res, next) =>
     pool.query(
       "DELETE FROM ?? WHERE ?? = ?",
       [table, key, req.params.id],
@@ -56,15 +57,15 @@ export const removeOne =
     );
 
 export const updateOne =
-  (table: string, key: string) =>
-  (req: Request, res: Response, next: NextFunction): Query =>
+  (table: string, key: string): EC =>
+  (req, res, next) =>
     pool.query(
       "UPDATE ?? SET ? WHERE ?? = ?",
       [table, req.body, key, req.params.id],
       addResultsToResponse(res, next)
     );
 
-export function sendResults(req: Request, res: Response): void {
+export const sendResults: EC = (req, res) => {
   const {
     method,
     query: { context },
@@ -90,14 +91,14 @@ export function sendResults(req: Request, res: Response): void {
     default:
       throw new Error("Invalid method " + method);
   }
-}
+};
 
 export const controllers = (
   table: string,
   key: string
 ): Record<
   "createOne" | "getMany" | "getOne" | "removeOne" | "updateOne",
-  (req: Request, res: Response, next: NextFunction) => Query
+  EC
 > => ({
   createOne: createOne(table),
   getMany: getMany(table),
