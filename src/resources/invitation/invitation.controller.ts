@@ -12,9 +12,8 @@ export const getInvitations: EC = (req, res, next) =>
            JSON_OBJECT('first',
             uin.first_name,
             'last',
-            uin.last_name)) as invitor,
+            uin.last_name),'email',uin.email) as invitor,
             tv.invitee AS invitees,
-            tv.invitation_id AS insssvitees,
             (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
             rm.id as group_id
             from invitation inv left join invitee iv on inv.id=iv.invitation_id 
@@ -48,9 +47,8 @@ export const getInvitationsByProject: EC = (req, res, next) =>
            JSON_OBJECT('first',
             uin.first_name,
             'last',
-            uin.last_name)) as invitor,
+            uin.last_name),'email',uin.email) as invitor,
             tv.invitee AS invitees,
-            tv.invitation_id AS insssvitees,
             (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
             rm.id as group_id
             from invitation inv left join invitee iv on inv.id=iv.invitation_id 

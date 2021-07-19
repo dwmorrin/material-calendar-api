@@ -13,7 +13,8 @@ FROM
         JSON_OBJECT(
           'id', CONVERT(u.id,char),
           'username', u.user_id,
-          'name', JSON_OBJECT('first', u.first_name,'last',u.last_name)
+          'name', JSON_OBJECT('first', u.first_name,'last',u.last_name),
+          'email', u.email
         )
       ) AS members
     FROM
