@@ -10,7 +10,12 @@ const query = `
     JSON_OBJECT(
       'id', studioId,
       'title', studio,
-      'restriction', (select studio.restriction from studio where studio.id=studioId)
+      'restriction', (
+        SELECT studio.restriction FROM studio WHERE studio.id = studioId
+       ),
+      'allowsWalkIns', (
+        SELECT studio.allows_walk_ins FROM studio WHERE studio.id = studioId
+      )
     ) AS location,
     description AS title,
     open AS reservable,

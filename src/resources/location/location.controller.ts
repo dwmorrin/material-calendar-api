@@ -15,7 +15,8 @@ const queryFn = (where = "") => `
         'hours', wh.hours
       ))
     ) AS hours,
-    s.restriction AS restriction
+    s.restriction AS restriction,
+    s.allows_walk_ins AS allowsWalkIns
   FROM
     studio s
     LEFT JOIN studio_hours wh ON s.id = wh.studio_id
