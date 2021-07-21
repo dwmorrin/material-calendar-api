@@ -13,6 +13,7 @@ router.post("/bulk", controller.createMany);
 router.put("/:id", controller.updateOne);
 // bulk route already exists
 router.post("/import", eventImport);
+router.post("/range", controller.range);
 
 router.use(sendResults);
 

@@ -83,10 +83,23 @@ const updateOne: EC = (req, res, next) =>
     addResultsToResponse(res, next)
   );
 
+const range: EC = (req, res, next) => {
+  const { start, end } = req.body;
+  pool.query(
+    `${query} WHERE start BETWEEN ? AND ?`,
+    [start, end],
+    (err, results) => {
+      if (err) return next(err);
+      res.status(200).json({ data: results });
+    }
+  );
+};
+
 export default {
   ...controllers("allotment", "id"),
   createMany,
   getMany,
   getOne,
   updateOne,
+  range,
 };
