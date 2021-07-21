@@ -1,28 +1,32 @@
 import pool from "../../utils/db";
 import { addResultsToResponse } from "../../utils/crud";
-import { groupQueryFn } from "./group.query";
 import { EC } from "../../utils/types";
 
+/**
+ * Reading: use the `user_group` view.
+ * Writing: use the `rm_group` table.
+ */
+
 export const getGroups: EC = (_, res, next) =>
-  pool.query(groupQueryFn(), addResultsToResponse(res, next));
+  pool.query("SELECT * FROM user_group", addResultsToResponse(res, next));
 
 export const getOneGroup: EC = (req, res, next) =>
   pool.query(
-    groupQueryFn("WHERE g.id = ?"),
+    "SELECT * FROM user_group WHERE id = ?",
     [req.params.groupId],
     addResultsToResponse(res, next, { one: true })
   );
 
 export const getGroupsByUser: EC = (req, res, next) =>
   pool.query(
-    groupQueryFn("WHERE JSON_SEARCH(g.members, 'all', ?)"),
+    "SELECT * FROM user_group WHERE JSON_SEARCH(members, 'all', ?)",
     [req.params.userId],
     addResultsToResponse(res, next)
   );
 
 export const getGroupsByProject: EC = (req, res, next) =>
   pool.query(
-    groupQueryFn("WHERE g.projectId = ?"),
+    "SELECT * FROM user_group WHERE projectId = ?",
     [req.params.projectId],
     addResultsToResponse(res, next)
   );
