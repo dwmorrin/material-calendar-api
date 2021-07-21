@@ -2,48 +2,17 @@ import { addResultsToResponse, controllers } from "../../utils/crud";
 import pool from "../../utils/db";
 import { EC } from "../../utils/types";
 
-const query = `
-  SELECT 
-    id,
-    start,
-    end,
-    JSON_OBJECT(
-      'id', studioId,
-      'title', studio,
-      'restriction', (
-        SELECT studio.restriction FROM studio WHERE studio.id = studioId
-       ),
-      'allowsWalkIns', (
-        SELECT studio.allows_walk_ins FROM studio WHERE studio.id = studioId
-      )
-    ) AS location,
-    description AS title,
-    open AS reservable,
-    IF (
-      reservationId IS NOT NULL,
-      JSON_OBJECT(
-        'id', reservationId,
-        'projectId', projectId,
-        'description', purpose,
-        'groupId', projectGroupId,
-        'liveRoom', \`live room\`,
-        'guests', guests,
-        'contact', phone,
-        'equipment', gear,
-        'notes', notes
-      ),
-      NULL
-    ) AS reservation
-  FROM
-    full_calendar
-`;
+/**
+ * Reading: use the `event` view.
+ * Writing: use the `allotment` table.
+ */
 
 const getMany: EC = (_, res, next) =>
-  pool.query(query, addResultsToResponse(res, next));
+  pool.query("SELECT * FROM event", addResultsToResponse(res, next));
 
 const getOne: EC = (req, res, next) =>
   pool.query(
-    query + "WHERE id = ?",
+    "SELECT * FROM event WHERE id = ?",
     [req.params.id],
     addResultsToResponse(res, next, { one: true })
   );
@@ -86,7 +55,7 @@ const updateOne: EC = (req, res, next) =>
 const range: EC = (req, res, next) => {
   const { start, end } = req.body;
   pool.query(
-    `${query} WHERE start BETWEEN ? AND ?`,
+    "SELECT * FROM event WHERE a.start BETWEEN ? AND ?",
     [start, end],
     (err, results) => {
       if (err) return next(err);
