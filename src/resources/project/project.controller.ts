@@ -3,9 +3,11 @@ import {
   addResultsToResponse,
   controllers,
   CrudAction,
+  withResource,
 } from "../../utils/crud";
 import { userQueryFn } from "../user/user.query";
 import { EC } from "../../utils/types";
+import { queryFn } from "../location/location.controller";
 
 /**
  * Reading: use `project_view` view.
@@ -134,12 +136,55 @@ export const updateAllotment: EC = (req, res, next) =>
     addResultsToResponse(res, next)
   );
 
+interface ProjectLocationHours {
+  project: string; // title
+  locationId: number;
+  hours: number;
+}
+
+const createLocationHours: EC = (req, res, next) => {
+  const locationHours = req.body as ProjectLocationHours[];
+  if (!Array.isArray(locationHours)) return next("no input given");
+  const { projects } = res.locals as {
+    projects: { id: number; title: string }[];
+  };
+  const query =
+    "REPLACE INTO project_studio_hours (project_id, studio_id, hours) VALUES ?";
+  pool.query(
+    query,
+    [
+      locationHours.map(({ project, locationId, hours }) => [
+        projects.find((p) => p.title === project)?.id,
+        locationId,
+        hours,
+      ]),
+    ],
+    addResultsToResponse(res, next, { key: "ignore" })
+  );
+};
+
+const respondWithUpdatedProjectsAndLocations: EC = (_, res) => {
+  res.status(201).json({
+    data: {
+      projects: res.locals.projects,
+      locations: res.locals.locations,
+    },
+  });
+};
+
 export default {
   ...controllers("project", "id"),
   createOne: [
     createOrUpdateOne,
     createOrUpdateProjectLocationHours,
     createOrUpdateSectionProject,
+  ],
+  createLocationHours: [
+    withResource("projects", "SELECT id, title FROM project"),
+    createLocationHours,
+    withResource("projects", "SELECT * FROM project_view"),
+    withResource("locations", queryFn()),
+    respondWithUpdatedProjectsAndLocations,
   ],
   getMany,
   getOneLocationAllotment,

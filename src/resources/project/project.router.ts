@@ -8,6 +8,8 @@ router.get("/:id/allotments", controller.getOneLocationAllotment);
 router.put("/:id/allotments", controller.updateAllotment);
 router.get("/:id/users", controller.getUsersByProject);
 
+router.post("/location-hours", controller.createLocationHours);
+
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);
 router.get("/:id", controller.getOne);

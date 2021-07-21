@@ -2,7 +2,8 @@ import { addResultsToResponse, controllers } from "../../utils/crud";
 import pool from "../../utils/db";
 import { EC } from "../../utils/types";
 
-const queryFn = (where = "") => `
+// TODO make this a view
+export const queryFn = (where = ""): string => `
   SELECT
     s.id,
     s.title,
