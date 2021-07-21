@@ -24,7 +24,6 @@ import rosterRecordQuery, {
   rosterInputQuery,
 } from "./roster.query";
 import { userQueryFn } from "../../resources/user/user.query";
-import { getManyQuery as projectQuery } from "../../resources/project/project.query";
 
 interface RosterRecordInput {
   Course: string;
@@ -614,7 +613,7 @@ export default [
   processUpdates,
   // logToFile,
   withResource("courses", courseQuery),
-  withResource("projects", projectQuery),
+  withResource("projects", "SELECT * FROM project_view"),
   withResource("users", userQueryFn()),
   withResource("rosterRecords", rosterRecordQuery),
   successResponder,

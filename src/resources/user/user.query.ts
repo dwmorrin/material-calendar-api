@@ -1,5 +1,3 @@
-import * as project from "../project/project.query";
-
 export const userCourseQuery = (id = ""): string => `
 SELECT
   c.id,
@@ -17,14 +15,16 @@ WHERE
 `;
 
 export const userProjectQuery = (id = ""): string => `
-  (${project.getManyQuery}
-    INNER JOIN section_project sp ON sp.project_id = p.id
-    INNER JOIN roster r ON r.section_id = sp.section_id
-    INNER JOIN user u ON u.id = r.user_id 
-  WHERE u.id = "${id}"
-  group by p.id)
-  UNION
-  (${project.getManyQuery} WHERE p.title = "Walk-in" )
+  (
+    SELECT p.*
+    FROM project_view p
+      INNER JOIN section_project sp ON sp.project_id = p.id
+      INNER JOIN roster r ON r.section_id = sp.section_id
+      INNER JOIN user u ON u.id = r.user_id 
+    WHERE u.id = "${id}"
+    GROUP BY p.id
+  )
+  UNION (SELECT * FROM project_view WHERE title = "Walk-in" )
 `;
 
 export const userQueryFn = (where = ""): string => `

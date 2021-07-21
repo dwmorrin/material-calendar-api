@@ -4,9 +4,13 @@ import {
   controllers,
   CrudAction,
 } from "../../utils/crud";
-import { getManyQuery } from "./project.query";
 import { userQueryFn } from "../user/user.query";
 import { EC } from "../../utils/types";
+
+/**
+ * Reading: use `project_view` view.
+ * Writing: use `project` table.
+ */
 
 const getUserIdsBySection: EC = (req, res, next) =>
   pool.query(
@@ -35,20 +39,13 @@ const getUsersByIdList: EC = (req, res, next) => {
 
 export const getOneLocationAllotment: EC = (req, res, next) =>
   pool.query(
-    `
-      SELECT
-        *
-      FROM
-        project_virtual_week_hours
-      WHERE
-        project_id = ?
-     `,
+    "SELECT * FROM project_virtual_week_hours WHERE project_id = ?",
     [req.params.id],
     addResultsToResponse(res, next, { one: true })
   );
 
-export const getMany: EC = (req, res, next) => {
-  pool.query(getManyQuery, addResultsToResponse(res, next));
+export const getMany: EC = (_, res, next) => {
+  pool.query("SELECT * from project_view", addResultsToResponse(res, next));
 };
 
 export const createOrUpdateOne: EC = (req, res, next): void => {
