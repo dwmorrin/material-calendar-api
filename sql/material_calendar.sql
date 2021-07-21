@@ -160,7 +160,7 @@ CREATE TABLE `equipment` (
   `serial` varchar(255) DEFAULT NULL,
   `barcode` varchar(255) DEFAULT NULL,
   `quantity` int DEFAULT NULL,
-  `consumable` int DEFAULT NULL,
+  `consumable` tinyint(1) NOT NULL DEFAULT '0',
   `notes` text,
   `restriction` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
