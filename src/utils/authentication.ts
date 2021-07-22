@@ -23,7 +23,7 @@ const authentication = (
         return res
           .status(500)
           .json({ error: "authentication method misconfigured" });
-      const authId = req.headers[process.env.AUTH_CUSTOM_HEADER];
+      const authId = req.headers[process.env.AUTH_CUSTOM_HEADER.toLowerCase()];
       if (!authId) {
         return res.status(401).send("not authenticated");
       }
