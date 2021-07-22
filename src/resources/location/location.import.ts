@@ -30,10 +30,24 @@ const process: EC = (req, res, next) => {
       title: string;
       location: string;
       restriction: number;
+      allows_walk_ins: boolean;
     }[]
   ).find(({ title }) => title === location.title);
-  if (existing) res.locals.updates.push({ ...location, id: existing.id });
-  else res.locals.inserts.push(location);
+  if (existing)
+    res.locals.updates.push({
+      id: existing.id,
+      title: location.title,
+      location: location.location,
+      restriction: location.restriction,
+      allows_walk_ins: location.allowsWalkIns,
+    });
+  else
+    res.locals.inserts.push({
+      title: location.title,
+      location: location.location,
+      restriction: location.restriction,
+      allows_walk_ins: location.allowsWalkIns,
+    });
   process(req, res, next);
 };
 
