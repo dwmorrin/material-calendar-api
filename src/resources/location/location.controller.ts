@@ -2,35 +2,17 @@ import { addResultsToResponse, controllers } from "../../utils/crud";
 import pool from "../../utils/db";
 import { EC } from "../../utils/types";
 
-// TODO make this a view
-export const queryFn = (where = ""): string => `
-  SELECT
-    s.id,
-    s.title,
-    s.location AS groupId,
-    IF (
-      wh.date IS NULL,
-      '[]',
-      JSON_ARRAYAGG(JSON_OBJECT(
-        'date', wh.date,
-        'hours', wh.hours
-      ))
-    ) AS hours,
-    s.restriction AS restriction,
-    s.allows_walk_ins AS allowsWalkIns
-  FROM
-    studio s
-    LEFT JOIN studio_hours wh ON s.id = wh.studio_id
-  ${where}
-  GROUP BY s.id
-`;
+/**
+ * Reading: use `location` view
+ * Writing: use `studio` table
+ */
 
 export const getMany: EC = (_, res, next) =>
-  pool.query(queryFn(), addResultsToResponse(res, next));
+  pool.query("SELECT * from location", addResultsToResponse(res, next));
 
 export const getOne: EC = (req, res, next) =>
   pool.query(
-    queryFn("WHERE s.id = ?"),
+    "SELECT * FROM location WHERE id = ?",
     [req.params.id],
     addResultsToResponse(res, next, { one: true })
   );

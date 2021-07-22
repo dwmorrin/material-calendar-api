@@ -7,7 +7,6 @@ import {
 } from "../../utils/crud";
 import { userQueryFn } from "../user/user.query";
 import { EC } from "../../utils/types";
-import { queryFn } from "../location/location.controller";
 
 /**
  * Reading: use `project_view` view.
@@ -183,7 +182,7 @@ export default {
     withResource("projects", "SELECT id, title FROM project"),
     createLocationHours,
     withResource("projects", "SELECT * FROM project_view"),
-    withResource("locations", queryFn()),
+    withResource("locations", "SELECT * FROM location"),
     respondWithUpdatedProjectsAndLocations,
   ],
   getMany,
