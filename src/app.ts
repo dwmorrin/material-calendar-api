@@ -41,26 +41,52 @@ app.use((req, res) => {
 });
 
 // catch unhandled exceptions
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((error: Error, req: Request, res: Response, _: NextFunction): void => {
-  // eslint-disable-next-line no-console
-  console.error(
-    [
-      "--- UNHANDLED EXCEPTION ---",
-      "** Error message: **",
-      error.message,
-      "** Error stack: **",
-      error.stack,
-      "--- END UNHANDLED EXCEPTION ---",
-    ].join("\n")
-  );
-  res.status(500).json({
-    error:
-      process.env.NODE_ENV === "development"
-        ? { message: error.message, stack: error.stack }
-        : { message: "Something went wrong" },
-    context: req.query.context,
-  });
-});
+app.use(
+  (
+    error: Error | string,
+    req: Request,
+    res: Response,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _: NextFunction
+  ): void => {
+    if (error instanceof Error) {
+      // eslint-disable-next-line no-console
+      console.error(
+        [
+          "--- UNHANDLED EXCEPTION ---",
+          "** Error message: **",
+          error.message,
+          "** Error stack: **",
+          error.stack,
+          "--- END UNHANDLED EXCEPTION ---",
+        ].join("\n")
+      );
+      res.status(500).json({
+        error:
+          process.env.NODE_ENV === "development"
+            ? { message: error.message, stack: error.stack }
+            : { message: "Something went wrong" },
+        context: req.query.context,
+      });
+    } else {
+      // eslint-disable-next-line no-console
+      console.error(
+        [
+          "--- UNHANDLED EXCEPTION ---",
+          "** Error message: **",
+          JSON.stringify(error),
+          "--- END UNHANDLED EXCEPTION ---",
+        ].join("\n")
+      );
+      res.status(500).json({
+        error:
+          process.env.NODE_ENV === "development"
+            ? { message: JSON.stringify(error) }
+            : { message: "Something went wrong" },
+        context: req.query.context,
+      });
+    }
+  }
+);
 
 export default app;
