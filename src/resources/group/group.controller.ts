@@ -49,7 +49,7 @@ export const createGroupFromInvitation: EC = (req, res, next) =>
       invitation.invitor as creator,
       1 as status,
       1 as group_type,
-      count(invitee.accepted)+1 as group_size
+      count(distinct invitee.accepted)+1 as group_size
     FROM invitation
       INNER JOIN invitee ON invitation.id = invitee.invitation_id
       INNER JOIN project ON invitation.project_id = project.id

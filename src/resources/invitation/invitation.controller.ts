@@ -15,7 +15,8 @@ export const getInvitations: EC = (req, res, next) =>
             uin.last_name),'email',uin.email) as invitor,
             tv.invitee AS invitees,
             (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
-            rm.id as group_id
+            rm.id as group_id,
+            inv.approved as approved
             from invitation inv left join invitee iv on inv.id=iv.invitation_id 
             left join 
               (select vt.invitation_id as invitation_id, json_arrayagg(JSON_Object('id',
@@ -25,6 +26,7 @@ export const getInvitations: EC = (req, res, next) =>
               uiv.first_name,
               'last',
               uiv.last_name),
+              'email',uiv.email,
               'accepted',
               vt.accepted,'rejected',vt.rejected)) AS invitee 
               from invitee vt 
@@ -50,7 +52,8 @@ export const getInvitationsByProject: EC = (req, res, next) =>
             uin.last_name),'email',uin.email) as invitor,
             tv.invitee AS invitees,
             (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
-            rm.id as group_id
+            rm.id as group_id,
+            inv.approved as approved
             from invitation inv left join invitee iv on inv.id=iv.invitation_id 
             left join 
               (select vt.invitation_id as invitation_id, json_arrayagg(JSON_Object('id',
@@ -60,6 +63,7 @@ export const getInvitationsByProject: EC = (req, res, next) =>
               uiv.first_name,
               'last',
               uiv.last_name),
+              'email',uiv.email,
               'accepted',
               vt.accepted,'rejected',vt.rejected)) AS invitee 
               from invitee vt 
@@ -72,10 +76,53 @@ export const getInvitationsByProject: EC = (req, res, next) =>
     addResultsToResponse(res, next)
   );
 
+export const getInvitationsPendingAdminApproval: EC = (req, res, next) =>
+  pool.query(
+    `select inv.id as id,
+    inv.project_id as project,
+    JSON_OBJECT('id',
+           inv.invitor,
+           'name',
+           JSON_OBJECT('first',
+            uin.first_name,
+            'last',
+            uin.last_name),'email',uin.email) as invitor,
+            tv.invitee AS invitees,
+            (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
+            rm.id as group_id,
+            inv.approved as approved,
+            p.title as projectTitle,
+            p.group_size as projectGroupSize
+            from invitation inv left join invitee iv on inv.id=iv.invitation_id 
+            left join 
+              (select vt.invitation_id as invitation_id, json_arrayagg(JSON_Object('id',
+              vt.invitee,
+              'name',
+              JSON_OBJECT('first',
+              uiv.first_name,
+              'last',
+              uiv.last_name),
+              'email',uiv.email,
+              'accepted',
+              vt.accepted,'rejected',vt.rejected)) AS invitee 
+              from invitee vt 
+              left join user uiv on uiv.id=vt.invitee 
+              group by vt.invitation_id) tv on tv.invitation_id=inv.id
+            left join user uin on uin.id=inv.invitor
+            left join rm_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
+            left join project p on inv.project_id=p.id
+            where (approved is null and denied is null) group by inv.id;`,
+    addResultsToResponse(res, next)
+  );
+
 const createInvitations: EC = (req, res, next) =>
   pool.query(
-    `insert into invitation (project_id,invitor) VALUES (?,?)`,
-    [req.body.projectId, req.body.invitorId],
+    `insert into invitation (project_id,invitor,approved) VALUES (?,?,?)`,
+    [
+      req.body.projectId,
+      req.body.invitorId,
+      req.body.approved ? req.body.invitorId : null,
+    ],
     addResultsToResponse(res, next)
   );
 
@@ -100,6 +147,21 @@ export const updateInvitation: EC = (req, res, next) => {
   );
 };
 
+export const adminResponse: EC = (req, res, next) => {
+  const { approved, denied, adminId } = req.body;
+  pool.query(
+    `UPDATE invitation
+      SET approved = ?,denied = ?
+      WHERE id = ?`,
+    [
+      approved ? adminId : null,
+      denied ? adminId : null,
+      req.params.invitationId,
+    ],
+    addResultsToResponse(res, next)
+  );
+};
+
 export const removeInvitation: EC = (req, res, next) =>
   pool.query(
     `delete from invitation where id=?`,
@@ -110,6 +172,8 @@ export const removeInvitation: EC = (req, res, next) =>
 export default {
   getInvitations,
   getInvitationsByProject,
+  getInvitationsPendingAdminApproval,
+  adminResponse,
   createInvitations: [createInvitations, createInvitees],
   updateInvitation,
   removeInvitation,

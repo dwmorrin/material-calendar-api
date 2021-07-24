@@ -9,6 +9,9 @@ router.get(
   "/user/:userId/project/:projectId",
   controller.getInvitationsByProject
 );
+router.get("/exceptions", controller.getInvitationsPendingAdminApproval);
+router.put("/exceptions/:invitationId", controller.adminResponse);
+
 router.post("/", controller.createInvitations);
 router.put("/:invitationId", controller.updateInvitation);
 router.delete("/:invitationId", controller.removeInvitation);
