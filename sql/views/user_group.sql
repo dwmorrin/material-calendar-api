@@ -11,7 +11,7 @@ FROM
       rg.project_id AS projectId,
       JSON_ARRAYAGG(
         JSON_OBJECT(
-          'id', u.id,
+          'id', CAST(u.id AS CHAR CHARSET UTF8MB4),
           'username', u.user_id,
           'name', JSON_OBJECT('first', u.first_name,'last',u.last_name),
           'email', u.email
