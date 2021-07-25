@@ -137,12 +137,11 @@ export const cancelReservation: EC = (req, res, next) =>
     [
       req.body.userId,
       req.body.refundRequest,
-      req.body.refundRequestUserId,
       req.body.refundApproved
         ? '"Refund Granted Automatically"'
         : req.body.refundComment,
-      req.body.refundApproved ? req.body.userId : "'NULL'",
-      req.body.refundApproved ? '"DEFAULT_TIMESTAMP"' : '"NULL"',
+      req.body.refundApproved ? req.body.userId : null,
+      req.body.refundApproved ? "DEFAULT_TIMESTAMP" : null,
       req.params.id,
     ],
     addResultsToResponse(res, next, { one: true })
@@ -178,7 +177,7 @@ export const createOne: EC = (req, res, next) =>
         group_id: req.body.groupId,
         purpose: req.body.description,
         guests: req.body.guests,
-        living_room: req.body.liveRoom,
+        live_room: req.body.liveRoom,
         contact_phone: req.body.phone,
         notes: req.body.notes,
       },
@@ -195,7 +194,7 @@ export const updateOne: EC = (req, res, next) =>
         group_id: req.body.groupId,
         purpose: req.body.description,
         guests: req.body.guests,
-        living_room: req.body.liveRoom,
+        live_room: req.body.liveRoom,
         contact_phone: req.body.phone,
         notes: req.body.notes,
       },
