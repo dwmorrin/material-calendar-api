@@ -47,7 +47,7 @@ SELECT
       "projectId", b.project_id,
       "description", b.purpose,
       "groupId", b.group_id,
-      "liveRoom", b.living_room,
+      "liveRoom", b.live_room,
       "guests", b.guests,
       "contact", b.contact_phone,
       "equipment", IF (

@@ -45,28 +45,19 @@ CREATE TABLE `booking` (
   `checkout` datetime DEFAULT NULL,
   `absent_logtime` datetime DEFAULT NULL,
   `cancelled` tinyint(1) DEFAULT '0',
+  `cancelled_user_id` int DEFAULT NULL,
   `cancelled_time` datetime DEFAULT NULL,
-  `cancel_request` tinyint(1) DEFAULT '0',
-  `cancel_request_userid` int DEFAULT NULL,
-  `cancel_request_time` datetime DEFAULT NULL,
-  `cancel_request_comment` text,
-  `cancelled_approval` int DEFAULT NULL,
-  `cancelled_denial` int DEFAULT NULL,
-  `living_room` tinyint(1) DEFAULT '0',
+  `refund_request` tinyint(1) DEFAULT '0',
+  `refund_request_comment` text,
+  `refund_approval` int DEFAULT NULL,
+  `refund_denial` int DEFAULT NULL,
+  `refund_response_time` datetime DEFAULT NULL,
+  `live_room` tinyint(1)DEFAULT '0',
   `multitrack` tinyint(1) DEFAULT '0',
   `format_analog` tinyint(1) DEFAULT '0',
   `format_dolby` tinyint(1) DEFAULT '0',
   `contact_phone` varchar(20) DEFAULT NULL,
   `guests` text,
-  `refundable` tinyint(1) DEFAULT '0',
-  `checked_in` tinyint(1) DEFAULT '0',
-  `checked_out` tinyint(1) DEFAULT '0',
-  `absent` tinyint(1) DEFAULT '0',
-  `checkin_comment` text,
-  `checkout_comment` text,
-  `checkin_id` int DEFAULT NULL,
-  `checkout_id` int DEFAULT NULL,
-  `absent_id` int DEFAULT NULL,
   `created` datetime DEFAULT CURRENT_TIMESTAMP,
   `modified` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   `notes` varchar(255) DEFAULT NULL,
@@ -74,17 +65,9 @@ CREATE TABLE `booking` (
   KEY `group_id_idx` (`group_id`),
   KEY `allotment_id_idx` (`allotment_id`),
   KEY `project_id_idx` (`project_id`),
-  KEY `cancelled_approval_idx` (`cancelled_approval`),
-  KEY `cancel_request_userid_idx` (`cancel_request_userid`),
-  KEY `checkin_id_idx` (`checkin_id`),
-  KEY `checkout_id_idx` (`checkout_id`),
-  KEY `absent_id_idx` (`absent_id`),
-  CONSTRAINT `booking_absent_id_user_id` FOREIGN KEY (`absent_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  KEY `cancelled_approval_idx` (`refund_approval`),
   CONSTRAINT `booking_allotment_id_allotment_id` FOREIGN KEY (`allotment_id`) REFERENCES `allotment` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `booking_cancel_request_userid_user_id` FOREIGN KEY (`cancel_request_userid`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `booking_cancelled_approval_user_id` FOREIGN KEY (`cancelled_approval`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `booking_checkin_id_user_id` FOREIGN KEY (`checkin_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `booking_checkout_id_user_id` FOREIGN KEY (`checkout_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `booking_cancelled_approval_user_id` FOREIGN KEY (`refund_approval`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `booking_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `booking_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -621,7 +604,7 @@ CREATE TABLE `week_name` (
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `event` AS with `equipment_list` as (select `er`.`booking_id` AS `booking_id`,if(((`e`.`manufacturer` is not null) and (`e`.`model` is not null)),concat(`e`.`manufacturer`,' ',`e`.`model`),`e`.`description`) AS `name`,json_object('quantity',sum(`er`.`quantity`),'items',json_arrayagg(json_object('id',`e`.`id`,'quantity',`er`.`quantity`))) AS `gear` from ((`equipment_reservation` `er` left join `equipment` `e` on((`e`.`id` = `er`.`equipment_id`))) left join `booking` `b` on((`er`.`booking_id` = `b`.`id`))) group by `name`,`b`.`id`) select `a`.`id` AS `id`,`a`.`start` AS `start`,`a`.`end` AS `end`,(select json_object('id',`s`.`id`,'title',`s`.`title`,'restriction',`s`.`restriction`,'allowsWalkIns',`s`.`allows_walk_ins`) from `studio` `s` where (`a`.`studio_id` = `s`.`id`)) AS `location`,if((`g`.`name` is not null),`g`.`name`,`a`.`description`) AS `title`,`a`.`bookable` AS `reservable`,if((`b`.`id` is not null),json_object('id',`b`.`id`,'projectId',`b`.`project_id`,'description',`b`.`purpose`,'groupId',`b`.`group_id`,'liveRoom',`b`.`living_room`,'guests',`b`.`guests`,'contact',`b`.`contact_phone`,'equipment',if((`el`.`gear` is not null),json_objectagg(ifnull(`el`.`name`,'unknown'),`el`.`gear`),NULL)),NULL) AS `reservation` from (((`allotment` `a` left join `booking` `b` on((`a`.`id` = `b`.`allotment_id`))) left join `equipment_list` `el` on((`el`.`booking_id` = `b`.`id`))) left join `rm_group` `g` on((`g`.`id` = `b`.`group_id`))) group by `a`.`id` */;
+/*!50001 VIEW `event` AS with `equipment_list` as (select `er`.`booking_id` AS `booking_id`,if(((`e`.`manufacturer` is not null) and (`e`.`model` is not null)),concat(`e`.`manufacturer`,' ',`e`.`model`),`e`.`description`) AS `name`,json_object('quantity',sum(`er`.`quantity`),'items',json_arrayagg(json_object('id',`e`.`id`,'quantity',`er`.`quantity`))) AS `gear` from ((`equipment_reservation` `er` left join `equipment` `e` on((`e`.`id` = `er`.`equipment_id`))) left join `booking` `b` on((`er`.`booking_id` = `b`.`id`))) group by `name`,`b`.`id`) select `a`.`id` AS `id`,`a`.`start` AS `start`,`a`.`end` AS `end`,(select json_object('id',`s`.`id`,'title',`s`.`title`,'restriction',`s`.`restriction`,'allowsWalkIns',`s`.`allows_walk_ins`) from `studio` `s` where (`a`.`studio_id` = `s`.`id`)) AS `location`,if((`g`.`name` is not null),`g`.`name`,`a`.`description`) AS `title`,`a`.`bookable` AS `reservable`,if((`b`.`id` is not null),json_object('id',`b`.`id`,'projectId',`b`.`project_id`,'description',`b`.`purpose`,'groupId',`b`.`group_id`,'liveRoom',`b`.`live_room`,'guests',`b`.`guests`,'contact',`b`.`contact_phone`,'equipment',if((`el`.`gear` is not null),json_objectagg(ifnull(`el`.`name`,'unknown'),`el`.`gear`),NULL)),NULL) AS `reservation` from (((`allotment` `a` left join `booking` `b` on((`a`.`id` = `b`.`allotment_id`))) left join `equipment_list` `el` on((`el`.`booking_id` = `b`.`id`))) left join `rm_group` `g` on((`g`.`id` = `b`.`group_id`))) group by `a`.`id` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;

@@ -3,35 +3,7 @@ import pool from "../../utils/db";
 import { EC } from "../../utils/types";
 
 const query = `
-  SELECT
-    id,
-    purpose AS description,
-    allotment_id AS eventId,
-    group_id AS groupId,
-    IFNULL (project_id, 0) AS projectId,
-    guests,
-    IF(
-      cancel_request = 1,
-      JSON_OBJECT(
-        'requested', JSON_OBJECT(
-          'on', date_format(cancel_request_time,"%Y-%m-%d %T"),
-          'by', cancel_request_userid,
-          'comment', cancel_request_comment
-      ),
-        'approved', JSON_OBJECT(
-          'on', date_format(cancelled_time,"%Y-%m-%d %T"),
-          'by', cancelled_approval
-      ),
-        'rejected', NULL
-      ),
-      NULL
-    ) AS cancellation
-  FROM
-    booking
-`;
-
-const adminRequestQuery = `
-  SELECT
+SELECT
     b.id,
     b.purpose AS description,
     b.allotment_id AS eventId,
@@ -39,19 +11,75 @@ const adminRequestQuery = `
     IFNULL (b.project_id, 0) AS projectId,
     b.guests,
     IF(
-      b.cancel_request = 1,
+      b.cancelled = 1,
+      if(b.refund_request = 1,
       JSON_OBJECT(
-        'requested', JSON_OBJECT(
-          'on', date_format(b.cancel_request_time,"%Y-%m-%d %T"),
-          'by', b.cancel_request_userid,
-          'comment', b.cancel_request_comment
-      ),
-        'approved', JSON_OBJECT(
+        'canceled', JSON_OBJECT(
           'on', date_format(b.cancelled_time,"%Y-%m-%d %T"),
-          'by', b.cancelled_approval
+          'by', b.cancelled_user_id,
+          'comment', b.refund_request_comment
       ),
-        'rejected', NULL
+      'refund',JSON_OBJECT(
+      'approved', JSON_OBJECT(
+        'on', if(b.refund_approval is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
+        'by', refund_approval
       ),
+        'rejected', JSON_OBJECT(
+          'on', if(refund_denial is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
+          'by', refund_denial
+        ))
+      ),
+      JSON_OBJECT(
+        'canceled', JSON_OBJECT(
+          'on', date_format(b.cancelled_time,"%Y-%m-%d %T"),
+          'by', b.cancelled_user_id,
+          'comment', b.refund_request_comment
+      )
+      )),
+      NULL
+    ) AS cancellation
+  FROM
+    booking b
+    left join allotment a on a.id=b.allotment_id
+    left join studio s on a.studio_id=s.id
+    left join user_group u on b.group_id=u.id
+    left join project p on u.projectId=p.id;
+`;
+
+const adminRequestQuery = `
+SELECT
+    b.id,
+    b.purpose AS description,
+    b.allotment_id AS eventId,
+    b.group_id AS groupId,
+    IFNULL (b.project_id, 0) AS projectId,
+    b.guests,
+    IF(
+      b.cancelled = 1,
+      if(b.refund_request = 1,
+      JSON_OBJECT(
+        'canceled', JSON_OBJECT(
+          'on', date_format(b.cancelled_time,"%Y-%m-%d %T"),
+          'by', b.cancelled_user_id,
+          'comment', b.refund_request_comment
+      ),
+      'refund',JSON_OBJECT(
+      'approved', JSON_OBJECT(
+        'on', if(b.refund_approval is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
+        'by', refund_approval
+      ),
+        'rejected', JSON_OBJECT(
+          'on', if(refund_denial is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
+          'by', refund_denial
+        ))
+      ),
+      JSON_OBJECT(
+        'canceled', JSON_OBJECT(
+          'on', date_format(b.cancelled_time,"%Y-%m-%d %T"),
+          'by', b.cancelled_user_id,
+          'comment', b.refund_request_comment
+      )
+      )),
       NULL
     ) AS cancellation,
     JSON_OBJECT('start', date_format(a.start,"%Y-%m-%d %T"), 'end', date_format(a.end,"%Y-%m-%d %T"), 'location', s.title) as event,
@@ -63,7 +91,7 @@ const adminRequestQuery = `
     left join studio s on a.studio_id=s.id
     left join user_group u on b.group_id=u.id
     left join project p on u.projectId=p.id
-    where (cancel_request=1 AND cancelled_approval is null AND cancelled_denial is null)
+    where (refund_request=1 AND refund_approval is null AND refund_denial is null)
 `;
 
 const flattenEquipment =
@@ -97,6 +125,26 @@ export const getOne: EC = (req, res, next) =>
   pool.query(
     query + "WHERE id = ?",
     [req.params.id],
+    addResultsToResponse(res, next, { one: true })
+  );
+
+export const cancelReservation: EC = (req, res, next) =>
+  pool.query(
+    `UPDATE booking SET cancelled=1,cancelled_time=CURRENT_TIMESTAMP,
+    cancelled_user_id=?,refund_request=?,refund_request_comment=?, 
+    refund_approved=?, refund_response_time=? 
+    WHERE id = ?`,
+    [
+      req.body.userId,
+      req.body.refundRequest,
+      req.body.refundRequestUserId,
+      req.body.refundApproved
+        ? '"Refund Granted Automatically"'
+        : req.body.refundComment,
+      req.body.refundApproved ? req.body.userId : "'NULL'",
+      req.body.refundApproved ? '"DEFAULT_TIMESTAMP"' : '"NULL"',
+      req.params.id,
+    ],
     addResultsToResponse(res, next, { one: true })
   );
 
@@ -164,5 +212,6 @@ export default {
   getMany,
   getManyPendingAdminApproval,
   adminResponse,
+  cancelReservation,
   reserveEquipment: [reserveEquipment, deleteEquipmentReservationZeros],
 };
