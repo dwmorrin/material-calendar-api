@@ -1,4 +1,8 @@
-import { addResultsToResponse, controllers } from "../../utils/crud";
+import {
+  addResultsToResponse,
+  controllers,
+  withResource,
+} from "../../utils/crud";
 import pool from "../../utils/db";
 import { EC } from "../../utils/types";
 
@@ -60,7 +64,7 @@ export const getVirtualWeeks: EC = (req, res, next) =>
     addResultsToResponse(res, next)
   );
 
-export const createOrUpdateHours: EC = (req, res, next) =>
+const createOrUpdateHours: EC = (req, res, next) =>
   pool.query(
     "REPLACE INTO studio_hours (studio_id, date, hours) VALUES ?",
     [
@@ -70,10 +74,7 @@ export const createOrUpdateHours: EC = (req, res, next) =>
         hours,
       ]),
     ],
-    (err, data) => {
-      if (err) return next(err);
-      res.status(201).json({ data, context: req.query.context });
-    }
+    addResultsToResponse(res, next)
   );
 
 export const createOne: EC = (req, res, next): void => {
@@ -105,10 +106,24 @@ export const sumHours: EC = (req, res, next) =>
     addResultsToResponse(res, next)
   );
 
+const bulkHoursResponse: EC = (req, res) =>
+  res.status(201).json({
+    data: {
+      locations: res.locals.locations,
+      virtualWeeks: res.locals.virtualWeeks,
+    },
+    context: req.query.context,
+  });
+
 export default {
   ...controllers("studio", "id"),
   createOne,
-  createOrUpdateHours,
+  bulkLocationHours: [
+    createOrUpdateHours,
+    withResource("locations", "SELECT * FROM location"),
+    withResource("virtualWeeks", "SELECT * FROM virtual_week_view"),
+    bulkHoursResponse,
+  ],
   getMany,
   getOne,
   getDefaultId,

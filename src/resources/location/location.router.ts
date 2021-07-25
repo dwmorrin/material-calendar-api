@@ -8,7 +8,7 @@ const router = Router();
 router.get("/default", controller.getDefaultId);
 
 router.get(`/${numericId}/virtualweeks`, controller.getVirtualWeeks);
-router.post(`/${numericId}/hours/bulk`, controller.createOrUpdateHours);
+router.post(`/${numericId}/hours/bulk`, controller.bulkLocationHours);
 
 // sums the hours of the events scheduled in a location
 router.get(`/${numericId}/hours`, controller.sumHours);

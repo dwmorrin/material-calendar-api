@@ -13,39 +13,14 @@ FROM
   virtual_week
 `;
 
-const getManyQuery = `
-SELECT
-  vw.id,
-  vw.start,
-  vw.end,
-  vw.studio_id AS locationId,
-  vw.semester_id AS semesterId,
-  IFNULL(
-    (
-      SELECT SUM(sh.hours)
-      FROM studio_hours sh
-      WHERE vw.studio_id = sh.studio_id
-      AND sh.date BETWEEN vw.start and vw.end
-    ),
-    0
-  ) AS 'locationHours',
-  IFNULL(
-    (
-      SELECT SUM(pa.hours)
-      FROM project_virtual_week_hours pa
-      WHERE pa.virtual_week_id = vw.id
-    ),
-    0
-  ) AS 'projectHours'
-FROM
-  virtual_week vw
-`;
-
 export const getOne: EC = (_, res, next) =>
   pool.query(getOneQuery, addResultsToResponse(res, next, { one: true }));
 
 export const getMany: EC = (_, res, next) =>
-  pool.query(getManyQuery, addResultsToResponse(res, next));
+  pool.query(
+    "SELECT * FROM virtual_week_view",
+    addResultsToResponse(res, next)
+  );
 
 export const createOne: EC = (req, res, next) =>
   pool.query(
