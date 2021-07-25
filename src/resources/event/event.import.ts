@@ -1,4 +1,4 @@
-import pool from "../../utils/db";
+import pool, { inflate } from "../../utils/db";
 import { withResource } from "../../utils/crud";
 import { EC, EEH } from "../../utils/types";
 import controllers from "./event.controller";
@@ -132,7 +132,7 @@ const update: EC = (req, res, next) => {
 
 // requires getMany to be run first to populate res.locals.results
 const response: EC = (_, res) => {
-  res.status(201).json({ data: res.locals.results });
+  res.status(201).json({ data: res.locals.results.map(inflate) });
 };
 
 const onError: EEH = (err, _, res, next) => {

@@ -12,7 +12,7 @@
  */
 
 import { NextFunction, Request, Response } from "express";
-import pool from "../db";
+import pool, { inflate } from "../db";
 import { withResource } from "../crud";
 import { query as courseQuery } from "../../resources/course/course.controller";
 import { getActive } from "../../resources/semester/semester.query";
@@ -554,10 +554,10 @@ function logToFile(req: Request, res: Response, next: NextFunction): void {
 function successResponder(_: Request, res: Response): void {
   res.status(201).json({
     data: {
-      courses: res.locals.courses,
-      projects: res.locals.projects,
-      users: res.locals.users,
-      rosterRecords: res.locals.rosterRecords,
+      courses: res.locals.courses.map(inflate),
+      projects: res.locals.projects.map(inflate),
+      users: res.locals.users.map(inflate),
+      rosterRecords: res.locals.rosterRecords.map(inflate),
       report: res.locals.report,
     },
   });

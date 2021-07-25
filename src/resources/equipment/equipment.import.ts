@@ -1,4 +1,4 @@
-import pool from "../../utils/db";
+import pool, { inflate } from "../../utils/db";
 import { withResource } from "../../utils/crud";
 import { EC, EEH } from "../../utils/types";
 import controller from "./equipment.controller";
@@ -169,9 +169,9 @@ const update: EC = (req, res, next) => {
   });
 };
 
-// fetch updated equpipment and attach to res.locals.results before this
+// fetch updated equipment and attach to res.locals.results before this
 const response: EC = (_, res) => {
-  res.status(201).json({ data: res.locals.results });
+  res.status(201).json({ data: res.locals.results.map(inflate) });
 };
 
 const onError: EEH = (err, _, res, next) => {
