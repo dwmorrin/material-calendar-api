@@ -4,11 +4,16 @@ SELECT
   p.title,
   IFNULL(
     (
-      SELECT DISTINCT JSON_OBJECT('id', c.id, 'title', c.title)
+      SELECT
+        JSON_OBJECT(
+          'id', c.id,
+          'title', c.title,
+          'sections', JSON_ARRAYAGG(s.title)
+        )
       FROM section_project sp
-      INNER JOIN section s ON s.id = sp.section_id
-      JOIN course c
-      WHERE sp.project_id = p.id AND s.course_id = c.id
+        INNER JOIN section s ON s.id = sp.section_id
+        JOIN course c
+          WHERE sp.project_id = p.id AND s.course_id = c.id
       LIMIT 1
     ),
     JSON_OBJECT('id', -1, 'title', '')
