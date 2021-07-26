@@ -129,7 +129,6 @@ export const getOne: EC = (req, res, next) =>
   );
 
 export const cancelReservation: EC = (req, res, next) => {
-  console.log(req.body);
   pool.query(
     `UPDATE booking SET cancelled=1,cancelled_time=CURRENT_TIMESTAMP,
     cancelled_user_id=?,refund_request=?,refund_request_comment=?, 
