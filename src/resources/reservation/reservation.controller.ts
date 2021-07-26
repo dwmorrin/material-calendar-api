@@ -157,7 +157,7 @@ export const adminResponse: EC = (req, res, next) => {
   const { approved, denied, adminId } = req.body;
   pool.query(
     `UPDATE booking
-        SET cancelled_approval = ?,cancelled_denial = ?
+        SET refund_approval = ?,refund_denial = ?
         WHERE id = ?`,
     [
       approved ? adminId : null,

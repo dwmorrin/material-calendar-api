@@ -19,8 +19,8 @@ export const getOneGroup: EC = (req, res, next) =>
 
 export const getGroupsByUser: EC = (req, res, next) =>
   pool.query(
-    "SELECT * FROM user_group WHERE JSON_SEARCH(members, 'all', ?)",
-    [req.params.userId],
+    "SELECT * FROM user_group WHERE JSON_CONTAINS(members, JSON_OBJECT('id', ?))",
+    [Number(req.params.userId)],
     addResultsToResponse(res, next)
   );
 

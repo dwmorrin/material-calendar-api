@@ -65,9 +65,9 @@ CREATE TABLE `booking` (
   KEY `group_id_idx` (`group_id`),
   KEY `allotment_id_idx` (`allotment_id`),
   KEY `project_id_idx` (`project_id`),
-  KEY `cancelled_approval_idx` (`refund_approval`),
+  KEY `refund_approval_idx` (`refund_approval`),
   CONSTRAINT `booking_allotment_id_allotment_id` FOREIGN KEY (`allotment_id`) REFERENCES `allotment` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `booking_cancelled_approval_user_id` FOREIGN KEY (`refund_approval`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `booking_refund_approval_user_id` FOREIGN KEY (`refund_approval`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `booking_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `rm_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `booking_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -641,7 +641,7 @@ CREATE TABLE `week_name` (
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `project_view` AS select `p`.`id` AS `id`,`p`.`title` AS `title`,ifnull((select json_object('id',`c`.`id`,'title',`c`.`title`,'sections',json_arrayagg(`s`.`title`)) from ((`section_project` `sp` join `section` `s` on((`s`.`id` = `sp`.`section_id`))) join `course` `c`) where ((`sp`.`project_id` = `p`.`id`) and (`s`.`course_id` = `c`.`id`)) limit 1),json_object('id',-(1),'title','')) AS `course`,`p`.`start` AS `start`,`p`.`end` AS `end`,`p`.`book_start` AS `reservationStart`,ifnull((select json_arrayagg(json_object('locationId',`vw`.`studio_id`,'virtualWeekId',`vw`.`id`,'start',`vw`.`start`,'end',`vw`.`end`,'hours',`ph`.`hours`)) from (`project_virtual_week_hours` `ph` left join `virtual_week` `vw` on((`ph`.`virtual_week_id` = `vw`.`id`))) where (`ph`.`project_id` = `p`.`id`)),'[]') AS `allotments`,ifnull((select json_arrayagg(json_object('locationId',`ps`.`studio_id`,'hours',`ps`.`hours`)) from `project_studio_hours` `ps` where (`ps`.`project_id` = `p`.`id`)),'[]') AS `locationHours`,`p`.`open` AS `open`,`p`.`group_size` AS `groupSize`,`p`.`group_hours` AS `groupAllottedHours` from `project` `p` */;
+/*!50001 VIEW `project_view` AS select `p`.`id` AS `id`,`p`.`title` AS `title`,ifnull((select distinct json_object('id',`c`.`id`,'title',`c`.`title`) from ((`section_project` `sp` join `section` `s` on((`s`.`id` = `sp`.`section_id`))) join `course` `c`) where ((`sp`.`project_id` = `p`.`id`) and (`s`.`course_id` = `c`.`id`)) limit 1),json_object('id',-(1),'title','')) AS `course`,`p`.`start` AS `start`,`p`.`end` AS `end`,`p`.`book_start` AS `reservationStart`,ifnull((select json_arrayagg(json_object('locationId',`vw`.`studio_id`,'virtualWeekId',`vw`.`id`,'start',`vw`.`start`,'end',`vw`.`end`,'hours',`ph`.`hours`)) from (`project_virtual_week_hours` `ph` left join `virtual_week` `vw` on((`ph`.`virtual_week_id` = `vw`.`id`))) where (`ph`.`project_id` = `p`.`id`)),'[]') AS `allotments`,ifnull((select json_arrayagg(json_object('locationId',`ps`.`studio_id`,'hours',`ps`.`hours`)) from `project_studio_hours` `ps` where (`ps`.`project_id` = `p`.`id`)),'[]') AS `locationHours`,`p`.`open` AS `open`,`p`.`group_size` AS `groupSize`,`p`.`group_hours` AS `groupAllottedHours` from `project` `p` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
