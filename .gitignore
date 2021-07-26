@@ -3,6 +3,7 @@
 database-backups/**/*
 *data.json
 *data.tsv
+*data.sql
 
 # Dependencies
 node_modules
