@@ -4,7 +4,7 @@ import { numericId, sendResults } from "../../utils/crud";
 
 const router = Router();
 
-router.put("/cancel/:reservationId", controller.adminResponse);
+router.put("/cancel/:reservationId", controller.cancelReservation);
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);
 router.get("/exceptions", controller.getManyPendingAdminApproval);
