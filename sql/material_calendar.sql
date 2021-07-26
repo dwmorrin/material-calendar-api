@@ -369,7 +369,6 @@ CREATE TABLE `rm_group` (
   `byadmin` tinyint(1) DEFAULT '0',
   `admin_id` int DEFAULT NULL,
   `group_type` tinyint(1) DEFAULT '1',
-  `group_size` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `creator_idx` (`creator`),
   KEY `project_id_idx` (`project_id`),
