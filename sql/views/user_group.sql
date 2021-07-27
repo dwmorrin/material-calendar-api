@@ -3,7 +3,7 @@ SELECT
   g.id,
   g.projectId,
   g.members,
-  IF (r.reservedHours IS NULL, 0, r.reservedHours) AS reservedHours
+  IFNULL (r.reservedHours, 0) AS reservedHours
 FROM
   (
     SELECT
