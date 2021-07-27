@@ -38,7 +38,6 @@ INSERT INTO project SET
 INSERT INTO rm_group SET
   name = '{first} {last}',
   project_id = 1,
-  status = 1,
-  group_size = 1;
+  status = 1;
 
 INSERT INTO student_group SET student_id = 1, group_id = 1;
