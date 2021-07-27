@@ -31,6 +31,7 @@ INSERT INTO project SET
   title = "Walk-in",
   group_hours = 999,
   open = 1,
+  book_start = '2000-01-01',
   start = '2000-01-01',
   end = '9999-12-31',
   group_size = 1;
