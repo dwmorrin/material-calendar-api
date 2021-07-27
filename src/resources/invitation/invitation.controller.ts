@@ -33,7 +33,7 @@ export const getInvitations: EC = (req, res, next) =>
               left join user uiv on uiv.id=vt.invitee 
               group by vt.invitation_id) tv on tv.invitation_id=inv.id
             left join user uin on uin.id=inv.invitor
-            left join rm_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
+            left join project_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
             where (iv.invitee=? or inv.invitor=?) group by inv.id;`,
     [req.params.userId, req.params.userId],
     addResultsToResponse(res, next)
@@ -70,7 +70,7 @@ export const getInvitationsByProject: EC = (req, res, next) =>
               left join user uiv on uiv.id=vt.invitee 
               group by vt.invitation_id) tv on tv.invitation_id=inv.id
             left join user uin on uin.id=inv.invitor
-            left join rm_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
+            left join project_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
             where inv.project_id=? and (iv.invitee=? or inv.invitor=?) group by inv.id;`,
     [req.params.projectId, req.params.userId, req.params.userId],
     addResultsToResponse(res, next)
@@ -109,7 +109,7 @@ export const getInvitationsPendingAdminApproval: EC = (req, res, next) =>
               left join user uiv on uiv.id=vt.invitee 
               group by vt.invitation_id) tv on tv.invitation_id=inv.id
             left join user uin on uin.id=inv.invitor
-            left join rm_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
+            left join project_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
             left join project p on inv.project_id=p.id
             where (approved is null and denied is null) group by inv.id;`,
     addResultsToResponse(res, next)

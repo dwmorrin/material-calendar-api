@@ -15,15 +15,12 @@ import { NextFunction, Request, Response } from "express";
 import pool, { inflate } from "../db";
 import { withResource } from "../crud";
 import { query as courseQuery } from "../../resources/course/course.controller";
-import { getActive } from "../../resources/semester/semester.query";
 import { MysqlError } from "mysql";
-import { writeFile } from "fs";
 import rosterRecordQuery, {
   userQuery,
   sectionQuery,
   rosterInputQuery,
 } from "./roster.query";
-import { userQueryFn } from "../../resources/user/user.query";
 
 interface RosterRecordInput {
   Course: string;
@@ -133,7 +130,7 @@ function withActiveSemester(
   res: Response,
   next: NextFunction
 ): void {
-  pool.query(getActive, (error, results) => {
+  pool.query("SELECT * FROM active_semester_view", (error, results) => {
     if (error) return next(error);
     if (!results.length) return next(new Error("no active semester"));
     const { id, start, end } = results[0];
@@ -540,14 +537,6 @@ function processUpdates(req: Request, res: Response, next: NextFunction): void {
   }
 }
 
-// for debugging
-function logToFile(req: Request, res: Response, next: NextFunction): void {
-  writeFile("./dump.json", JSON.stringify(res.locals, null, 2), (error) => {
-    if (error) return next(error);
-    return next();
-  });
-}
-
 /**
  * roster import is done; respond with success
  */
@@ -614,7 +603,7 @@ export default [
   // logToFile,
   withResource("courses", courseQuery),
   withResource("projects", "SELECT * FROM project_view"),
-  withResource("users", userQueryFn()),
+  withResource("users", "SELECT * FROM user_view"),
   withResource("rosterRecords", rosterRecordQuery),
   successResponder,
   mySqlErrorResponder,

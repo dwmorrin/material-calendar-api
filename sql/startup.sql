@@ -35,9 +35,8 @@ INSERT INTO project SET
   end = '9999-12-31',
   group_size = 1;
 
-INSERT INTO rm_group SET
+INSERT INTO project_group SET
   name = '{first} {last}',
-  project_id = 1,
-  status = 1;
+  project_id = 1;
 
 INSERT INTO student_group SET student_id = 1, group_id = 1;

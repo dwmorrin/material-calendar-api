@@ -4,7 +4,7 @@ import { EC } from "../../utils/types";
 
 /**
  * Reading: use the `user_group` view.
- * Writing: use the `rm_group` table.
+ * Writing: use the `project_group` table.
  */
 
 export const getGroups: EC = (_, res, next) =>
@@ -33,22 +33,20 @@ export const getGroupsByProject: EC = (req, res, next) =>
 
 export const removeOneGroup: EC = (req, res, next) =>
   pool.query(
-    "DELETE FROM rm_group WHERE id=?",
+    "DELETE FROM project_group WHERE id=?",
     [req.params.groupId],
     addResultsToResponse(res, next)
   );
 
 export const createGroupFromInvitation: EC = (req, res, next) =>
   pool.query(
-    `INSERT INTO rm_group (
-      project_id, course_id, creator, status, group_type
+    `INSERT INTO project_group (
+      project_id, course_id, creator
     )
     SELECT
       invitation.project_id,
       course.id as course_id,
-      invitation.invitor as creator,
-      1 as status,
-      1 as group_type
+      invitation.invitor as creator
     FROM invitation
       INNER JOIN project ON invitation.project_id = project.id
       INNER JOIN section_project ON project.id = section_project.project_id

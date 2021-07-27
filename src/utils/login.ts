@@ -1,11 +1,10 @@
 import pool, { inflate } from "./db";
-import { userQueryFn } from "../resources/user/user.query";
 import { EC, EEH } from "./types";
 import { addResultsToResponse } from "./crud";
 
 const getOne: EC = (_, res, next) =>
   pool.query(
-    userQueryFn("WHERE u.id = ?"),
+    "SELECT * FROM user_view WHERE id = ?",
     [res.locals.user.id],
     addResultsToResponse(res, next)
   );
@@ -25,7 +24,7 @@ const response: EC = (req, res, next) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const handleAuthError: EEH = (err, req, res, next) =>
+const handleAuthError: EEH = (err, req, res, _) =>
   res.status(500).json({
     error: {
       code: 500,

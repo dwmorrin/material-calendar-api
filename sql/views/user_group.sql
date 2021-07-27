@@ -20,7 +20,7 @@ FROM
     FROM
       user u
       INNER JOIN student_group sg ON sg.student_id = u.id
-      INNER JOIN rm_group rg ON rg.id = sg.group_id
+      INNER JOIN project_group rg ON rg.id = sg.group_id
     GROUP BY
       rg.id
   ) g
@@ -33,7 +33,7 @@ FROM
         AS DECIMAL(8,2)
       ) AS reservedHours
     FROM
-      rm_group rg
+      project_group rg
 	  INNER JOIN booking b on b.group_id = rg.id
       INNER JOIN allotment a on a.id = b.allotment_id
     GROUP BY

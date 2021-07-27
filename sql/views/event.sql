@@ -61,5 +61,5 @@ SELECT
 FROM allotment a
   LEFT JOIN booking b ON a.id = b.allotment_id
   LEFT JOIN equipment_list el ON el.booking_id = b.id
-  LEFT JOIN rm_group g on g.id = b.group_id
+  LEFT JOIN project_group g on g.id = b.group_id
 GROUP BY a.id

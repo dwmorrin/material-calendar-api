@@ -1,15 +1,15 @@
 import { Router } from "express";
 import controller from "./semester.controller";
-import { sendResults } from "../../utils/crud";
+import { numericId, sendResults } from "../../utils/crud";
 
 const router = Router();
 
 router.get("/current", controller.getCurrent);
 router.get("/", controller.getMany);
-router.get("/:id", controller.getOne);
+router.get(`/${numericId}`, controller.getOne);
 router.post("/", controller.createOne);
-router.put("/:id", controller.updateOne);
-router.delete("/:id", controller.removeOne);
+router.put(`/${numericId}`, controller.updateOne);
+router.delete(`/${numericId}`, controller.removeOne);
 
 router.use(sendResults);
 

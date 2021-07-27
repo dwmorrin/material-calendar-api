@@ -4,14 +4,16 @@ import {
   addResultsToResponse,
   CrudAction,
 } from "../../utils/crud";
-import { getActive, getSemester } from "./semester.query";
 import { EC } from "../../utils/types";
 
-export const getCurrent: EC = (req, res, next) =>
-  pool.query(getActive, addResultsToResponse(res, next, { one: true }));
+export const getCurrent: EC = (_, res, next) =>
+  pool.query(
+    "SELECT * FROM active_semester_view",
+    addResultsToResponse(res, next, { one: true })
+  );
 
-export const getMany: EC = (req, res, next) =>
-  pool.query(getSemester, addResultsToResponse(res, next));
+export const getMany: EC = (_, res, next) =>
+  pool.query("SELECT * FROM semester_view", addResultsToResponse(res, next));
 
 const updateActive: EC = (req, res, next) => {
   if (req.body.active) {

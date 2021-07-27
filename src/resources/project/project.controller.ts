@@ -5,7 +5,6 @@ import {
   CrudAction,
   withResource,
 } from "../../utils/crud";
-import { userQueryFn } from "../user/user.query";
 import { EC } from "../../utils/types";
 import { Project } from "./project.type";
 
@@ -32,7 +31,7 @@ const getUsersByIdList: EC = (req, res, next) => {
   const { results } = res.locals;
   if (results.length)
     pool.query(
-      userQueryFn("WHERE u.id IN (?)"),
+      "SELECT * FROM user_view WHERE id IN (?)",
       [(results as { id: number }[]).map(({ id }) => id)],
       addResultsToResponse(res, next)
     );

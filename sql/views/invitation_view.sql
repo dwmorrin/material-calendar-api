@@ -32,6 +32,6 @@ FROM
     GROUP BY vt.invitation_id
   ) tv ON tv.invitation_id = inv.id
   LEFT JOIN user uin ON uin.id=inv.invitor
-  LEFT JOIN rm_group rm
+  LEFT JOIN project_group rm
     ON uin.id = rm.creator AND inv.project_id = rm.project_id
   -- WHERE (iv.invitee=? or inv.invitor=?) group by inv.id
