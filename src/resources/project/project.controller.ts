@@ -167,7 +167,8 @@ interface ProjectLocationHours {
 
 const createLocationHours: EC = (req, res, next) => {
   const locationHours = req.body as ProjectLocationHours[];
-  if (!Array.isArray(locationHours)) return next("no input given");
+  if (!Array.isArray(locationHours) || !locationHours.length)
+    return next("no input given");
   const { projects } = res.locals as {
     projects: { id: number; title: string }[];
   };
@@ -205,12 +206,10 @@ const withSelectedCourseSections: EC = (req, res, next) => {
 };
 
 const createOneResponse: EC = (req, res) => {
-  res
-    .status(201)
-    .json({
-      data: { id: res.locals.project.id, ...req.body },
-      context: req.query.context,
-    });
+  res.status(201).json({
+    data: { id: res.locals.project.id, ...req.body },
+    context: req.query.context,
+  });
 };
 
 const updateOneResponse: EC = (req, res) => {
