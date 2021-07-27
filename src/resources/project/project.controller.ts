@@ -103,7 +103,7 @@ const createOrUpdateProjectLocationHours: EC = (req, res, next) => {
   } = req;
   if (!locationHours || !locationHours.length) return next();
   pool.query(
-    `REPLACE INTO project_studio_hours (project_id, studio_id, hours) VALUES ?`,
+    "REPLACE INTO project_studio_hours (project_id, studio_id, hours) VALUES ?",
     [
       locationHours.map(({ locationId, hours }: Record<string, unknown>) => [
         method === CrudAction.Create ? res.locals.project.insertId : id,
@@ -113,6 +113,20 @@ const createOrUpdateProjectLocationHours: EC = (req, res, next) => {
     ],
     addResultsToResponse(res, next)
   );
+};
+
+const deleteProjectLocationHours: EC = (req, res, next) => {
+  const {
+    body: { id, locationHours },
+  } = req;
+  const query = !(Array.isArray(locationHours) && locationHours.length)
+    ? `DELETE FROM project_studio_hours WHERE project_id = ${pool.escape(id)}`
+    : `DELETE FROM project_studio_hours WHERE studio_id NOT IN (${pool.escape(
+        (locationHours as { locationId: number }[]).map(
+          ({ locationId }) => locationId
+        )
+      )})`;
+  pool.query(query, addResultsToResponse(res, next, { key: "ignore" }));
 };
 
 // update will require deletions of old sections
@@ -242,6 +256,7 @@ export default {
     withSelectedCourseSections,
     createOrUpdateProjectLocationHours,
     createOrUpdateSectionProject,
+    deleteProjectLocationHours,
     deleteSectionProject,
     updateOneResponse,
   ],
