@@ -101,7 +101,7 @@ const createOrUpdateProjectLocationHours: EC = (req, res, next) => {
     body: { id, locationHours },
     method,
   } = req;
-  if (!locationHours || locationHours.length) return next();
+  if (!locationHours || !locationHours.length) return next();
   pool.query(
     `REPLACE INTO project_studio_hours (project_id, studio_id, hours) VALUES ?`,
     [
