@@ -14,7 +14,7 @@ export const error403 = Object.freeze({
  * res.locals.admin: boolean
  * {@link http://expressjs.com/en/api.html#res.locals}
  */
-const authorization: EC = (req, res, next) => {
+const authorization: EC = (_, res, next) => {
   // assumes authentication has already added res.locals.authId
   pool.query(
     `SELECT
@@ -41,13 +41,13 @@ const authorization: EC = (req, res, next) => {
   );
 };
 
-const onError: EEH = (error, req, res, next) => {
-  if (typeof error === "string" && error.includes("not authorized")) {
-    res.status(403).json({
-      error: { message: "Not authorized" },
-      context: req.query.context,
-    });
-  } else next();
-};
+// const onError: EEH = (error, req, res, next) => {
+//   if (typeof error === "string" && error.includes("not authorized")) {
+//     res.status(403).json({
+//       error: { message: "Not authorized" },
+//       context: req.query.context,
+//     });
+//   } else next(error);
+// };
 
-export default [authorization, onError];
+export default authorization;

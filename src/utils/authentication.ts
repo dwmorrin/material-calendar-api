@@ -1,23 +1,27 @@
-import { Request, Response, NextFunction } from "express";
+import { EC } from "./types";
 
 /**
  * If user is authenticated, adds res.locals.authId: string
  * {@link http://expressjs.com/en/api.html#res.locals}
  */
-const authentication = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void | Response => {
-  // development use: hardcode an ID into the .env file
-  if (process.env.NODE_ENV === "development") {
-    if (process.env.NET_ID) {
-      res.locals.authId = process.env.NET_ID;
-      return next();
-    } else return res.status(500).json({ error: "NET_ID not set in .env" });
+const authentication: EC = (req, res, next) => {
+  // if the user has already been authenticated, pass through
+  const session = req.session as { authId?: string };
+  if (session.authId) {
+    res.locals.authId = session.authId;
+    return next();
   }
-  // production use: selectabled auth method
   switch (process.env.AUTH_METHOD) {
+    // development: use an ID in the .env file
+    case "DOT_ENV_AUTH_ID": {
+      const authId = process.env.AUTH_ID;
+      if (authId) {
+        res.locals.authId = authId;
+        return next();
+      }
+      return res.status(500).json({ error: "AUTH_ID not set in .env" });
+    }
+    // have the web server handle authentication and inject the authId into the request
     case "CUSTOM_HEADER": {
       if (typeof process.env.AUTH_CUSTOM_HEADER !== "string")
         return res
@@ -30,10 +34,15 @@ const authentication = (
       res.locals.authId = authId;
       return next();
     }
-    default:
-      return res
-        .status(500)
-        .json({ error: "no authentication method selected" });
+    // using password authentication and cookie sessions
+    default: {
+      const session = req.session as { authId?: string };
+      if (session.authId) {
+        res.locals.authId = session.authId;
+        return next();
+      }
+      return res.status(401).send("not authenticated");
+    }
   }
 };
 

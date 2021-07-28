@@ -17,21 +17,12 @@ MYSQL_USER=root
 MYSQL_PASSWORD=password
 MYSQL_DATABASE=calendar
 MYSQL_BACKUP_DIR=/my/backup/dir
-NET_ID=username_to_login_with_for_development
+MYSQL_SHA2_PASSPHRASE=if_using_password_auth_passphrase
+AUTH_ID=if_bypassing_auth_for_development
+AUTH_METHOD=DOT_ENV_AUTH_ID
 EMAIL_FROM="Booking App <admin@booking.app>"
 EMAIL_PORT=25
-```
-
-Optional values used by startup script:
-
-```
-ADMIN_PASSWORD=web_app_admin_password
-ADMIN_FIRST_NAME=web_app_admin
-ADMIN_LAST_NAME=web_app_admin
-ADMIN_EMAIL=web_app_admin
-SEMESTER_TITLE=title
-SEMESTER_START=2000-01-01
-SEMESTER_END=2000-12-31
+SESSION_SECRET=SecretForSessionCookies
 ```
 
 ## Authentication
@@ -43,15 +34,22 @@ MySQL database's user table.
 If `NODE_ENV` is set to development, then the authentication ID will be retrieved
 from the .env file.
 
+By default the app will use password authentication.
+This requires the .env property:
+
+```
+MYSQL_SHA2_PASSPHRASE=passphrase
+```
+
 For production with an external authentication that can inject the auth ID into
 the requeset headers, add the following entries to .env:
 
 ```
 AUTH_METHOD=CUSTOM_HEADER
-AUTH_CUSTOM_HEADER=my-net-id
+AUTH_CUSTOM_HEADER=my-auth-id
 ```
 
-Otherwise, add an additional case or default handler in `authentication.ts` for
+Otherwise, add an additional case in `authentication.ts` for
 your environment.
 
 ## Authorization
