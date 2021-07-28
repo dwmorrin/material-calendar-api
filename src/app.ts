@@ -4,6 +4,7 @@ dotenvExpand(dotenv.config({ path: ".env" }));
 
 import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
+import cookieSession from "cookie-session";
 
 import apiRouter from "./api.router";
 import authentication from "./utils/authentication";
@@ -18,16 +19,25 @@ app.set("port", process.env.PORT || 5000);
 // configure global logging
 app.use(morgan(process.env.NODE_ENV === "development" ? "dev" : "combined"));
 
+// configure session
+app.use(
+  cookieSession({
+    name: "session",
+    secret: process.env.SESSION_SECRET,
+  })
+);
+
 // express middleware for parsing JSON data
 // increased limit for large data import files, e.g. events
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ extended: true }));
 
+app.post("/login", login);
+
 // auth
 app.use(authentication, authorization); // adds res.locals.authId
 
 // application routing
-app.use("/login", login);
 app.use("/api", apiRouter);
 
 // catch unhandled requests

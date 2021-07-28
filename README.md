@@ -20,6 +20,7 @@ MYSQL_BACKUP_DIR=/my/backup/dir
 NET_ID=username_to_login_with_for_development
 EMAIL_FROM="Booking App <admin@booking.app>"
 EMAIL_PORT=25
+SESSION_SECRET=SecretForSessionCookies
 ```
 
 Optional values used by startup script:
