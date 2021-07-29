@@ -17,6 +17,9 @@ router.use("/:id", (req: Request, res: Response, next: NextFunction) => {
 router.get("/:id/courses", controller.getCourses);
 router.get("/:id/projects", controller.getProjects);
 
+// Reset user password
+router.put("/:id/reset", controller.resetPassword);
+
 // user records
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);
