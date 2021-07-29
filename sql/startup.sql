@@ -10,8 +10,11 @@ SOURCE material_calendar.sql; -- This is the SQL file that contains the schema
 
 /* Inserting minimal needed data for app to startup. */
 
+/* password optional, if using local password authentication.
+   passphrase should match the entry in .env for MYSQL_SHA2_PASSPHRASE */
 INSERT INTO user SET
   user_id = '{user}',
+  password = AES_ENCRYPT('{password}', UNHEX(SHA2('{passphrase}', 512))),
   first_name = '{first}',
   last_name = '{last}',
   email = '{email}';
