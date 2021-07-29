@@ -11,7 +11,8 @@ SELECT
   -- (SELECT IF (COUNT(iv.accepted) = SUM(iv.accepted), 1, 0)) AS confirmed,
   (SELECT (CASE WHEN COUNT(iv.accepted) = SUM(iv.accepted) THEN 1 ELSE 0 END)) AS confirmed,
   rm.id AS group_id,
-  inv.approved AS approved
+  inv.approved_id AS approvedId
+  inv.denied_id AS deniedId
 FROM
   invitation inv
   LEFT JOIN invitee iv ON inv.id = iv.invitation_id 

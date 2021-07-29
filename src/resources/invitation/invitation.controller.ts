@@ -16,7 +16,8 @@ export const getInvitations: EC = (req, res, next) =>
             tv.invitee AS invitees,
             (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
             rm.id as group_id,
-            inv.approved as approved
+            inv.approved_id as approvedId,
+            inv.denied_id as deniedId
             from invitation inv left join invitee iv on inv.id=iv.invitation_id 
             left join 
               (select vt.invitation_id as invitation_id, json_arrayagg(JSON_Object('id',
@@ -53,7 +54,8 @@ export const getInvitationsByProject: EC = (req, res, next) =>
             tv.invitee AS invitees,
             (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
             rm.id as group_id,
-            inv.approved as approved
+            inv.approved_id as approvedId,
+            inv.denied_id as deniedId
             from invitation inv left join invitee iv on inv.id=iv.invitation_id 
             left join 
               (select vt.invitation_id as invitation_id, json_arrayagg(JSON_Object('id',
@@ -90,7 +92,8 @@ export const getInvitationsPendingAdminApproval: EC = (req, res, next) =>
             tv.invitee AS invitees,
             (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
             rm.id as group_id,
-            inv.approved as approved,
+            inv.approved_id as approvedId,
+            inv.denied_id as deniedId,
             p.title as projectTitle,
             p.group_size as projectGroupSize
             from invitation inv left join invitee iv on inv.id=iv.invitation_id 
@@ -111,7 +114,7 @@ export const getInvitationsPendingAdminApproval: EC = (req, res, next) =>
             left join user uin on uin.id=inv.invitor
             left join project_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
             left join project p on inv.project_id=p.id
-            where (approved is null and denied is null) group by inv.id;`,
+            where (approvedId is null and deniedId is null) group by inv.id;`,
     addResultsToResponse(res, next)
   );
 

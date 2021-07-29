@@ -21,12 +21,12 @@ SELECT
       ),
       'refund',JSON_OBJECT(
       'approved', JSON_OBJECT(
-        'on', if(b.refund_approval is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
-        'by', refund_approval
+        'on', if(b.refund_approval_id is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
+        'by', refund_approval_id
       ),
         'rejected', JSON_OBJECT(
-          'on', if(refund_denial is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
-          'by', refund_denial
+          'on', if(refund_denial_id is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
+          'by', refund_denial_id
         ))
       ),
       JSON_OBJECT(
@@ -65,12 +65,12 @@ SELECT
       ),
       'refund',JSON_OBJECT(
       'approved', JSON_OBJECT(
-        'on', if(b.refund_approval is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
-        'by', refund_approval
+        'on', if(b.refund_approval_id is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
+        'by', refund_approval_id
       ),
         'rejected', JSON_OBJECT(
-          'on', if(refund_denial is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
-          'by', refund_denial
+          'on', if(refund_denial_id is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
+          'by', refund_denial_id
         ))
       ),
       JSON_OBJECT(
@@ -91,7 +91,7 @@ SELECT
     left join studio s on a.studio_id=s.id
     left join user_group u on b.group_id=u.id
     left join project p on u.projectId=p.id
-    where (refund_request=1 AND refund_approval is null AND refund_denial is null)
+    where (refund_request=1 AND refund_approval_id is null AND refund_denial_id is null)
 `;
 
 const flattenEquipment =
@@ -132,7 +132,7 @@ export const cancelReservation: EC = (req, res, next) => {
   pool.query(
     `UPDATE booking SET cancelled=1,cancelled_time=CURRENT_TIMESTAMP,
     cancelled_user_id=?,refund_request=?,refund_request_comment=?, 
-    refund_approval=?, refund_response_time=? 
+    refund_approval_id=?, refund_response_time=? 
     WHERE id = ?`,
     [
       req.body.userId,
@@ -158,7 +158,7 @@ export const adminResponse: EC = (req, res, next) => {
   const { approved, denied, adminId } = req.body;
   pool.query(
     `UPDATE booking
-        SET refund_approval = ?,refund_denial = ?
+        SET refund_approval_id = ?,refund_denial_id = ?
         WHERE id = ?`,
     [
       approved ? adminId : null,
