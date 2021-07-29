@@ -39,6 +39,8 @@ const usePassword: EEH = (err, req, res, next) => {
       [password, process.env.MYSQL_SHA2_PASSPHRASE, username],
       (err, result) => {
         if (err) return next(err);
+        if (!Array.isArray(result) || result.length !== 1)
+          return res.status(401).json({ error: "Invalid credentials" });
         const { passwordsMatch } = result[0];
         if (typeof passwordsMatch === "boolean" && passwordsMatch) {
           const session = req.session as { authId?: string };
@@ -75,7 +77,8 @@ const response: EC = (req, res, next) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const handleAuthError: EEH = (err, req, res, _) =>
+const handleAuthError: EEH = (err, req, res, _) => {
+  console.log("syntx error in auth handler?", err instanceof SyntaxError);
   res.status(500).json({
     error: {
       code: 500,
@@ -83,6 +86,7 @@ const handleAuthError: EEH = (err, req, res, _) =>
     },
     context: req.query.context,
   });
+};
 
 export default [
   // add res.locals.authId or 401

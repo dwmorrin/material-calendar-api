@@ -3,6 +3,7 @@ import dotenvExpand from "dotenv-expand";
 dotenvExpand(dotenv.config({ path: ".env" }));
 
 import express, { Request, Response, NextFunction } from "express";
+import syntaxError from "./utils/syntaxError";
 import morgan from "morgan";
 import cookieSession from "cookie-session";
 
@@ -30,7 +31,7 @@ app.use(
 
 // express middleware for parsing JSON data
 // increased limit for large data import files, e.g. events
-app.use(express.json({ limit: "100mb" }));
+app.use(express.json({ limit: "100mb" }), syntaxError);
 app.use(express.urlencoded({ extended: true }));
 
 // initial user authentication, starts an auth session if valid
