@@ -16,6 +16,7 @@ const authentication: EC = (req, res, next) => {
     case "DOT_ENV_AUTH_ID": {
       const authId = process.env.AUTH_ID;
       if (authId) {
+        session.authId = authId;
         res.locals.authId = authId;
         return next();
       }
@@ -28,14 +29,31 @@ const authentication: EC = (req, res, next) => {
           .status(500)
           .json({ error: "authentication method misconfigured" });
       const authId = req.headers[process.env.AUTH_CUSTOM_HEADER.toLowerCase()];
-      if (!authId) {
+      if (!authId || Array.isArray(authId)) {
         return res.status(401).send("not authenticated");
       }
+      session.authId = authId;
       res.locals.authId = authId;
       return next();
     }
-    default:
+    default: {
+      // including /login check so we can reuse this authentication method for /login
+      if (req.originalUrl.startsWith("/login")) {
+        // username & password
+        if (req.method !== "POST") {
+          return res
+            .status(401)
+            .json({ error: { message: "Send credentials" } });
+        }
+        const { username, password } = req.body;
+        if (username && password) {
+          return next("password");
+        }
+        return res.status(401).json({ error: { message: "Send credentials" } });
+      }
+      // trying to access a protected resource outside an auth session
       return res.status(401).send("not authenticated");
+    }
   }
 };
 

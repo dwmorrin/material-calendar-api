@@ -10,6 +10,7 @@ import cookieSession from "cookie-session";
 import apiRouter from "./api.router";
 import authentication from "./utils/authentication";
 import authorization, { onNotAuthorized } from "./utils/authorization";
+import password from "./utils/password";
 import login from "./utils/login";
 import logout from "./utils/logout";
 
@@ -35,7 +36,7 @@ app.use(express.json({ limit: "100mb" }), syntaxError);
 app.use(express.urlencoded({ extended: true }));
 
 // initial user authentication, starts an auth session if valid
-app.use("/login", login);
+app.use("/login", authentication, password, authorization, login);
 // destroys the session
 app.use("/logout", logout);
 
