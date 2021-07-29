@@ -1,12 +1,7 @@
 import pool from "./db";
 import { EC, EEH } from "./types";
 
-export const error403 = Object.freeze({
-  error: {
-    code: 403,
-    message: "not authorized",
-  },
-});
+export const NotAuthorized = "Not authorized";
 
 /**
  * If user ID exists in the database, adds
@@ -29,7 +24,7 @@ const authorization: EC = (_, res, next) => {
     (error, results) => {
       if (error) return next(error); // unexpected error
       const user = results[0];
-      if (!user) return next("not authorized");
+      if (!user) return next(NotAuthorized);
       res.locals.user = {
         id: user.id,
         userId: user.user_id,
@@ -41,13 +36,13 @@ const authorization: EC = (_, res, next) => {
   );
 };
 
-// const onError: EEH = (error, req, res, next) => {
-//   if (typeof error === "string" && error.includes("not authorized")) {
-//     res.status(403).json({
-//       error: { message: "Not authorized" },
-//       context: req.query.context,
-//     });
-//   } else next(error);
-// };
+export const onNotAuthorized: EEH = (error, req, res, next) => {
+  if (typeof error === "string" && error.includes(NotAuthorized)) {
+    res.status(403).json({
+      error: { code: 403, message: NotAuthorized },
+      context: req.query.context,
+    });
+  } else next(error);
+};
 
 export default authorization;

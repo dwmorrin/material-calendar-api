@@ -34,15 +34,8 @@ const authentication: EC = (req, res, next) => {
       res.locals.authId = authId;
       return next();
     }
-    // using password authentication and cookie sessions
-    default: {
-      const session = req.session as { authId?: string };
-      if (session.authId) {
-        res.locals.authId = session.authId;
-        return next();
-      }
+    default:
       return res.status(401).send("not authenticated");
-    }
   }
 };
 

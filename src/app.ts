@@ -8,7 +8,7 @@ import cookieSession from "cookie-session";
 
 import apiRouter from "./api.router";
 import authentication from "./utils/authentication";
-import authorization from "./utils/authorization";
+import authorization, { onNotAuthorized } from "./utils/authorization";
 import login from "./utils/login";
 import logout from "./utils/logout";
 
@@ -33,11 +33,13 @@ app.use(
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ extended: true }));
 
+// initial user authentication, starts an auth session if valid
 app.use("/login", login);
+// destroys the session
 app.use("/logout", logout);
 
-// auth
-app.use(authentication, authorization); // adds res.locals.authId
+// auth adds res.locals.authId and res.locals.user for /api routes
+app.use(authentication, authorization, onNotAuthorized);
 
 // application routing
 app.use("/api", apiRouter);

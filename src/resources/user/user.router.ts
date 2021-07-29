@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { error403 } from "../../utils/authorization";
+import { onNotAuthorized, NotAuthorized } from "../../utils/authorization";
 import controller from "./user.controller";
 import { sendResults } from "../../utils/crud";
 
@@ -9,7 +9,7 @@ const router = Router();
 router.use("/:id", (req: Request, res: Response, next: NextFunction) => {
   // lookups by ID only allowed by admins or self
   if (res.locals.user.id !== Number(req.params.id) && !res.locals.admin)
-    return res.status(403).json(error403);
+    return next(NotAuthorized);
   next();
 });
 
@@ -25,5 +25,6 @@ router.post("/", controller.createOne);
 router.put("/:id", controller.updateOne);
 
 router.use(sendResults);
+router.use(onNotAuthorized);
 
 export default router;

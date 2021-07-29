@@ -4,15 +4,16 @@ import { addResultsToResponse } from "./crud";
 import authorization from "./authorization";
 
 const checkForSession: EC = (req, res, next) => {
+  const session = req.session as { authId?: string };
   if (process.env.AUTH_METHOD === "DOT_ENV_AUTH_ID") {
     const authId = process.env.AUTH_ID;
     if (authId) {
+      session.authId = authId;
       res.locals.authId = authId;
       return next();
     }
     return res.status(500).json({ error: "AUTH_ID not set in .env" });
   }
-  const session = req.session as { authId?: string };
   if (session.authId) {
     res.locals.authId = session.authId;
     return next();
