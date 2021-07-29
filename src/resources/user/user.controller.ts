@@ -119,7 +119,7 @@ const resetPassword: EC = (req, res, next) => {
   if (!password) return next(new Error("Password is required"));
   pool.query(
     `UPDATE user
-    SET password = AES_ENCRYPT('?', UNHEX(SHA2('?', 512)))
+    SET password = AES_ENCRYPT(?, UNHEX(SHA2(?, 512)))
     WHERE id = ?
     `,
     [password, process.env.MYSQL_SHA2_PASSPHRASE, req.params.id],
