@@ -20,22 +20,25 @@ SELECT
     ),
     JSON_ARRAY()
   ) AS roles,
-  (
-    SELECT JSON_ARRAYAGG(JSON_OBJECT(
-          'id', rg.project_id,
-          'title', p.title,
-          'groupId', rg.id,
-          'course', JSON_OBJECT(
-            'id', IFNULL (c.id, 0),
-            'title', IFNULL (c.title, '')
+  IFNULL (
+    (
+      SELECT JSON_ARRAYAGG(JSON_OBJECT(
+            'id', rg.project_id,
+            'title', p.title,
+            'groupId', rg.id,
+            'course', JSON_OBJECT(
+              'id', IFNULL (c.id, 0),
+              'title', IFNULL (c.title, '')
+            )
           )
-        )
-    )
-    FROM student_group sg
-      LEFT JOIN project_group rg ON rg.id = sg.group_id
-      LEFT JOIN course c ON c.id = rg.course_id
-      LEFT JOIN project p ON rg.project_id = p.id
-    WHERE sg.student_id = u.id
+      )
+      FROM student_group sg
+        LEFT JOIN project_group rg ON rg.id = sg.group_id
+        LEFT JOIN course c ON c.id = rg.course_id
+        LEFT JOIN project p ON rg.project_id = p.id
+      WHERE sg.student_id = u.id
+    ),
+    JSON_ARRAY()
   ) as projects
 FROM
   user u

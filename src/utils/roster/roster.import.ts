@@ -14,6 +14,7 @@
 import { NextFunction, Request, Response } from "express";
 import pool, { inflate } from "../db";
 import { withResource } from "../crud";
+import withActiveSemester from "../withActiveSemester";
 import { query as courseQuery } from "../../resources/course/course.controller";
 import { MysqlError } from "mysql";
 import rosterRecordQuery, {
@@ -122,21 +123,6 @@ function setup(req: Request, res: Response, next: NextFunction): void {
     },
   };
   next();
-}
-
-// assumes roster entries and project start/end should be in the active semester
-function withActiveSemester(
-  _: Request,
-  res: Response,
-  next: NextFunction
-): void {
-  pool.query("SELECT * FROM active_semester_view", (error, results) => {
-    if (error) return next(error);
-    if (!results.length) return next(new Error("no active semester"));
-    const { id, start, end } = results[0];
-    res.locals.semester = { id, start, end };
-    next();
-  });
 }
 
 function withRosterRecords(

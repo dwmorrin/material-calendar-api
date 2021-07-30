@@ -1,5 +1,6 @@
 const query = `
   SELECT
+    r.id,
     JSON_OBJECT(
       'title', c.title,
       'catalogId', c.catalog_id,
@@ -7,12 +8,13 @@ const query = `
       'instructor', s.instructor
     ) as course,
     JSON_OBJECT(
+      'id', u.id,
+      'username', u.user_id,
       'name', JSON_OBJECT(
         'first', u.first_name,
         'middle', u.middle_name,
         'last', u.last_name
-      ),
-      'id', u.id
+      )
     ) AS student
   FROM
     roster r LEFT JOIN user u ON r.user_id = u.id
