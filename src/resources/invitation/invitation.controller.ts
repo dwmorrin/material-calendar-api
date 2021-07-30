@@ -5,7 +5,7 @@ import { EC } from "../../utils/types";
 export const getInvitations: EC = (req, res, next) =>
   pool.query(
     `select inv.id as id,
-    inv.project_id as project,
+    inv.project_id as projectId,
     JSON_OBJECT('id',
            inv.invitor,
            'name',
@@ -13,7 +13,7 @@ export const getInvitations: EC = (req, res, next) =>
             uin.first_name,
             'last',
             uin.last_name),'email',uin.email) as invitor,
-            tv.invitee AS invitees,
+            IFNULL(tv.invitee,'[]') AS invitees,
             (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
             rm.id as group_id,
             inv.approved_id as approvedId,
@@ -43,7 +43,7 @@ export const getInvitations: EC = (req, res, next) =>
 export const getInvitationsByProject: EC = (req, res, next) =>
   pool.query(
     `select inv.id as id,
-    inv.project_id as project,
+    inv.project_id as projectId,
     JSON_OBJECT('id',
            inv.invitor,
            'name',
@@ -51,7 +51,7 @@ export const getInvitationsByProject: EC = (req, res, next) =>
             uin.first_name,
             'last',
             uin.last_name),'email',uin.email) as invitor,
-            tv.invitee AS invitees,
+            IFNULL(tv.invitee,'[]') AS invitees,
             (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
             rm.id as group_id,
             inv.approved_id as approvedId,
@@ -81,7 +81,7 @@ export const getInvitationsByProject: EC = (req, res, next) =>
 export const getInvitationsPendingAdminApproval: EC = (req, res, next) =>
   pool.query(
     `select inv.id as id,
-    inv.project_id as project,
+    inv.project_id as projectId,
     JSON_OBJECT('id',
            inv.invitor,
            'name',
@@ -89,7 +89,7 @@ export const getInvitationsPendingAdminApproval: EC = (req, res, next) =>
             uin.first_name,
             'last',
             uin.last_name),'email',uin.email) as invitor,
-            tv.invitee AS invitees,
+            IFNULL(tv.invitee,'[]') AS invitees,
             (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
             rm.id as group_id,
             inv.approved_id as approvedId,
@@ -120,7 +120,7 @@ export const getInvitationsPendingAdminApproval: EC = (req, res, next) =>
 
 const createInvitations: EC = (req, res, next) =>
   pool.query(
-    `insert into invitation (project_id,invitor,approved) VALUES (?,?,?)`,
+    `insert into invitation (project_id,invitor,approved_id) VALUES (?,?,?)`,
     [
       req.body.projectId,
       req.body.invitorId,
@@ -132,11 +132,13 @@ const createInvitations: EC = (req, res, next) =>
 const createInvitees: EC = (req, res, next) => {
   const { results } = res.locals;
   const { invitees } = req.body;
-  pool.query(
-    `replace into invitee (invitation_id,invitee) VALUES ?`,
-    [(invitees as unknown[]).map((invitee) => [results.insertId, invitee])],
-    addResultsToResponse(res, next)
-  );
+  if (invitees.length > 0) {
+    pool.query(
+      `replace into invitee (invitation_id,invitee) VALUES ?`,
+      [(invitees as unknown[]).map((invitee) => [results.insertId, invitee])],
+      addResultsToResponse(res, next)
+    );
+  } else pool.query(`select '[]'`, addResultsToResponse(res, next));
 };
 
 export const updateInvitation: EC = (req, res, next) => {
@@ -154,7 +156,7 @@ export const adminResponse: EC = (req, res, next) => {
   const { approved, denied, adminId } = req.body;
   pool.query(
     `UPDATE invitation
-      SET approved = ?,denied = ?
+      SET approved_id = ?,denied_id = ?
       WHERE id = ?`,
     [
       approved ? adminId : null,
