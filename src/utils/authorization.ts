@@ -24,7 +24,7 @@ const authorization: EC = (_, res, next) => {
     (error, results) => {
       if (error) return next(error); // unexpected error
       const user = results[0];
-      if (!user) return next(NotAuthorized);
+      if (!user || !Array.isArray(user.roles)) return next(NotAuthorized);
       res.locals.user = {
         id: user.id,
         userId: user.user_id,
