@@ -24,7 +24,7 @@ const updateActive: EC = (req, res, next) => {
     pool.query(
       "REPLACE INTO active_semester SET id = 1, semester_id = ?",
       [id],
-      addResultsToResponse(res, next, { key: "ignore" })
+      addResultsToResponse(res, next, { key: "ignore", one: true })
     );
   } else {
     next();
@@ -45,7 +45,7 @@ export const updateOne: EC = (req, res, next): void => {
       { title: req.body.title, start: req.body.start, end: req.body.end },
       req.params.id,
     ],
-    addResultsToResponse(res, next)
+    addResultsToResponse(res, next, { one: true })
   );
 };
 
