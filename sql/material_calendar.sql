@@ -385,6 +385,31 @@ CREATE TABLE `project_virtual_week_hours` (
   CONSTRAINT `project_allotment_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `reservation` AS SELECT 
+ 1 AS `id`,
+ 1 AS `description`,
+ 1 AS `eventId`,
+ 1 AS `groupId`,
+ 1 AS `projectId`,
+ 1 AS `guests`,
+ 1 AS `cancellation`*/;
+SET character_set_client = @saved_cs_client;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `reservation_pending` AS SELECT 
+ 1 AS `id`,
+ 1 AS `description`,
+ 1 AS `eventId`,
+ 1 AS `groupId`,
+ 1 AS `projectId`,
+ 1 AS `guests`,
+ 1 AS `cancellation`,
+ 1 AS `event`,
+ 1 AS `members`,
+ 1 AS `projectTitle`*/;
+SET character_set_client = @saved_cs_client;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `role` (
@@ -687,6 +712,32 @@ DELIMITER ;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
 /*!50001 VIEW `project_view` AS select `p`.`id` AS `id`,`p`.`title` AS `title`,ifnull((select json_object('id',`c`.`id`,'title',`c`.`title`,'sections',json_arrayagg(`s`.`title`)) from ((`section_project` `sp` join `section` `s` on((`s`.`id` = `sp`.`section_id`))) join `course` `c`) where ((`sp`.`project_id` = `p`.`id`) and (`s`.`course_id` = `c`.`id`)) limit 1),json_object('id',-(1),'title','')) AS `course`,`p`.`start` AS `start`,`p`.`end` AS `end`,`p`.`book_start` AS `reservationStart`,ifnull((select json_arrayagg(json_object('locationId',`vw`.`studio_id`,'virtualWeekId',`vw`.`id`,'start',`vw`.`start`,'end',`vw`.`end`,'hours',`ph`.`hours`)) from (`project_virtual_week_hours` `ph` left join `virtual_week` `vw` on((`ph`.`virtual_week_id` = `vw`.`id`))) where (`ph`.`project_id` = `p`.`id`)),'[]') AS `allotments`,ifnull((select json_arrayagg(json_object('locationId',`ps`.`studio_id`,'hours',`ps`.`hours`)) from `project_studio_hours` `ps` where (`ps`.`project_id` = `p`.`id`)),'[]') AS `locationHours`,`p`.`open` AS `open`,`p`.`group_size` AS `groupSize`,`p`.`group_hours` AS `groupAllottedHours` from `project` `p` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP VIEW IF EXISTS `reservation`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
+/*!50001 VIEW `reservation` AS select `b`.`id` AS `id`,`b`.`purpose` AS `description`,`b`.`allotment_id` AS `eventId`,`b`.`group_id` AS `groupId`,ifnull(`b`.`project_id`,0) AS `projectId`,`b`.`guests` AS `guests`,if((`b`.`cancelled` = 1),if((`b`.`refund_request` = 1),json_object('canceled',json_object('on',date_format(`b`.`cancelled_time`,'%Y-%m-%d %T'),'by',`b`.`cancelled_user_id`,'comment',`b`.`refund_request_comment`),'refund',json_object('approved',json_object('on',if((`b`.`refund_approval_id` is not null),date_format(`b`.`refund_response_time`,'%Y-%m-%d %T'),''),'by',`b`.`refund_approval_id`),'rejected',json_object('on',if((`b`.`refund_denial_id` is not null),date_format(`b`.`refund_response_time`,'%Y-%m-%d %T'),''),'by',`b`.`refund_denial_id`))),json_object('canceled',json_object('on',date_format(`b`.`cancelled_time`,'%Y-%m-%d %T'),'by',`b`.`cancelled_user_id`,'comment',`b`.`refund_request_comment`))),NULL) AS `cancellation` from ((((`booking` `b` left join `allotment` `a` on((`a`.`id` = `b`.`allotment_id`))) left join `studio` `s` on((`a`.`studio_id` = `s`.`id`))) left join `user_group` `u` on((`b`.`group_id` = `u`.`id`))) left join `project` `p` on((`u`.`projectId` = `p`.`id`))) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP VIEW IF EXISTS `reservation_pending`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
+/*!50001 VIEW `reservation_pending` AS select `b`.`id` AS `id`,`b`.`purpose` AS `description`,`b`.`allotment_id` AS `eventId`,`b`.`group_id` AS `groupId`,ifnull(`b`.`project_id`,0) AS `projectId`,`b`.`guests` AS `guests`,if((`b`.`cancelled` = 1),if((`b`.`refund_request` = 1),json_object('canceled',json_object('on',date_format(`b`.`cancelled_time`,'%Y-%m-%d %T'),'by',`b`.`cancelled_user_id`,'comment',`b`.`refund_request_comment`),'refund',json_object('approved',json_object('on',if((`b`.`refund_approval_id` is not null),date_format(`b`.`refund_response_time`,'%Y-%m-%d %T'),''),'by',`b`.`refund_approval_id`),'rejected',json_object('on',if((`b`.`refund_denial_id` is not null),date_format(`b`.`refund_response_time`,'%Y-%m-%d %T'),''),'by',`b`.`refund_denial_id`))),json_object('canceled',json_object('on',date_format(`b`.`cancelled_time`,'%Y-%m-%d %T'),'by',`b`.`cancelled_user_id`,'comment',`b`.`refund_request_comment`))),NULL) AS `cancellation`,json_object('start',date_format(`a`.`start`,'%Y-%m-%d %T'),'end',date_format(`a`.`end`,'%Y-%m-%d %T'),'location',`s`.`title`) AS `event`,`u`.`members` AS `members`,`p`.`title` AS `projectTitle` from ((((`booking` `b` left join `allotment` `a` on((`a`.`id` = `b`.`allotment_id`))) left join `studio` `s` on((`a`.`studio_id` = `s`.`id`))) left join `user_group` `u` on((`b`.`group_id` = `u`.`id`))) left join `project` `p` on((`u`.`projectId` = `p`.`id`))) where ((`b`.`refund_request` = 1) and (`b`.`refund_approval_id` is null) and (`b`.`refund_denial_id` is null)) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;

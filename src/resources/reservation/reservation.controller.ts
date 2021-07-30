@@ -2,143 +2,53 @@ import { addResultsToResponse, controllers } from "../../utils/crud";
 import pool from "../../utils/db";
 import { EC } from "../../utils/types";
 
-const query = `
-SELECT
-    b.id,
-    b.purpose AS description,
-    b.allotment_id AS eventId,
-    b.group_id AS groupId,
-    IFNULL (b.project_id, 0) AS projectId,
-    b.guests,
-    IF(
-      b.cancelled = 1,
-      if(b.refund_request = 1,
-      JSON_OBJECT(
-        'canceled', JSON_OBJECT(
-          'on', date_format(b.cancelled_time,"%Y-%m-%d %T"),
-          'by', b.cancelled_user_id,
-          'comment', b.refund_request_comment
-      ),
-      'refund',JSON_OBJECT(
-      'approved', JSON_OBJECT(
-        'on', if(b.refund_approval_id is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
-        'by', refund_approval_id
-      ),
-        'rejected', JSON_OBJECT(
-          'on', if(refund_denial_id is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
-          'by', refund_denial_id
-        ))
-      ),
-      JSON_OBJECT(
-        'canceled', JSON_OBJECT(
-          'on', date_format(b.cancelled_time,"%Y-%m-%d %T"),
-          'by', b.cancelled_user_id,
-          'comment', b.refund_request_comment
-      )
-      )),
-      NULL
-    ) AS cancellation
-  FROM
-    booking b
-    left join allotment a on a.id=b.allotment_id
-    left join studio s on a.studio_id=s.id
-    left join user_group u on b.group_id=u.id
-    left join project p on u.projectId=p.id;
-`;
+interface Equipment {
+  id: number;
+  quantity: number;
+}
 
-const adminRequestQuery = `
-SELECT
-    b.id,
-    b.purpose AS description,
-    b.allotment_id AS eventId,
-    b.group_id AS groupId,
-    IFNULL (b.project_id, 0) AS projectId,
-    b.guests,
-    IF(
-      b.cancelled = 1,
-      if(b.refund_request = 1,
-      JSON_OBJECT(
-        'canceled', JSON_OBJECT(
-          'on', date_format(b.cancelled_time,"%Y-%m-%d %T"),
-          'by', b.cancelled_user_id,
-          'comment', b.refund_request_comment
-      ),
-      'refund',JSON_OBJECT(
-      'approved', JSON_OBJECT(
-        'on', if(b.refund_approval_id is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
-        'by', refund_approval_id
-      ),
-        'rejected', JSON_OBJECT(
-          'on', if(refund_denial_id is not null,date_format(refund_response_time,"%Y-%m-%d %T"),""),
-          'by', refund_denial_id
-        ))
-      ),
-      JSON_OBJECT(
-        'canceled', JSON_OBJECT(
-          'on', date_format(b.cancelled_time,"%Y-%m-%d %T"),
-          'by', b.cancelled_user_id,
-          'comment', b.refund_request_comment
-      )
-      )),
-      NULL
-    ) AS cancellation,
-    JSON_OBJECT('start', date_format(a.start,"%Y-%m-%d %T"), 'end', date_format(a.end,"%Y-%m-%d %T"), 'location', s.title) as event,
-    u.members,
-    p.title as projectTitle
-  FROM
-    booking b
-    left join allotment a on a.id=b.allotment_id
-    left join studio s on a.studio_id=s.id
-    left join user_group u on b.group_id=u.id
-    left join project p on u.projectId=p.id
-    where (refund_request=1 AND refund_approval_id is null AND refund_denial_id is null)
-`;
-
-const flattenEquipment =
-  (bookingId: number) =>
-  (equipment: {
-    id: number;
-    quantity: number;
-  }): (string | number | boolean)[] =>
-    [equipment.id, bookingId, equipment.quantity];
-
-const insertManyQuery = `
-  REPLACE INTO equipment_reservation
-    (equipment_id, booking_id, quantity)
-  VALUES ?
-`;
-
-const reserveEquipment: EC = (req, res, next) =>
+const reserveEquipment: EC = (req, res, next) => {
+  const bookingId = Number(req.params.id);
+  const equipment = req.body as Equipment[];
   pool.query(
-    insertManyQuery,
-    [req.body.map(flattenEquipment(+req.params.id))],
+    `REPLACE INTO equipment_reservation (
+      equipment_id, booking_id, quantity
+    ) VALUES ?`,
+    [equipment.map(({ id, quantity }) => [id, bookingId, quantity])],
     addResultsToResponse(res, next)
   );
+};
 
 const deleteEquipmentReservationZeros: EC = (_, res, next) =>
   pool.query(
-    " DELETE FROM equipment_reservation where quantity=0",
+    "DELETE FROM equipment_reservation WHERE quantity = 0",
     addResultsToResponse(res, next)
   );
 
 export const getOne: EC = (req, res, next) =>
   pool.query(
-    query + "WHERE id = ?",
+    "SELECT * FROM reservation WHERE id = ?",
     [req.params.id],
     addResultsToResponse(res, next, { one: true })
   );
 
 export const cancelReservation: EC = (req, res, next) => {
   pool.query(
-    `UPDATE booking SET cancelled=1,cancelled_time=CURRENT_TIMESTAMP,
-    cancelled_user_id=?,refund_request=?,refund_request_comment=?, 
-    refund_approval_id=?, refund_response_time=? 
+    `UPDATE booking
+    SET
+      cancelled = 1,
+      cancelled_time = CURRENT_TIMESTAMP,
+      cancelled_user_id = ?,
+      refund_request = ?,
+      refund_request_comment = ?, 
+      refund_approval_id = ?,
+      refund_response_time = ? 
     WHERE id = ?`,
     [
       req.body.userId,
       req.body.refundApproved ? 1 : req.body.refundRequest ? 1 : 0,
       req.body.refundApproved
-        ? '"Refund Granted Automatically"'
+        ? "Refund Granted Automatically"
         : req.body.refundComment,
       req.body.refundApproved ? req.body.userId : null,
       req.body.refundApproved ? new Date() : null,
@@ -149,20 +59,23 @@ export const cancelReservation: EC = (req, res, next) => {
 };
 
 export const getMany: EC = (_, res, next) =>
-  pool.query(query, addResultsToResponse(res, next));
+  pool.query("SELECT * FROM reservation", addResultsToResponse(res, next));
 
 export const getManyPendingAdminApproval: EC = (_, res, next) =>
-  pool.query(adminRequestQuery, addResultsToResponse(res, next));
+  pool.query(
+    "SELECT * FROM reservation_pending",
+    addResultsToResponse(res, next)
+  );
 
 export const adminResponse: EC = (req, res, next) => {
   const { approved, denied, adminId } = req.body;
   pool.query(
-    `UPDATE booking
-        SET refund_approval_id = ?,refund_denial_id = ?
-        WHERE id = ?`,
+    "UPDATE booking SET ? WHERE id = ?",
     [
-      approved ? adminId : null,
-      denied ? adminId : null,
+      {
+        refund_approval_id: approved ? adminId : null,
+        refund_denial_id: denied ? adminId : null,
+      },
       req.params.reservationId,
     ],
     addResultsToResponse(res, next)
