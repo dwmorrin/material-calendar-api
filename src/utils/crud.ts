@@ -28,17 +28,21 @@ export const withResource =
       next();
     });
 
+interface CrudOptions {
+  one?: boolean;
+  many?: boolean;
+  key?: string;
+}
+
 export const addResultsToResponse =
-  (
-    res: Response,
-    next: NextFunction,
-    { one = false, key = "results", many = false } = {}
-  ) =>
+  (res: Response, next: NextFunction, options: CrudOptions = {}) =>
   (error: MysqlError | null, results: Record<string, unknown>[]): void => {
+    const { one, many, key } = options;
     if (error) return next(error);
-    res.locals.one = one;
-    res.locals.many = many;
-    res.locals[key] = results;
+    // avoid unintentionally overwriting these options
+    if (one !== undefined) res.locals.one = one;
+    if (many !== undefined) res.locals.many = many;
+    res.locals[key || "results"] = results;
     next();
   };
 
