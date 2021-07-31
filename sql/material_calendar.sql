@@ -501,7 +501,7 @@ CREATE TABLE `studio` (
   `restriction` int NOT NULL DEFAULT '0',
   `allows_walk_ins` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -776,7 +776,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `user_view` AS select `u`.`id` AS `id`,`u`.`user_id` AS `username`,json_object('first',`u`.`first_name`,'middle',`u`.`middle_name`,'last',`u`.`last_name`) AS `name`,`u`.`email` AS `email`,`u`.`phone` AS `phone`,`u`.`restriction` AS `restriction`,ifnull((select json_arrayagg(`r`.`title`) from (`role` `r` join `user_role` `ur` on((`ur`.`role_id` = `r`.`id`))) where (`ur`.`user_id` = `u`.`id`)),json_array()) AS `roles`,(select json_arrayagg(json_object('id',`rg`.`project_id`,'title',`p`.`title`,'groupId',`rg`.`id`,'course',json_object('id',ifnull(`c`.`id`,0),'title',ifnull(`c`.`title`,'')))) from (((`student_group` `sg` left join `project_group` `rg` on((`rg`.`id` = `sg`.`group_id`))) left join `course` `c` on((`c`.`id` = `rg`.`course_id`))) left join `project` `p` on((`rg`.`project_id` = `p`.`id`))) where (`sg`.`student_id` = `u`.`id`)) AS `projects` from `user` `u` group by `u`.`id` */;
+/*!50001 VIEW `user_view` AS select `u`.`id` AS `id`,`u`.`user_id` AS `username`,json_object('first',`u`.`first_name`,'middle',`u`.`middle_name`,'last',`u`.`last_name`) AS `name`,`u`.`email` AS `email`,`u`.`phone` AS `phone`,`u`.`restriction` AS `restriction`,ifnull((select json_arrayagg(`r`.`title`) from (`role` `r` join `user_role` `ur` on((`ur`.`role_id` = `r`.`id`))) where (`ur`.`user_id` = `u`.`id`)),json_array()) AS `roles`,ifnull((select json_arrayagg(json_object('id',`rg`.`project_id`,'title',`p`.`title`,'groupId',`rg`.`id`,'course',json_object('id',ifnull(`c`.`id`,0),'title',ifnull(`c`.`title`,'')))) from (((`student_group` `sg` left join `project_group` `rg` on((`rg`.`id` = `sg`.`group_id`))) left join `course` `c` on((`c`.`id` = `rg`.`course_id`))) left join `project` `p` on((`rg`.`project_id` = `p`.`id`))) where (`sg`.`student_id` = `u`.`id`)),json_array()) AS `projects` from `user` `u` group by `u`.`id` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
