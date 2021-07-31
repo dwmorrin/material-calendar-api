@@ -1,6 +1,7 @@
 import { addResultsToResponse, controllers } from "../../utils/crud";
 import pool from "../../utils/db";
 import { EC } from "../../utils/types";
+import { useMailbox } from "../../utils/mailer";
 
 interface Equipment {
   id: number;
@@ -33,6 +34,9 @@ export const getOne: EC = (req, res, next) =>
   );
 
 export const cancelReservation: EC = (req, res, next) => {
+  const { mailbox } = req.body;
+  // useMailbox requires res.locals.mailbox be an array
+  res.locals.mailbox = Array.isArray(mailbox) ? mailbox : [];
   pool.query(
     `UPDATE booking
     SET
@@ -126,6 +130,6 @@ export default {
   getMany,
   getManyPendingAdminApproval,
   adminResponse,
-  cancelReservation,
+  cancelReservation: [cancelReservation, useMailbox],
   reserveEquipment: [reserveEquipment, deleteEquipmentReservationZeros],
 };
