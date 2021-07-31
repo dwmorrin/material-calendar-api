@@ -114,7 +114,7 @@ export const getInvitationsPendingAdminApproval: EC = (req, res, next) =>
             left join user uin on uin.id=inv.invitor
             left join project_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
             left join project p on inv.project_id=p.id
-            where (approvedId is null and deniedId is null) group by inv.id;`,
+            where (approved_id is null and denied_id is null) group by inv.id;`,
     addResultsToResponse(res, next)
   );
 
