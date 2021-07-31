@@ -2,6 +2,7 @@ CREATE VIEW user_group AS
 SELECT
   g.id,
   g.projectId,
+  r.name AS title,
   g.members,
   IFNULL (r.reservedHours, 0) AS reservedHours
 FROM
@@ -28,6 +29,7 @@ FROM
   (
     SELECT
       rg.id,
+      rg.name,
       CAST(
         SUM(TIME_TO_SEC(TIMEDIFF(a.end, a.start))) / 3600
         AS DECIMAL(8,2)

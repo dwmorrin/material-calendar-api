@@ -37,7 +37,7 @@ CREATE TABLE `allotment` (
   KEY `user_foreign_key` (`lock_user_id`),
   CONSTRAINT `allotment_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `user_foreign_key` FOREIGN KEY (`lock_user_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -79,7 +79,7 @@ CREATE TABLE `booking` (
   CONSTRAINT `booking_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `project_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `booking_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `booking_refund_approval_user_id` FOREIGN KEY (`refund_approval_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -122,7 +122,7 @@ CREATE TABLE `category` (
   `title` text,
   `parent_id` int DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -157,7 +157,7 @@ CREATE TABLE `equipment` (
   `notes` text,
   `restriction` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -501,7 +501,7 @@ CREATE TABLE `studio` (
   `restriction` int NOT NULL DEFAULT '0',
   `allows_walk_ins` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -545,6 +545,7 @@ SET @saved_cs_client     = @@character_set_client;
 /*!50001 CREATE VIEW `user_group` AS SELECT 
  1 AS `id`,
  1 AS `projectId`,
+ 1 AS `title`,
  1 AS `members`,
  1 AS `reservedHours`*/;
 SET character_set_client = @saved_cs_client;
@@ -763,7 +764,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `user_group` AS select `g`.`id` AS `id`,`g`.`projectId` AS `projectId`,`g`.`members` AS `members`,ifnull(`r`.`reservedHours`,0) AS `reservedHours` from ((select `rg`.`id` AS `id`,`rg`.`project_id` AS `projectId`,json_arrayagg(json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'last',`u`.`last_name`),'email',`u`.`email`)) AS `members` from ((`user` `u` join `student_group` `sg` on((`sg`.`student_id` = `u`.`id`))) join `project_group` `rg` on((`rg`.`id` = `sg`.`group_id`))) group by `rg`.`id`) `g` left join (select `rg`.`id` AS `id`,cast((sum(time_to_sec(timediff(`a`.`end`,`a`.`start`))) / 3600) as decimal(8,2)) AS `reservedHours` from ((`project_group` `rg` join `booking` `b` on((`b`.`group_id` = `rg`.`id`))) join `allotment` `a` on((`a`.`id` = `b`.`allotment_id`))) group by `rg`.`id`) `r` on((`g`.`id` = `r`.`id`))) */;
+/*!50001 VIEW `user_group` AS select `g`.`id` AS `id`,`g`.`projectId` AS `projectId`,`r`.`name` AS `title`,`g`.`members` AS `members`,ifnull(`r`.`reservedHours`,0) AS `reservedHours` from ((select `rg`.`id` AS `id`,`rg`.`project_id` AS `projectId`,json_arrayagg(json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'last',`u`.`last_name`),'email',`u`.`email`)) AS `members` from ((`user` `u` join `student_group` `sg` on((`sg`.`student_id` = `u`.`id`))) join `project_group` `rg` on((`rg`.`id` = `sg`.`group_id`))) group by `rg`.`id`) `g` left join (select `rg`.`id` AS `id`,`rg`.`name` AS `name`,cast((sum(time_to_sec(timediff(`a`.`end`,`a`.`start`))) / 3600) as decimal(8,2)) AS `reservedHours` from ((`project_group` `rg` join `booking` `b` on((`b`.`group_id` = `rg`.`id`))) join `allotment` `a` on((`a`.`id` = `b`.`allotment_id`))) group by `rg`.`id`) `r` on((`g`.`id` = `r`.`id`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
