@@ -1,12 +1,12 @@
 SELECT
   inv.id AS id,
-  inv.project_id AS project,
+  inv.project_id AS projectId,
   JSON_OBJECT(
     'id', inv.invitor,
     'name', JSON_OBJECT('first', uin.first_name, 'last', uin.last_name),
     'email',uin.email
   ) AS invitor,
-  tv.invitee AS invitees,
+  IFNULL (tv.invitee, JSON_ARRAY()) AS invitees,
   /* can we use the IF instead of CASE? */
   -- (SELECT IF (COUNT(iv.accepted) = SUM(iv.accepted), 1, 0)) AS confirmed,
   (SELECT (CASE WHEN COUNT(iv.accepted) = SUM(iv.accepted) THEN 1 ELSE 0 END)) AS confirmed,
