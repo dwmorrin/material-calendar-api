@@ -1,5 +1,5 @@
 import { addResultsToResponse, controllers } from "../../utils/crud";
-import pool from "../../utils/db";
+import pool, { inflate } from "../../utils/db";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
 
@@ -61,6 +61,42 @@ export const cancelReservation: EC = (req, res, next) => {
     addResultsToResponse(res, next, { one: true })
   );
 };
+
+const getUpdatedEvent: EC = (req, res, next) => {
+  pool.query(
+    "SELECT * FROM event WHERE id = (SELECT eventId FROM reservation WHERE id = ?)",
+    req.params.reservationId,
+    (err, results) => {
+      if (err) return next(err);
+      res.locals.event = inflate(results[0]);
+      next();
+    }
+  );
+};
+
+const getUpdatedReservation: EC = (req, res, next) => {
+  pool.query(
+    "SELECT * FROM reservation WHERE id = ?",
+    req.params.reservationId,
+    (err, results) => {
+      if (err) return next(err);
+      res.locals.reservation = inflate(results[0]);
+      next();
+    }
+  );
+};
+
+const cancelResponse: EC = (req, res, next) => {
+  res.status(201).json({
+    data: {
+      reservation: res.locals.reservation,
+    },
+  });
+  next();
+};
+
+// just used to stop after useMailbox
+const noop: EC = () => undefined;
 
 export const getMany: EC = (_, res, next) =>
   pool.query("SELECT * FROM reservation", addResultsToResponse(res, next));
@@ -130,6 +166,13 @@ export default {
   getMany,
   getManyPendingAdminApproval,
   adminResponse,
-  cancelReservation: [cancelReservation, useMailbox],
+  cancelReservation: [
+    cancelReservation,
+    getUpdatedEvent,
+    getUpdatedReservation,
+    cancelResponse,
+    useMailbox,
+    noop,
+  ],
   reserveEquipment: [reserveEquipment, deleteEquipmentReservationZeros],
 };
