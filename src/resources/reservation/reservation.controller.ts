@@ -74,22 +74,10 @@ const getUpdatedEvent: EC = (req, res, next) => {
   );
 };
 
-const getUpdatedReservation: EC = (req, res, next) => {
-  pool.query(
-    "SELECT * FROM reservation WHERE id = ?",
-    req.params.reservationId,
-    (err, results) => {
-      if (err) return next(err);
-      res.locals.reservation = inflate(results[0]);
-      next();
-    }
-  );
-};
-
-const cancelResponse: EC = (req, res, next) => {
+const cancelResponse: EC = (_, res, next) => {
   res.status(201).json({
     data: {
-      reservation: res.locals.reservation,
+      event: res.locals.event,
     },
   });
   next();
@@ -169,7 +157,6 @@ export default {
   cancelReservation: [
     cancelReservation,
     getUpdatedEvent,
-    getUpdatedReservation,
     cancelResponse,
     useMailbox,
     noop,
