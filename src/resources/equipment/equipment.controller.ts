@@ -5,13 +5,13 @@ import { EC } from "../../utils/types";
 const query = `
   SELECT
     *
-  FROM equipment_info
+  FROM equipment_view
   WHERE
-    JSON_SEARCH(equipment_info.category, 'one', ?)
+    JSON_SEARCH(category, 'one', ?)
   GROUP BY id
 `;
 
 export const getByCategory: EC = (req, res, next) =>
   pool.query(query, [req.params.id], addResultsToResponse(res, next));
 
-export default { ...controllers("equipment_info", "id"), getByCategory };
+export default { ...controllers("equipment_view", "id"), getByCategory };

@@ -37,7 +37,7 @@ CREATE TABLE `allotment` (
   KEY `user_foreign_key` (`lock_user_id`),
   CONSTRAINT `allotment_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `user_foreign_key` FOREIGN KEY (`lock_user_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -79,7 +79,7 @@ CREATE TABLE `booking` (
   CONSTRAINT `booking_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `project_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `booking_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `booking_refund_approval_user_id` FOREIGN KEY (`refund_approval_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -122,7 +122,7 @@ CREATE TABLE `category` (
   `title` text,
   `parent_id` int DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -139,7 +139,7 @@ CREATE TABLE `course` (
   `catalog_id` varchar(50) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_course` (`title`,`catalog_id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -157,23 +157,8 @@ CREATE TABLE `equipment` (
   `notes` text,
   `restriction` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
-SET @saved_cs_client     = @@character_set_client;
-/*!50503 SET character_set_client = utf8mb4 */;
-/*!50001 CREATE VIEW `equipment_info` AS SELECT 
- 1 AS `id`,
- 1 AS `manufacturer`,
- 1 AS `model`,
- 1 AS `description`,
- 1 AS `sku`,
- 1 AS `quantity`,
- 1 AS `category`,
- 1 AS `tags`,
- 1 AS `consumable`,
- 1 AS `reservations`,
- 1 AS `restriction`*/;
-SET character_set_client = @saved_cs_client;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `equipment_reservation` (
@@ -188,6 +173,24 @@ CREATE TABLE `equipment_reservation` (
   CONSTRAINT `FK_equipment_equipment_reservation` FOREIGN KEY (`equipment_id`) REFERENCES `equipment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `equipment_view` AS SELECT 
+ 1 AS `id`,
+ 1 AS `manufacturer`,
+ 1 AS `model`,
+ 1 AS `serial`,
+ 1 AS `description`,
+ 1 AS `sku`,
+ 1 AS `barcode`,
+ 1 AS `restriction`,
+ 1 AS `quantity`,
+ 1 AS `category`,
+ 1 AS `tags`,
+ 1 AS `consumable`,
+ 1 AS `reservations`,
+ 1 AS `notes`*/;
+SET character_set_client = @saved_cs_client;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `event` AS SELECT 
@@ -437,7 +440,7 @@ CREATE TABLE `roster` (
   CONSTRAINT `roster_section_id_section_id` FOREIGN KEY (`section_id`) REFERENCES `section` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `roster_semester_id_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `roster_student_id_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -449,7 +452,7 @@ CREATE TABLE `section` (
   PRIMARY KEY (`id`),
   KEY `course_id_idx` (`course_id`),
   CONSTRAINT `section_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -501,7 +504,7 @@ CREATE TABLE `studio` (
   `restriction` int NOT NULL DEFAULT '0',
   `allows_walk_ins` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -664,7 +667,7 @@ DELIMITER ;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `equipment_info`*/;
+/*!50001 DROP VIEW IF EXISTS `equipment_view`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;
 /*!50001 SET @saved_cs_results         = @@character_set_results */;
 /*!50001 SET @saved_col_connection     = @@collation_connection */;
@@ -673,7 +676,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `equipment_info` AS with `reservation_list` as (select `r`.`equipment_id` AS `id`,json_object('quantity',`r`.`quantity`,'bookingId',`r`.`booking_id`,'start',`a`.`start`,'end',`a`.`end`) AS `booking` from ((`equipment_reservation` `r` left join `booking` `b` on((`b`.`id` = `r`.`booking_id`))) left join `allotment` `a` on((`b`.`allotment_id` = `a`.`id`)))) select `equipment`.`id` AS `id`,`equipment`.`manufacturer` AS `manufacturer`,`equipment`.`model` AS `model`,`equipment`.`description` AS `description`,`equipment`.`sku` AS `sku`,`equipment`.`quantity` AS `quantity`,json_object('id',`c`.`id`,'title',`c`.`title`,'parentId',`c`.`parent_id`) AS `category`,'[]' AS `tags`,0 AS `consumable`,(case when (`r`.`booking` is not null) then json_arrayagg(`r`.`booking`) else '[]' end) AS `reservations`,`equipment`.`restriction` AS `restriction` from ((`equipment` left join `category` `c` on((`c`.`id` = `equipment`.`category`))) left join `reservation_list` `r` on((`r`.`id` = `equipment`.`id`))) group by `equipment`.`id` */;
+/*!50001 VIEW `equipment_view` AS with `reservation_list` as (select `r`.`equipment_id` AS `id`,json_object('quantity',`r`.`quantity`,'bookingId',`r`.`booking_id`,'start',`a`.`start`,'end',`a`.`end`) AS `booking` from ((`equipment_reservation` `r` left join `booking` `b` on((`b`.`id` = `r`.`booking_id`))) left join `allotment` `a` on((`b`.`allotment_id` = `a`.`id`)))) select `e`.`id` AS `id`,`e`.`manufacturer` AS `manufacturer`,`e`.`model` AS `model`,`e`.`serial` AS `serial`,`e`.`description` AS `description`,`e`.`sku` AS `sku`,`e`.`barcode` AS `barcode`,`e`.`restriction` AS `restriction`,`e`.`quantity` AS `quantity`,json_object('id',`c`.`id`,'title',`c`.`title`,'parentId',`c`.`parent_id`) AS `category`,'[]' AS `tags`,`e`.`consumable` AS `consumable`,if((`r`.`booking` is not null),json_arrayagg(`r`.`booking`),json_array()) AS `reservations`,`e`.`notes` AS `notes` from ((`equipment` `e` left join `category` `c` on((`c`.`id` = `e`.`category`))) left join `reservation_list` `r` on((`r`.`id` = `e`.`id`))) group by `e`.`id` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
