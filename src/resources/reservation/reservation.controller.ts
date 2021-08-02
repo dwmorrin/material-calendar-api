@@ -143,7 +143,7 @@ export const updateOne: EC = (req, res, next) =>
       },
       Number(req.params.id),
     ],
-    addResultsToResponse(res, next)
+    addResultsToResponse(res, next, { one: true })
   );
 
 export default {

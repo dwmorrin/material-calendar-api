@@ -36,11 +36,11 @@ export const createOne: EC = (req, res, next) =>
     addResultsToResponse(res, next)
   );
 
-export const updateOne: EC = (req, res, next) =>
+const updateOne: EC = (req, res, next) =>
   pool.query(
     `UPDATE virtual_week SET ? WHERE id = ?`,
     [{ start: req.body.start, end: req.body.end }, req.body.id],
-    addResultsToResponse(res, next)
+    addResultsToResponse(res, next, { one: true })
   );
 
 const splitOneUpdate: EC = (req, _, next) => {

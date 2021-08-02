@@ -39,7 +39,7 @@ const updateOne: EC = (req, res, next) =>
       },
       req.params.id,
     ],
-    addResultsToResponse(res, next)
+    addResultsToResponse(res, next, { one: true })
   );
 
 // TODO: Roles currently hardcoded for admin = 1, user = 2

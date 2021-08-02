@@ -49,7 +49,7 @@ const updateOne: EC = (req, res, next) =>
       },
       req.params.id,
     ],
-    addResultsToResponse(res, next)
+    addResultsToResponse(res, next, { one: true })
   );
 
 const range: EC = (req, res, next) => {

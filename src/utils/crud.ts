@@ -84,7 +84,7 @@ export const updateOne =
     pool.query(
       "UPDATE ?? SET ? WHERE ?? = ?",
       [table, req.body, key, req.params.id],
-      addResultsToResponse(res, next)
+      addResultsToResponse(res, next, { one: true })
     );
 
 export const sendResults: EC = (req, res, next) => {
