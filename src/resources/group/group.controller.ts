@@ -88,6 +88,15 @@ export const leaveGroup: EC = (req, res, next) =>
     addResultsToResponse(res, next)
   );
 
+const updateOne: EC = (req, res, next) => {
+  const { projectId, title } = req.body;
+  pool.query(
+    "UPDATE project_group SET ? WHERE id = ?",
+    [{ project_id: projectId, name: title }, req.params.groupId],
+    addResultsToResponse(res, next, { one: true })
+  );
+};
+
 export default {
   getGroups,
   getGroupsByUser,
@@ -97,4 +106,5 @@ export default {
   removeOneGroup,
   joinGroup,
   leaveGroup,
+  updateOne,
 };
