@@ -36,8 +36,8 @@ FROM
       ) AS reservedHours
     FROM
       project_group rg
-	  INNER JOIN booking b on b.group_id = rg.id
-      INNER JOIN allotment a on a.id = b.allotment_id
+	    LEFT JOIN booking b on b.group_id = rg.id
+      LEFT JOIN allotment a on a.id = b.allotment_id
     GROUP BY
       rg.id
   ) r ON g.id = r.id
