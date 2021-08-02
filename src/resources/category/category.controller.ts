@@ -14,4 +14,14 @@ const query = `
 export const getMany: EC = (_, res, next) =>
   pool.query(query, addResultsToResponse(res, next));
 
-export default { ...controllers("category", "id"), getMany };
+const updateOne: EC = (req, res, next) => {
+  const { id } = req.params;
+  const { title, parentId } = req.body;
+  pool.query(
+    "UPDATE category SET ? WHERE id = ?",
+    [{ title, parent_id: parentId }, id],
+    addResultsToResponse(res, next, { one: true })
+  );
+};
+
+export default { ...controllers("category", "id"), getMany, updateOne };
