@@ -171,7 +171,12 @@ const update: EC = (req, res, next) => {
 
 // fetch updated equipment and attach to res.locals.results before this
 const response: EC = (_, res) => {
-  res.status(201).json({ data: res.locals.results.map(inflate) });
+  res.status(201).json({
+    data: {
+      equipment: res.locals.results.map(inflate),
+      categories: res.locals.categories.map(inflate),
+    },
+  });
 };
 
 const onError: EEH = (err, _, res, next) => {
