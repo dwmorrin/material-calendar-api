@@ -115,6 +115,19 @@ const bulkHoursResponse: EC = (req, res) =>
     context: req.query.context,
   });
 
+const updateOne: EC = (req, res, next) => {
+  const { id } = req.params;
+  const { title, groupId, restriction, allowsWalkIns } = req.body;
+  pool.query(
+    "UPDATE studio SET ? WHERE id = ?",
+    [
+      { title, location: groupId, restriction, allows_walk_ins: allowsWalkIns },
+      id,
+    ],
+    addResultsToResponse(res, next, { one: true })
+  );
+};
+
 export default {
   ...controllers("studio", "id"),
   createOne,
@@ -129,4 +142,5 @@ export default {
   getDefaultId,
   getVirtualWeeks,
   sumHours,
+  updateOne,
 };
