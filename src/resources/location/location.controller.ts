@@ -3,7 +3,7 @@ import {
   controllers,
   withResource,
 } from "../../utils/crud";
-import pool from "../../utils/db";
+import pool, { inflate } from "../../utils/db";
 import { EC } from "../../utils/types";
 
 /**
@@ -109,8 +109,8 @@ export const sumHours: EC = (req, res, next) =>
 const bulkHoursResponse: EC = (req, res) =>
   res.status(201).json({
     data: {
-      locations: res.locals.locations,
-      virtualWeeks: res.locals.virtualWeeks,
+      locations: res.locals.locations.map(inflate),
+      virtualWeeks: res.locals.virtualWeeks.map(inflate),
     },
     context: req.query.context,
   });
