@@ -2,6 +2,8 @@ import pool, { inflate } from "./db";
 import { EC, EEH } from "./types";
 import { addResultsToResponse } from "./crud";
 
+const NotAuthenicated = "Not authenticated";
+
 const getOne: EC = (_, res, next) =>
   pool.query(
     "SELECT * FROM user_view WHERE id = ?",
@@ -19,18 +21,20 @@ const updateLastLogin: EC = (_, res, next) =>
 const response: EC = (req, res, next) => {
   const { context } = req.query;
   const user = inflate(res.locals.results[0]);
-  if (!user || !user.id) return next(new Error("Not authorized"));
+  if (!user || !user.id) return next(NotAuthenicated);
   res.json({ data: user, context });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const handleAuthError: EEH = (err, req, res, _) =>
-  res.status(500).json({
-    error: {
-      code: 500,
-      message: err instanceof Error ? err.message : "authentication error",
-    },
-    context: req.query.context,
-  });
+const handleAuthError: EEH = (err, req, res, next) => {
+  if (err === NotAuthenicated) {
+    res.status(401).json({
+      error: {
+        code: 401,
+        message: err,
+      },
+      context: req.query.context,
+    });
+  } else next(err);
+};
 
 export default [getOne, updateLastLogin, response, handleAuthError];
