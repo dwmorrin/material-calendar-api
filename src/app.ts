@@ -48,12 +48,17 @@ app.use("/api", apiRouter);
 
 // catch unhandled requests
 app.use((req, res) => {
-  res.status(404).json({
-    error: {
-      code: 404,
-      message: `nothing found for ${req.method} ${req.originalUrl}`,
-    },
-  });
+  if (req.is("application/json")) {
+    // missed API request: provide an echo of the request for debugging
+    return res.status(404).json({
+      error: {
+        code: 404,
+        message: `nothing found for ${req.method} ${req.originalUrl}`,
+      },
+    });
+  }
+  // typing a bad URL in a browser, just redirect to root
+  res.redirect(404, "/");
 });
 
 // catch unhandled exceptions
