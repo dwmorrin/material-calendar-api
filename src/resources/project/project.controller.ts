@@ -7,6 +7,7 @@ import {
 } from "../../utils/crud";
 import { EC } from "../../utils/types";
 import { Project } from "./project.type";
+import { isValidSQLDateInterval } from "../../utils/date";
 
 /**
  * Reading: use `project_view` view.
@@ -58,7 +59,7 @@ const getOne: EC = (req, res, next) => {
   );
 };
 
-export const createOrUpdateOne: EC = (req, res, next): void => {
+export const createOrUpdateOne: EC = (req, res, next) => {
   const {
     body: {
       end,
@@ -72,6 +73,11 @@ export const createOrUpdateOne: EC = (req, res, next): void => {
     },
     method,
   } = req;
+
+  if (!isValidSQLDateInterval({ start, end }))
+    return res.status(400).json({
+      error: { message: "Invalid: Project end is after start" },
+    });
 
   const query =
     method === CrudAction.Create
