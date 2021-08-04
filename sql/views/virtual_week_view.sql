@@ -7,15 +7,6 @@ SELECT
   vw.semester_id AS semesterId,
   IFNULL(
     (
-      SELECT SUM(sh.hours)
-      FROM studio_hours sh
-      WHERE vw.studio_id = sh.studio_id
-      AND sh.date BETWEEN vw.start and vw.end
-    ),
-    0
-  ) AS 'locationHours',
-  IFNULL(
-    (
       SELECT SUM(pa.hours)
       FROM project_virtual_week_hours pa
       WHERE pa.virtual_week_id = vw.id

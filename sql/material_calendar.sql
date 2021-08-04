@@ -37,7 +37,7 @@ CREATE TABLE `allotment` (
   KEY `user_foreign_key` (`lock_user_id`),
   CONSTRAINT `allotment_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `user_foreign_key` FOREIGN KEY (`lock_user_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -122,7 +122,7 @@ CREATE TABLE `category` (
   `title` text,
   `parent_id` int DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -157,7 +157,7 @@ CREATE TABLE `equipment` (
   `notes` text,
   `restriction` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -281,7 +281,8 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `groupId`,
  1 AS `hours`,
  1 AS `restriction`,
- 1 AS `allowsWalkIns`*/;
+ 1 AS `allowsWalkIns`,
+ 1 AS `defaultHours`*/;
 SET character_set_client = @saved_cs_client;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -511,6 +512,13 @@ CREATE TABLE `studio` (
   `location` varchar(255) DEFAULT '',
   `restriction` int NOT NULL DEFAULT '0',
   `allows_walk_ins` tinyint(1) NOT NULL DEFAULT '0',
+  `default_hours_monday` int NOT NULL DEFAULT '0',
+  `default_hours_tuesday` int NOT NULL DEFAULT '0',
+  `default_hours_wednesday` int NOT NULL DEFAULT '0',
+  `default_hours_thursday` int NOT NULL DEFAULT '0',
+  `default_hours_friday` int NOT NULL DEFAULT '0',
+  `default_hours_saturday` int NOT NULL DEFAULT '0',
+  `default_hours_sunday` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -597,7 +605,7 @@ CREATE TABLE `virtual_week` (
   KEY `semester_idx` (`semester_id`),
   CONSTRAINT `virtual_week_semester_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`),
   CONSTRAINT `virtual_week_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -607,7 +615,6 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `end`,
  1 AS `locationId`,
  1 AS `semesterId`,
- 1 AS `locationHours`,
  1 AS `projectHours`*/;
 SET character_set_client = @saved_cs_client;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -710,7 +717,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `location` AS select `s`.`id` AS `id`,`s`.`title` AS `title`,`s`.`location` AS `groupId`,if((`sh`.`date` is null),'[]',json_arrayagg(json_object('date',`sh`.`date`,'hours',`sh`.`hours`))) AS `hours`,`s`.`restriction` AS `restriction`,`s`.`allows_walk_ins` AS `allowsWalkIns` from (`studio` `s` left join `studio_hours` `sh` on((`s`.`id` = `sh`.`studio_id`))) group by `s`.`id` */;
+/*!50001 VIEW `location` AS select `s`.`id` AS `id`,`s`.`title` AS `title`,`s`.`location` AS `groupId`,if((`sh`.`date` is null),'[]',json_arrayagg(json_object('date',`sh`.`date`,'hours',`sh`.`hours`))) AS `hours`,`s`.`restriction` AS `restriction`,`s`.`allows_walk_ins` AS `allowsWalkIns`,json_object('monday',`s`.`default_hours_monday`,'tuesday',`s`.`default_hours_tuesday`,'wednesday',`s`.`default_hours_wednesday`,'thursday',`s`.`default_hours_thursday`,'friday',`s`.`default_hours_friday`,'saturday',`s`.`default_hours_saturday`,'sunday',`s`.`default_hours_sunday`) AS `defaultHours` from (`studio` `s` left join `studio_hours` `sh` on((`s`.`id` = `sh`.`studio_id`))) group by `s`.`id` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -814,7 +821,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `virtual_week_view` AS select `vw`.`id` AS `id`,`vw`.`start` AS `start`,`vw`.`end` AS `end`,`vw`.`studio_id` AS `locationId`,`vw`.`semester_id` AS `semesterId`,ifnull((select sum(`sh`.`hours`) from `studio_hours` `sh` where ((`vw`.`studio_id` = `sh`.`studio_id`) and (`sh`.`date` between `vw`.`start` and `vw`.`end`))),0) AS `locationHours`,ifnull((select sum(`pa`.`hours`) from `project_virtual_week_hours` `pa` where (`pa`.`virtual_week_id` = `vw`.`id`)),0) AS `projectHours` from `virtual_week` `vw` */;
+/*!50001 VIEW `virtual_week_view` AS select `vw`.`id` AS `id`,`vw`.`start` AS `start`,`vw`.`end` AS `end`,`vw`.`studio_id` AS `locationId`,`vw`.`semester_id` AS `semesterId`,ifnull((select sum(`pa`.`hours`) from `project_virtual_week_hours` `pa` where (`pa`.`virtual_week_id` = `vw`.`id`)),0) AS `projectHours` from `virtual_week` `vw` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;

@@ -4,7 +4,7 @@ import {
   withResource,
 } from "../../utils/crud";
 import pool, { inflate } from "../../utils/db";
-import { EC } from "../../utils/types";
+import { EC, EEH } from "../../utils/types";
 
 /**
  * Reading: use `location` view
@@ -64,30 +64,76 @@ export const getVirtualWeeks: EC = (req, res, next) =>
     addResultsToResponse(res, next)
   );
 
-const createOrUpdateHours: EC = (req, res, next) =>
+const createOrUpdateHoursSetup: EC = (req, res, next) => {
+  const dailyHours = req.body;
+  if (!Array.isArray(dailyHours)) {
+    return next("Expected array of daily hours");
+  }
+  res.locals.updates = dailyHours.filter(({ useDefault }) => !useDefault);
+  res.locals.deletes = dailyHours.filter(({ useDefault }) => useDefault);
+  next();
+};
+
+const createOrUpdateHours: EC = (req, res, next) => {
+  if (!Array.isArray(res.locals.updates))
+    return next("Daily hours update handler not configured.");
+  if (!res.locals.updates.length) return next();
   pool.query(
     "REPLACE INTO studio_hours (studio_id, date, hours) VALUES ?",
     [
-      (req.body as { date: string; hours: number }[]).map(({ date, hours }) => [
-        req.params.id,
-        date,
-        hours,
-      ]),
+      (res.locals.updates as { date: string; hours: number }[]).map(
+        ({ date, hours }) => [req.params.id, date, hours]
+      ),
     ],
     addResultsToResponse(res, next)
   );
+};
 
-export const createOne: EC = (req, res, next): void => {
+const deleteHours: EC = (req, res, next) => {
+  if (!Array.isArray(res.locals.deletes))
+    return next("Daily hours delete handler not configured.");
+  if (!res.locals.deletes.length) return next();
+  pool.query(
+    "DELETE FROM studio_hours WHERE studio_id = ? AND date in (?)",
+    [req.params.id, res.locals.deletes.map((d) => d.date)],
+    addResultsToResponse(res, next, { key: "ignore" })
+  );
+};
+
+const onHoursError: EEH = (err, _, res, next) => {
+  if (typeof err === "string")
+    return res.status(400).json({ error: { message: err } });
+  else next(err);
+};
+
+export const createOne: EC = (req, res, next) => {
+  const { title, groupId, restriction, allowsWalkIns, defaultHours } = req.body;
+  const defaultHoursValid = Object.values(defaultHours).every(
+    (value) =>
+      typeof value === "number" && !isNaN(value) && value >= 0 && value <= 24
+  );
+  if (!defaultHoursValid)
+    return res.status(400).json({
+      error: { message: "Default hours must be between 0 and 24" },
+    });
   pool.query(
     "INSERT INTO studio SET ?",
     [
       {
-        title: req.body.title,
-        location: req.body.groupId,
-        restriction: req.body.restriction,
+        title: title,
+        location: groupId,
+        restriction: restriction,
+        allows_walk_ins: allowsWalkIns,
+        default_hours_monday: defaultHours.monday,
+        default_hours_tuesday: defaultHours.tuesday,
+        default_hours_wednesday: defaultHours.wednesday,
+        default_hours_thursday: defaultHours.thursday,
+        default_hours_friday: defaultHours.friday,
+        default_hours_saturday: defaultHours.saturday,
+        default_hours_sunday: defaultHours.sunday,
       },
     ],
-    addResultsToResponse(res, next)
+    addResultsToResponse(res, next, { one: true })
   );
 };
 
@@ -110,18 +156,37 @@ const bulkHoursResponse: EC = (req, res) =>
   res.status(201).json({
     data: {
       locations: res.locals.locations.map(inflate),
-      virtualWeeks: res.locals.virtualWeeks.map(inflate),
     },
     context: req.query.context,
   });
 
 const updateOne: EC = (req, res, next) => {
   const { id } = req.params;
-  const { title, groupId, restriction, allowsWalkIns } = req.body;
+  const { title, groupId, restriction, allowsWalkIns, defaultHours } = req.body;
+  const defaultHoursValid = Object.values(defaultHours).every(
+    (value) =>
+      typeof value === "number" && !isNaN(value) && value >= 0 && value <= 24
+  );
+  if (!defaultHoursValid)
+    return res.status(400).json({
+      error: { message: "Default hours must be between 0 and 24" },
+    });
   pool.query(
     "UPDATE studio SET ? WHERE id = ?",
     [
-      { title, location: groupId, restriction, allows_walk_ins: allowsWalkIns },
+      {
+        title,
+        location: groupId,
+        restriction,
+        allows_walk_ins: allowsWalkIns,
+        default_hours_monday: defaultHours.monday,
+        default_hours_tuesday: defaultHours.tuesday,
+        default_hours_wednesday: defaultHours.wednesday,
+        default_hours_thursday: defaultHours.thursday,
+        default_hours_friday: defaultHours.friday,
+        default_hours_saturday: defaultHours.saturday,
+        default_hours_sunday: defaultHours.sunday,
+      },
       id,
     ],
     addResultsToResponse(res, next, { one: true })
@@ -132,10 +197,12 @@ export default {
   ...controllers("studio", "id"),
   createOne,
   bulkLocationHours: [
+    createOrUpdateHoursSetup,
     createOrUpdateHours,
+    deleteHours,
     withResource("locations", "SELECT * FROM location"),
-    withResource("virtualWeeks", "SELECT * FROM virtual_week_view"),
     bulkHoursResponse,
+    onHoursError,
   ],
   getMany,
   getOne,

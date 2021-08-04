@@ -12,7 +12,16 @@ SELECT
     ))
   ) AS hours,
   s.restriction AS restriction,
-  s.allows_walk_ins AS allowsWalkIns
+  s.allows_walk_ins AS allowsWalkIns,
+  JSON_OBJECT(
+    'monday', s.default_hours_monday,
+    'tuesday', s.default_hours_tuesday,
+    'wednesday', s.default_hours_wednesday,
+    'thursday', s.default_hours_thursday,
+    'friday', s.default_hours_friday,
+    'saturday', s.default_hours_saturday,
+    'sunday', s.default_hours_sunday
+  ) AS defaultHours
 FROM
   studio s
   LEFT JOIN
