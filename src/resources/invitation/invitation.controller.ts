@@ -143,6 +143,16 @@ const createInvitees: EC = (req, res, next) => {
 
 export const updateInvitation: EC = (req, res, next) => {
   const { accepted, rejected, userId } = req.body;
+  // Delete the Invitations that the accepting user has created
+  if (accepted)
+    pool.query(
+      `delete i from invitation i where invitor=? AND project_id IN (
+        SELECT pid FROM (
+            SELECT DISTINCT invitation.project_id AS pid FROM invitation where id=?
+        ) AS inv
+    )`,
+      [userId, req.params.invitationId]
+    );
   pool.query(
     `UPDATE invitee
       SET accepted = ?, rejected = ?
