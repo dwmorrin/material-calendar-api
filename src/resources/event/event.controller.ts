@@ -43,7 +43,7 @@ const updateOne: EC = (req, res, next) =>
       {
         start: req.body.start,
         end: req.body.end,
-        studio_id: req.body.location.id,
+        studio_id: req.body.locationId,
         bookable: req.body.reservable,
         description: req.body.title,
       },
