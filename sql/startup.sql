@@ -1,32 +1,31 @@
 /*
  * This is a template file for starting a new SQL database.
- * Replace all strings with curly braces with your own values.
+ * Use the startup.js script in the project root to run this file.
+ * The startup script will read from the .env file to set the {{placeholders}}.
  */
 
-DROP DATABASE IF EXISTS {database};
-CREATE DATABASE {database};
-USE {database};
-SOURCE material_calendar.sql; -- This is the SQL file that contains the schema
+DROP DATABASE IF EXISTS {{MYSQL_DATABASE}};
+CREATE DATABASE {{MYSQL_DATABASE}};
+USE {{MYSQL_DATABASE}};
+SOURCE sql/material_calendar.sql; -- This is the SQL file that contains the schema
 
 /* Inserting minimal needed data for app to startup. */
 
-/* password optional, if using local password authentication.
-   passphrase should match the entry in .env for MYSQL_SHA2_PASSPHRASE */
 INSERT INTO user SET
-  user_id = '{user}',
-  password = AES_ENCRYPT('{password}', UNHEX(SHA2('{passphrase}', 512))),
-  first_name = '{first}',
-  last_name = '{last}',
-  email = '{email}';
+  user_id = '{{AUTH_ID}}',
+  password = AES_ENCRYPT('{{ADMIN_PASSWORD}}', UNHEX(SHA2('{{MYSQL_SHA2_PASSPHRASE}}', 512))),
+  first_name = '{{ADMIN_FIRST_NAME}}',
+  last_name = '{{ADMIN_LAST_NAME}}',
+  email = '{{EMAIL_FROM}}';
 
 INSERT INTO role (title) VALUES ('admin'), ('user');
 
 INSERT INTO user_role (user_id, role_id) VALUES (1, 1);
 
 INSERT INTO semester SET
-  title = '{semester}',
-  start = '{start}',
-  end = '{end}';
+  title = '{{SEMESTER_TITLE}}',
+  start = '{{SEMESTER_START}}',
+  end = '{{SEMESTER_END}}';
 
 INSERT INTO active_semester SET semester_id = 1;
 
@@ -40,7 +39,7 @@ INSERT INTO project SET
   group_size = 1;
 
 INSERT INTO project_group SET
-  name = '{first} {last}',
+  name = 'Admin Walk-in',
   project_id = 1;
 
 INSERT INTO student_group SET student_id = 1, group_id = 1;

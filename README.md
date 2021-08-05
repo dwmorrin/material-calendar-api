@@ -7,32 +7,51 @@ This is the backend to a calendar app for scheduling events in locations.
 
 `yarn` to install dependencies.
 
-Create a .env file with credentials for MySQL and email:
+Create a .env file with credentials for MySQL and the app's initial admin user:
 
 ```
-PORT=3001
-NODE_ENV=development
-MYSQL_HOST="127.0.0.1"
-MYSQL_USER=root
-MYSQL_PASSWORD=password
-MYSQL_DATABASE=calendar
-MYSQL_BACKUP_DIR=/my/backup/dir
-MYSQL_SHA2_PASSPHRASE=if_using_password_auth_passphrase
-AUTH_ID=if_bypassing_auth_for_development
-AUTH_METHOD=DOT_ENV_AUTH_ID
+ADMIN_FIRST_NAME=Ad
+ADMIN_LAST_NAME=Min
+ADMIN_PASSWORD=password
+AUTH_ID=admin
 EMAIL_FROM="Booking App <admin@booking.app>"
 EMAIL_PORT=25
+MYSQL_BACKUP_DIR=backups
+MYSQL_DATABASE=calendar
+MYSQL_HOST=127.0.0.1
+MYSQL_PASSWORD=password
+MYSQL_SHA2_PASSPHRASE=passphrase
+MYSQL_USER=root
+NODE_ENV=development
+PORT=3001
+SEMESTER_END=2000-06-15
+SEMESTER_START=2000-01-05
+SEMESTER_TITLE="Spring 2000"
 SESSION_SECRET=SecretForSessionCookies
 ```
 
+## Database initialization
+
+Run
+
+```sh
+node startup.js
+```
+
+which will use the .env file to
+
+- create the database backups directory
+- create the database
+- load the database schema from sql/material-calendar.sql
+- load a minimal set of data to start the app, including the initial admin user
+
 ## Authentication
 
-An authentication method must be selected in `src/utils/authentication.ts`.
-The method must set `res.locals.authId` to a string matching a username in the
-MySQL database's user table.
+The means of authenticating users can be set in `src/utils/authentication.ts`.
+An authentication string is added to `res.locals.authId` and `session.authId`.
 
-If `NODE_ENV` is set to development, then the authentication ID will be retrieved
-from the .env file.
+The optional .env key `AUTH_METHOD` can be set to `DOT_ENV_AUTH_ID` to use the
+`AUTH_ID` key as the authentication string. This will bypass the login system.
 
 By default the app will use password authentication.
 This requires the .env property:
@@ -42,7 +61,7 @@ MYSQL_SHA2_PASSPHRASE=passphrase
 ```
 
 For production with an external authentication that can inject the auth ID into
-the requeset headers, add the following entries to .env:
+the request headers, add the following entries to .env:
 
 ```
 AUTH_METHOD=CUSTOM_HEADER
@@ -79,9 +98,15 @@ docker run -d -p 2525:25 -v /tmp/fakemail:/var/mail ghusta/fakesmtp:2.0
 # hit the email API, then inspect emails sent at /tmp/fakemail
 ```
 
-## Run
+## Development script
 
-`yarn watch` will use `tsc` to build and `nodemon` to refresh `node` on save.
+Run
+
+```sh
+yarn watch
+```
+
+to use `tsc` to build and `nodemon` to refresh `node` on save.
 
 ## Credits
 
