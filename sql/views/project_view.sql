@@ -41,6 +41,14 @@ SELECT
   ) AS allotments,
   IFNULL(
     (
+      SELECT SUM(ph.hours)
+      FROM project_virtual_week_hours ph
+      WHERE ph.project_id = p.id
+    ),
+    0
+  ) AS totalAllottedHours,
+  IFNULL(
+    (
       SELECT JSON_ARRAYAGG(
         JSON_OBJECT(
             'locationId', ps.studio_id,
