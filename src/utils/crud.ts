@@ -28,6 +28,18 @@ export const withResource =
       next();
     });
 
+export const respondWith =
+  (...keys: string[]): EC =>
+  (req, res, next) => {
+    const data = {} as Record<string, unknown>;
+    for (const key of keys) {
+      if (!(key in res.locals)) next("bad key (nothing found): " + key);
+      data[key] = res.locals[key];
+    }
+    const { context } = req.query;
+    res.status(201).json({ data, context });
+  };
+
 interface CrudOptions {
   one?: boolean;
   many?: boolean;
