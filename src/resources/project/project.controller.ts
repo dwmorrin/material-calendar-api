@@ -206,14 +206,16 @@ const createLocationHours: EC = (req, res, next) => {
   );
 };
 
-const respondWithUpdatedProjectsAndLocations: EC = (_, res) => {
-  res.status(201).json({
-    data: {
-      projects: res.locals.projects,
-      locations: res.locals.locations,
-    },
-  });
-};
+const respondWith =
+  (...keys: string[]): EC =>
+  (_, res, next) => {
+    const data = {} as Record<string, unknown>;
+    for (const key of keys) {
+      if (!(key in res.locals)) next("bad key (nothing found): " + key);
+      data[key] = res.locals[key];
+    }
+    res.status(201).json({ data });
+  };
 
 const withSelectedCourseSections: EC = (req, res, next) => {
   const project = req.body as Project;
@@ -249,13 +251,18 @@ export default {
     createLocationHours,
     withResource("projects", "SELECT * FROM project_view"),
     withResource("locations", "SELECT * FROM location"),
-    respondWithUpdatedProjectsAndLocations,
+    respondWith("projects", "locations"),
   ],
   getMany,
   getOne,
   getOneLocationAllotment,
   getUsersByProject: [getUserIdsBySection, getUsersByIdList],
-  updateAllotment,
+  updateAllotment: [
+    updateAllotment,
+    withResource("projects", "SELECT * FROM project_view"),
+    withResource("weeks", "SELECT * FROM virtual_week_view"),
+    respondWith("projects", "weeks"),
+  ],
   updateOne: [
     createOrUpdateOne,
     withSelectedCourseSections,
