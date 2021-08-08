@@ -1,24 +1,17 @@
-import pool, { inflate } from "../../utils/db";
+import pool from "../../utils/db";
 import {
   addResultsToResponse,
-  controllers,
-  CrudAction,
+  respondWith,
+  withResource,
 } from "../../utils/crud";
 import { EC } from "../../utils/types";
 
-const getOneQuery = `
-SELECT
-  id,
-  start,
-  end,
-  studio_id AS locationId,
-  semester_id AS semesterId
-FROM
-  virtual_week
-`;
-
-export const getOne: EC = (_, res, next) =>
-  pool.query(getOneQuery, addResultsToResponse(res, next, { one: true }));
+const getOne: EC = (req, res, next) =>
+  pool.query(
+    "SELECT * FROM virtual_week_view WHERE id = ?",
+    req.params.id,
+    addResultsToResponse(res, next, { one: true })
+  );
 
 export const getMany: EC = (_, res, next) =>
   pool.query(
@@ -98,74 +91,26 @@ export const joinTwo: EC = (req, res, next) => {
   );
 };
 
-// TODO this should be withResource
-const withUpdatedProjects: EC = (_, res, next) =>
-  pool.query("SELECT * FROM project_view", (error, projects) => {
-    if (error) return next(error);
-    res.locals.projects = projects.map(inflate);
-    next();
-  });
-
-// TODO this should be withResource
-const withUpdatedWeeks: EC = (_, res, next) =>
-  pool.query("SELECT * FROM virtual_week_view", (error, weeks) => {
-    if (error) return next(error);
-    res.locals.weeks = weeks.map(inflate);
-    next();
-  });
-
-const sendWithUpdatedProjectsAndWeeks: EC = (req, res, next) => {
-  const { projects, weeks } = res.locals;
-  const { results } = res.locals;
-  if (!results) return next("no results in virtual week responder");
-  const {
-    method,
-    query: { context },
-  } = req;
-  switch (method) {
-    case CrudAction.Create:
-    case CrudAction.Update:
-    case CrudAction.Delete:
-      res.status(201).json({
-        data: {
-          weeks,
-          projects,
-        },
-        context,
-      });
-      break;
-    default:
-      throw new Error("Invalid method " + method);
-  }
+const removeOne: EC = (req, res, next) => {
+  pool.query(
+    `DELETE FROM virtual_week WHERE id = ?`,
+    [req.params.id],
+    addResultsToResponse(res, next, { one: true })
+  );
 };
 
+const withUpdatedProjectsAndWeeks = [
+  withResource("projects", "SELECT * FROM project_view"),
+  withResource("weeks", "SELECT * FROM virtual_week_view"),
+  respondWith("projects", "weeks"),
+];
+
 export default {
-  ...controllers("virtual_week", "id"),
-  createOne: [
-    createOne,
-    withUpdatedProjects,
-    withUpdatedWeeks,
-    sendWithUpdatedProjectsAndWeeks,
-  ],
+  createOne: [createOne, ...withUpdatedProjectsAndWeeks],
   getMany,
   getOne,
-  joinTwo: [
-    joinTwo,
-    withUpdatedProjects,
-    withUpdatedWeeks,
-    sendWithUpdatedProjectsAndWeeks,
-  ],
-  splitOne: [
-    splitOneUpdate,
-    splitOneInsert,
-    withUpdatedProjects,
-    withUpdatedWeeks,
-    sendWithUpdatedProjectsAndWeeks,
-  ],
-  updateOne: [
-    updateOne,
-    withUpdatedProjects,
-    withUpdatedWeeks,
-    sendWithUpdatedProjectsAndWeeks,
-  ],
+  joinTwo: [joinTwo, ...withUpdatedProjectsAndWeeks],
+  removeOne: [removeOne, ...withUpdatedProjectsAndWeeks],
+  splitOne: [splitOneUpdate, splitOneInsert, ...withUpdatedProjectsAndWeeks],
+  updateOne: [updateOne, ...withUpdatedProjectsAndWeeks],
 };

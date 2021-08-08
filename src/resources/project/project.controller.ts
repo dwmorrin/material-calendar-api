@@ -3,6 +3,7 @@ import {
   addResultsToResponse,
   controllers,
   CrudAction,
+  respondWith,
   withResource,
 } from "../../utils/crud";
 import { EC } from "../../utils/types";
@@ -205,17 +206,6 @@ const createLocationHours: EC = (req, res, next) => {
     addResultsToResponse(res, next, { key: "ignore" })
   );
 };
-
-const respondWith =
-  (...keys: string[]): EC =>
-  (_, res, next) => {
-    const data = {} as Record<string, unknown>;
-    for (const key of keys) {
-      if (!(key in res.locals)) next("bad key (nothing found): " + key);
-      data[key] = res.locals[key];
-    }
-    res.status(201).json({ data });
-  };
 
 const withSelectedCourseSections: EC = (req, res, next) => {
   const project = req.body as Project;
