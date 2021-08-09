@@ -1,6 +1,5 @@
 import pool from "./db";
-import { EC } from "./types";
-import { Request, Response, NextFunction } from "express";
+import { EC, EEH } from "./types";
 
 export const NotAuthorized = "Not authorized";
 
@@ -39,16 +38,12 @@ const authorization: EC = (_, res, next) => {
   );
 };
 
-export const onNotAuthorized = (
-  error: unknown,
-  req: Omit<Request, "session"> & { session: null },
-  res: Response,
-  next: NextFunction
-): void => {
+export const onNotAuthorized: EEH = (error, req, res, next) => {
   if (typeof error === "string" && error.includes(NotAuthorized)) {
     // end cookie session in case client has out-dated auth cookie
     // TODO this still requires user to try login twice to get a new cookie
-    req.session = null;
+    const request = req as { session: null }; // type-cast to prevent TS error
+    request.session = null;
     res.status(403).json({
       error: { code: 403, message: NotAuthorized },
       context: req.query.context,
