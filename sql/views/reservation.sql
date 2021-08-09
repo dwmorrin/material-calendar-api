@@ -6,6 +6,7 @@ SELECT
   b.group_id AS groupId,
   IFNULL (b.project_id, 0) AS projectId,
   b.guests,
+  b.created as created, 
   IF (
     b.cancelled = 1,
     IF (b.refund_request = 1,

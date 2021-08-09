@@ -50,6 +50,7 @@ SELECT
       "liveRoom", b.live_room,
       "guests", b.guests,
       "contact", b.contact_phone,
+      "created", DATE_FORMAT(b.created, "%Y-%m-%d %T"),
       "equipment", IF (
         el.gear IS NOT NULL,
         JSON_OBJECTAGG(IFNULL(el.name, "unknown"), el.gear),
