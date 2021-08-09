@@ -23,19 +23,23 @@ SELECT
   p.book_start AS 'reservationStart',
   IFNULL(
     (
-      SELECT JSON_ARRAYAGG(
+      SELECT DISTINCT JSON_ARRAYAGG(
         JSON_OBJECT(
           'locationId', vw.studio_id,
           'virtualWeekId', vw.id,
-          'start', vw.start,
-          'end', vw.end,
-          'hours', ph.hours
+          'start', IF(vw.start >= p.start, vw.start, p.start),
+          'end', IF(vw.end <= p.end, vw.end, p.end),
+          'hours', IFNULL(ph.hours, 0)
         )
       )
-      FROM
-        project_virtual_week_hours ph
-        LEFT JOIN virtual_week vw ON ph.virtual_week_id = vw.id
-      WHERE ph.project_id = p.id
+      FROM project_studio_hours psh
+        JOIN virtual_week vw USING (studio_id)
+        LEFT JOIN project_virtual_week_hours ph
+          ON ph.project_id = psh.project_id
+          AND ph.virtual_week_id = vw.id
+      WHERE psh.project_id = p.id
+          AND vw.end >= p.start
+          AND vw.start <= p.end
     ),
     '[]'
   ) AS allotments,
