@@ -82,8 +82,8 @@ interface PendingRosterRecord {
 }
 
 function setup(req: Request, res: Response, next: NextFunction): void {
-  if (!Array.isArray(req.body.records)) return next(new Error("no records"));
-  res.locals.inputRecords = req.body.records;
+  if (!Array.isArray(req.body)) return next(new Error("no records"));
+  res.locals.inputRecords = req.body;
   // tracks unique records by key
   res.locals.seen = {
     course: {}, // { [title]: Course }

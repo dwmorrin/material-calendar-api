@@ -7,7 +7,7 @@ const router = Router();
 
 router.get("/", controller.getMany);
 router.post("/", controller.createOne);
-router.post("/import", importStack);
+router.post("/bulk", importStack);
 router.put(`/${numericId}`, controller.updateOne);
 
 router.use(sendResults);
