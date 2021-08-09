@@ -40,6 +40,11 @@ const getSectionByCourseIdAndTitle: EC = (req, res, next) => {
   );
 };
 
+const withActiveSemesterAndSections = [
+  withActiveSemester,
+  getSectionByCourseIdAndTitle,
+];
+
 // requires semester and sectionId to be in res.locals
 const updateOne: EC = (req, res, next) => {
   const record = req.body as RosterRecord;
@@ -58,7 +63,24 @@ const updateOne: EC = (req, res, next) => {
   );
 };
 
+const createOne: EC = (req, res, next) => {
+  const record = req.body as RosterRecord;
+  pool.query(
+    "INSERT INTO roster SET ?",
+    [
+      {
+        user_id: record.student.id,
+        course_id: record.course.id,
+        semester_id: res.locals.semester.id,
+        section_id: res.locals.sectionId,
+      },
+    ],
+    addResultsToResponse(res, next)
+  );
+};
+
 export default {
   getMany,
-  updateOne: [withActiveSemester, getSectionByCourseIdAndTitle, updateOne],
+  createOne: [...withActiveSemesterAndSections, createOne],
+  updateOne: [...withActiveSemesterAndSections, updateOne],
 };

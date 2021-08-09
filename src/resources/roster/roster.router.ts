@@ -6,6 +6,7 @@ import importStack from "./roster.import";
 const router = Router();
 
 router.get("/", controller.getMany);
+router.post("/", controller.createOne);
 router.post("/import", importStack);
 router.put(`/${numericId}`, controller.updateOne);
 
