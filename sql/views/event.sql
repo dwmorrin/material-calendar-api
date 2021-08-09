@@ -31,6 +31,7 @@ SELECT
   (
     SELECT JSON_OBJECT(
       "id", s.id,
+      "groupId", s.location,
       "title", s.title,
       "restriction", s.restriction,
       "allowsWalkIns", s.allows_walk_ins
