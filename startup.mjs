@@ -70,7 +70,14 @@ readFile("./sql/startup.sql", "utf8", (err, sqlTemplate) => {
       MYSQL_HOST === "localhost" ? "127.0.0.1" : MYSQL_HOST
     } -u${MYSQL_USER} -p${MYSQL_PASSWORD} < ${tmp}`,
     (err, stdout, stderr) => {
-      if (err) console.error(err);
+      if (err) {
+        // rewrite error message for well-known errors
+        if (err.message.includes("ERROR 2003"))
+          console.error(
+            "ERROR 2003: Can't connect to mysql. Is mysql running?"
+          );
+        else console.error(err);
+      }
       // ignoring the password warning
       if (stderr && !stderr.includes("Using a password on the command"))
         console.error(stderr);
