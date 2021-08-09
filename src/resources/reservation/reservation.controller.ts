@@ -110,7 +110,8 @@ export const adminResponse: EC = (req, res, next) => {
   );
 };
 
-export const createOne: EC = (req, res, next) =>
+export const createOne: EC = (req, res, next) => {
+  console.log(req.body);
   pool.query(
     "INSERT INTO booking SET ?",
     [
@@ -122,11 +123,12 @@ export const createOne: EC = (req, res, next) =>
         live_room: req.body.liveRoom,
         contact_phone: req.body.phone,
         notes: req.body.notes,
-        project_id: req.body.project,
+        project_id: req.body.projectId,
       },
     ],
     addResultsToResponse(res, next)
   );
+};
 
 export const updateOne: EC = (req, res, next) =>
   pool.query(
