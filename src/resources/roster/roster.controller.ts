@@ -1,8 +1,8 @@
-import pool from "../db";
-import { addResultsToResponse } from "../crud";
+import pool from "../../utils/db";
+import { addResultsToResponse } from "../../utils/crud";
 import query from "./roster.query";
-import { EC } from "../types";
-import withActiveSemester from "../withActiveSemester";
+import { EC } from "../../utils/types";
+import withActiveSemester from "../../utils/withActiveSemester";
 
 const getMany: EC = (_, res, next) =>
   pool.query(query, addResultsToResponse(res, next));

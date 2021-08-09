@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { numericId, sendResults } from "../crud";
+import { numericId, sendResults } from "../../utils/crud";
 import controller from "./roster.controller";
 import importStack from "./roster.import";
 

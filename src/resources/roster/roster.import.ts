@@ -12,10 +12,10 @@
  */
 
 import { NextFunction, Request, Response } from "express";
-import pool, { inflate } from "../db";
-import { withResource } from "../crud";
-import withActiveSemester from "../withActiveSemester";
-import { query as courseQuery } from "../../resources/course/course.controller";
+import pool, { inflate } from "../../utils/db";
+import { withResource } from "../../utils/crud";
+import withActiveSemester from "../../utils/withActiveSemester";
+import { query as courseQuery } from "../course/course.controller";
 import { MysqlError } from "mysql";
 import rosterRecordQuery, {
   userQuery,
