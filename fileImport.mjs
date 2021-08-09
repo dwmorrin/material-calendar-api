@@ -46,6 +46,7 @@ const onHttpResponse = (res) => {
     rawData += chunk;
   });
   res.on("end", () => {
+    console.log(`${res.statusCode} ${res.statusMessage}`);
     console.log("received: " + rawData.length + " characters");
     console.log("done");
     process.exit(0);
@@ -62,10 +63,7 @@ const afterConfirmed = (parsed) => (answer) => {
       port: process.env.PORT,
       path: apiPath,
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Content-Length": body.length,
-      },
+      headers: { "Content-Type": "application/json" },
     };
 
     const req = request(httpOptions, onHttpResponse);
