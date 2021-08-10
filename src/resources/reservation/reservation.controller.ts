@@ -1,5 +1,9 @@
-import { addResultsToResponse, controllers } from "../../utils/crud";
-import pool, { inflate } from "../../utils/db";
+import {
+  addResultsToResponse,
+  controllers,
+  withResource,
+} from "../../utils/crud";
+import pool from "../../utils/db";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
 
@@ -62,26 +66,20 @@ export const cancelReservation: EC = (req, res, next) => {
   );
 };
 
-const getUpdatedEvent: EC = (req, res, next) => {
-  pool.query(
-    "SELECT * FROM event WHERE id = (SELECT eventId FROM reservation WHERE id = ?)",
-    req.params.reservationId,
-    (err, results) => {
-      if (err) return next(err);
-      res.locals.event = inflate(results[0]);
-      next();
-    }
-  );
-};
-
 const cancelResponse: EC = (_, res, next) => {
   res.status(201).json({
     data: {
-      event: res.locals.event,
+      reservations: res.locals.reservations,
+      events: res.locals.events,
     },
   });
   next();
 };
+
+const withUpdatedEventsAndReservations = [
+  withResource("reservations", "SELECT * FROM reservation"),
+  withResource("events", "SELECT * FROM event"),
+];
 
 // just used to stop after useMailbox
 const noop: EC = () => undefined;
@@ -169,7 +167,7 @@ export default {
   adminResponse,
   cancelReservation: [
     cancelReservation,
-    getUpdatedEvent,
+    ...withUpdatedEventsAndReservations,
     cancelResponse,
     useMailbox,
     noop,
