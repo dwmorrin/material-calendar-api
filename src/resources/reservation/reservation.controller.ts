@@ -89,6 +89,18 @@ const noop: EC = () => undefined;
 export const getMany: EC = (_, res, next) =>
   pool.query("SELECT * FROM reservation", addResultsToResponse(res, next));
 
+const byUserQuery = `SELECT
+  res.*
+FROM
+  reservation res
+  INNER JOIN project_group pg ON pg.id = res.groupId
+  INNER JOIN student_group sg ON sg.group_id = pg.id
+  INNER JOIN user u on u.id = sg.student_id
+WHERE u.id = ?`;
+
+const getByUser: EC = (req, res, next) =>
+  pool.query(byUserQuery, req.params.id, addResultsToResponse(res, next));
+
 export const getManyPendingAdminApproval: EC = (_, res, next) =>
   pool.query(
     "SELECT * FROM reservation_pending",
@@ -151,6 +163,7 @@ export default {
   createOne,
   updateOne,
   getOne,
+  getByUser,
   getMany,
   getManyPendingAdminApproval,
   adminResponse,
