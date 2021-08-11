@@ -2,40 +2,46 @@ import pool from "../../utils/db";
 import { addResultsToResponse } from "../../utils/crud";
 import { EC } from "../../utils/types";
 
+export const getInvitationsQuery = `
+SELECT
+  inv.id AS id,
+  inv.project_id AS projectId,
+  JSON_OBJECT(
+    'id', inv.invitor,
+    'name', JSON_OBJECT('first', uin.first_name, 'last', uin.last_name),
+    'email',uin.email
+  ) AS invitor,
+  IFNULL(tv.invitee,'[]') AS invitees,
+  (
+    SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)
+  ) AS confirmed,
+  rm.id AS group_id,
+  inv.approved_id AS approvedId,
+  inv.denied_id AS deniedId
+FROM invitation inv
+  LEFT JOIN invitee iv ON inv.id=iv.invitation_id 
+  LEFT JOIN (
+    SELECT
+      vt.invitation_id AS invitation_id,
+      JSON_ARRAYAGG(JSON_OBJECT(
+        'id', vt.invitee,
+        'name', JSON_OBJECT('first', uiv.first_name, 'last', uiv.last_name),
+        'email',uiv.email,
+        'accepted', vt.accepted,
+        'rejected',vt.rejected
+      )) AS invitee 
+    FROM invitee vt 
+    LEFT JOIN user uiv ON uiv.id=vt.invitee 
+    GROUP BY vt.invitation_id
+  ) tv ON tv.invitation_id=inv.id
+  LEFT JOIN user uin ON uin.id=inv.invitor
+  LEFT JOIN project_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
+WHERE (iv.invitee=? or inv.invitor=?)
+GROUP BY inv.id`;
+
 export const getInvitations: EC = (req, res, next) =>
   pool.query(
-    `select inv.id as id,
-    inv.project_id as projectId,
-    JSON_OBJECT('id',
-           inv.invitor,
-           'name',
-           JSON_OBJECT('first',
-            uin.first_name,
-            'last',
-            uin.last_name),'email',uin.email) as invitor,
-            IFNULL(tv.invitee,'[]') AS invitees,
-            (SELECT (CASE WHEN COUNT(iv.accepted)=SUM(iv.accepted) THEN 1 ELSE 0 END)) as confirmed,
-            rm.id as group_id,
-            inv.approved_id as approvedId,
-            inv.denied_id as deniedId
-            from invitation inv left join invitee iv on inv.id=iv.invitation_id 
-            left join 
-              (select vt.invitation_id as invitation_id, json_arrayagg(JSON_Object('id',
-              vt.invitee,
-              'name',
-              JSON_OBJECT('first',
-              uiv.first_name,
-              'last',
-              uiv.last_name),
-              'email',uiv.email,
-              'accepted',
-              vt.accepted,'rejected',vt.rejected)) AS invitee 
-              from invitee vt 
-              left join user uiv on uiv.id=vt.invitee 
-              group by vt.invitation_id) tv on tv.invitation_id=inv.id
-            left join user uin on uin.id=inv.invitor
-            left join project_group rm on uin.id=rm.creator and inv.project_id=rm.project_id
-            where (iv.invitee=? or inv.invitor=?) group by inv.id;`,
+    getInvitationsQuery,
     [req.params.userId, req.params.userId],
     addResultsToResponse(res, next)
   );
