@@ -101,6 +101,7 @@ function setup(req: Request, res: Response, next: NextFunction): void {
     rosterRecords: [], // PendingRosterRecord[]
     sections: [],
     users: [],
+    walkInGroups: [],
   };
   res.locals.updates = {
     courses: [],
@@ -227,6 +228,8 @@ function processInputRecords(
       res.locals.inserts.users.push(user);
       // and give the user the "user" role
       res.locals.inserts.roles.push(user);
+      // and give the user a "walk-in" group
+      res.locals.inserts.walkInGroups.push(user);
     }
     // if name does not match or restriction does not match, update user
     else if (
@@ -444,6 +447,13 @@ function processInserts(req: Request, res: Response, next: NextFunction): void {
           if (r.username === user.username) r.id = result.insertId;
           return r;
         });
+        // and the walk-in projects
+        res.locals.inserts.walkInGroups = (
+          res.locals.inserts.walkInGroups as { id?: number; username: string }[]
+        ).map((u) => {
+          if (u.username === user.username) u.id = result.insertId;
+          return u;
+        });
         return processInserts(req, res, next);
       }
     );
@@ -471,6 +481,29 @@ function processInserts(req: Request, res: Response, next: NextFunction): void {
         return processInserts(req, res, next);
       }
     );
+  } else if (res.locals.inserts.walkInGroups.length) {
+    // peek if group exists yet
+    if (!res.locals.inserts.walkInGroups[0].groupId) {
+      //! warning: using hardcoded walk-in project ID = 1
+      pool.query(
+        "INSERT INTO project_group SET project_id = 1",
+        (error, { insertId }) => {
+          if (error) return next(error);
+          res.locals.inserts.walkInGroups[0].groupId = insertId;
+          return processInserts(req, res, next);
+        }
+      );
+    } else {
+      const { id, groupId } = res.locals.inserts.walkInGroups.shift();
+      pool.query(
+        "INSERT INTO student_group SET ?",
+        { student_id: id, group_id: groupId },
+        (error) => {
+          if (error) return next(error);
+          return processInserts(req, res, next);
+        }
+      );
+    }
   } else {
     next();
   }
