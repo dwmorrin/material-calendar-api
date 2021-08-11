@@ -4,7 +4,7 @@ import { sendResults } from "../../utils/crud";
 
 const router = Router();
 
-router.get(`/user/:userId`, controller.getGroupsByUser);
+router.get("/user/:userId", controller.getGroupsByUser);
 router.get("/", controller.getGroups);
 router.get("/project/:projectId", controller.getGroupsByProject);
 router.post("/invitation/:invitationId", controller.createGroupFromInvitation);
