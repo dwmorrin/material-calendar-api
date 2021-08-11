@@ -1,6 +1,7 @@
 import pool from "../../utils/db";
 import { addResultsToResponse } from "../../utils/crud";
 import { EC } from "../../utils/types";
+import { useMailbox } from "../../utils/mailer";
 
 /**
  * Reading: use the `user_group` view.
@@ -81,12 +82,44 @@ export const joinGroup: EC = (req, res, next) =>
     addResultsToResponse(res, next)
   );
 
-export const leaveGroup: EC = (req, res, next) =>
+const leaveGroup: EC = (req, res, next) => {
+  const { mail } = req.body;
+  res.locals.mailbox = mail.to ? [mail] : [];
   pool.query(
     "DELETE FROM student_group WHERE student_id=? AND group_id=?",
     [req.params.userId, req.params.groupId],
     addResultsToResponse(res, next)
   );
+};
+
+const rejectAllGroupInvites: EC = (req, res, next) => {
+  const { projectId } = req.body;
+  pool.query(
+    `UPDATE invitee
+      SET accepted = 0, rejected = 1
+      WHERE invitation_id = (
+        SELECT id FROM invitation WHERE project_id = ?
+      ) and invitee = ?`,
+    [projectId, res.locals.user.id],
+    addResultsToResponse(res, next, { key: "ignore" })
+  );
+};
+
+const deleteEmptyGroup: EC = (req, res, next) => {
+  const { groupIsEmpty } = req.body;
+  if (!groupIsEmpty) return next();
+  pool.query(
+    "DELETE FROM project_group WHERE id=?",
+    [req.params.groupId],
+    addResultsToResponse(res, next)
+  );
+};
+
+//! TODO we need to update groups and invitations
+const leaveResponse: EC = (_, res, next) => {
+  res.status(201).json({ data: "left group" });
+  next();
+};
 
 const updateOne: EC = (req, res, next) => {
   const { projectId, title } = req.body;
@@ -105,6 +138,13 @@ export default {
   createGroupFromInvitation,
   removeOneGroup,
   joinGroup,
-  leaveGroup,
+  leaveGroup: [
+    leaveGroup,
+    rejectAllGroupInvites,
+    deleteEmptyGroup,
+    leaveResponse,
+    useMailbox,
+    (): void => undefined,
+  ],
   updateOne,
 };
