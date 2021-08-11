@@ -9,13 +9,14 @@ import {
 import { EC } from "../../utils/types";
 import { Project } from "./project.type";
 import { isValidSQLDateInterval } from "../../utils/date";
+import { getInvitationsQuery } from "../invitation/invitation.controller";
 
 /**
  * Reading: use `project_view` view.
  * Writing: use `project` table.
  */
 
-const getUserIdsBySection: EC = (req, res, next) =>
+const getUserIdsByProject: EC = (req, res, next) =>
   pool.query(
     `SELECT 
       u.id
@@ -35,9 +36,29 @@ const getUsersByIdList: EC = (req, res, next) => {
     pool.query(
       "SELECT * FROM user_view WHERE id IN (?)",
       [(results as { id: number }[]).map(({ id }) => id)],
-      addResultsToResponse(res, next)
+      addResultsToResponse(res, next, { key: "users" })
     );
-  else res.status(200).json({ data: [], context: req.query.context });
+  else
+    res.status(200).json({
+      data: { users: [], invitations: [] },
+      context: req.query.context,
+    });
+};
+
+// note: this gets ALL inviations, not just the ones for the project
+const getProjectInvites: EC = (_, res, next) => {
+  pool.query(
+    getInvitationsQuery,
+    res.locals.user.id,
+    addResultsToResponse(res, next, { key: "invitations" })
+  );
+};
+
+const dashboardReponse: EC = (req, res) => {
+  const { users, invitations } = res.locals;
+  res
+    .status(200)
+    .json({ data: { users, invitations }, context: req.query.context });
 };
 
 export const getOneLocationAllotment: EC = (req, res, next) =>
@@ -246,7 +267,12 @@ export default {
   getMany,
   getOne,
   getOneLocationAllotment,
-  getUsersByProject: [getUserIdsBySection, getUsersByIdList],
+  getGroupDashboard: [
+    getUserIdsByProject,
+    getUsersByIdList,
+    getProjectInvites,
+    dashboardReponse,
+  ],
   updateAllotment: [
     updateAllotment,
     withResource("projects", "SELECT * FROM project_view"),

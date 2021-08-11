@@ -6,7 +6,7 @@ const router = Router();
 
 router.get("/:id/allotments", controller.getOneLocationAllotment);
 router.put("/:id/allotments", controller.updateAllotment);
-router.get("/:id/users", controller.getUsersByProject);
+router.get("/:id/group-dashboard", controller.getGroupDashboard);
 
 router.post("/location-hours", controller.createLocationHours);
 
