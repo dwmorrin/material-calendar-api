@@ -152,17 +152,17 @@ const createInvitees: EC = (req, res, next) => {
   } else pool.query(`select '[]'`, addResultsToResponse(res, next));
 };
 
-const getUpdatedInvites: EC = (req, res, next) => {
+export const getUpdatedInvites: EC = (_, res, next) => {
   pool.query(
     getInvitationsQuery,
     [res.locals.user.id],
-    addResultsToResponse(res, next)
+    addResultsToResponse(res, next, { key: "invitations" })
   );
 };
 
 const createInvitesResponse: EC = (req, res, next) => {
   res.status(201).json({
-    data: res.locals.results.map(inflate),
+    data: res.locals.invitations.map(inflate),
     context: req.query.context,
   });
   next(); // continues to useMailbox

@@ -1,7 +1,8 @@
-import pool from "../../utils/db";
+import pool, { inflate } from "../../utils/db";
 import { addResultsToResponse } from "../../utils/crud";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
+import { getUpdatedInvites } from "../invitation/invitation.controller";
 
 /**
  * Reading: use the `user_group` view.
@@ -18,9 +19,12 @@ export const getOneGroup: EC = (req, res, next) =>
     addResultsToResponse(res, next, { one: true })
   );
 
+const getGroupsByUserQuery =
+  "SELECT * FROM user_group WHERE JSON_CONTAINS(members, JSON_OBJECT('id', ?))";
+
 export const getGroupsByUser: EC = (req, res, next) =>
   pool.query(
-    "SELECT * FROM user_group WHERE JSON_CONTAINS(members, JSON_OBJECT('id', ?))",
+    getGroupsByUserQuery,
     [Number(req.params.userId)],
     addResultsToResponse(res, next)
   );
@@ -115,9 +119,24 @@ const deleteEmptyGroup: EC = (req, res, next) => {
   );
 };
 
-//! TODO we need to update groups and invitations
-const leaveResponse: EC = (_, res, next) => {
-  res.status(201).json({ data: "left group" });
+// surely we can refactor to share code, but this is just to update after leaving a group
+const getUpdatedGroups: EC = (_, res, next) => {
+  pool.query(
+    getGroupsByUserQuery,
+    [res.locals.user.id],
+    addResultsToResponse(res, next, { key: "groups" })
+  );
+};
+
+const leaveResponse: EC = (req, res, next) => {
+  const { invitations, groups } = res.locals;
+  res.status(201).json({
+    data: {
+      invitations: invitations.map(inflate),
+      groups: groups.map(inflate),
+    },
+    context: req.query.context,
+  });
   next();
 };
 
@@ -142,6 +161,8 @@ export default {
     leaveGroup,
     rejectAllGroupInvites,
     deleteEmptyGroup,
+    getUpdatedGroups,
+    getUpdatedInvites,
     leaveResponse,
     useMailbox,
     (): void => undefined,
