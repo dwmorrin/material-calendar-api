@@ -1,6 +1,7 @@
-import pool from "../../utils/db";
+import pool, { inflate } from "../../utils/db";
 import { addResultsToResponse } from "../../utils/crud";
 import { EC } from "../../utils/types";
+import { useMailbox } from "../../utils/mailer";
 
 export const getInvitationsQuery = `
 SELECT
@@ -124,7 +125,10 @@ export const getInvitationsPendingAdminApproval: EC = (req, res, next) =>
     addResultsToResponse(res, next)
   );
 
-const createInvitations: EC = (req, res, next) =>
+const createInvitations: EC = (req, res, next) => {
+  const { mail } = req.body;
+  // checks if 'to' is empty string; useMailbox requires mailbox be an array
+  res.locals.mailbox = mail.to ? [mail] : [];
   pool.query(
     `insert into invitation (project_id,invitor,approved_id) VALUES (?,?,?)`,
     [
@@ -134,6 +138,7 @@ const createInvitations: EC = (req, res, next) =>
     ],
     addResultsToResponse(res, next)
   );
+};
 
 const createInvitees: EC = (req, res, next) => {
   const { results } = res.locals;
@@ -141,10 +146,26 @@ const createInvitees: EC = (req, res, next) => {
   if (invitees.length > 0) {
     pool.query(
       `replace into invitee (invitation_id,invitee) VALUES ?`,
-      [(invitees as unknown[]).map((invitee) => [results.insertId, invitee])],
+      [(invitees as number[]).map((invitee) => [results.insertId, invitee])],
       addResultsToResponse(res, next)
     );
   } else pool.query(`select '[]'`, addResultsToResponse(res, next));
+};
+
+const getUpdatedInvites: EC = (req, res, next) => {
+  pool.query(
+    getInvitationsQuery,
+    [res.locals.user.id],
+    addResultsToResponse(res, next)
+  );
+};
+
+const createInvitesResponse: EC = (req, res, next) => {
+  res.status(201).json({
+    data: res.locals.results.map(inflate),
+    context: req.query.context,
+  });
+  next(); // continues to useMailbox
 };
 
 export const updateInvitation: EC = (req, res, next) => {
@@ -195,7 +216,14 @@ export default {
   getInvitationsByProject,
   getInvitationsPendingAdminApproval,
   adminResponse,
-  createInvitations: [createInvitations, createInvitees],
+  createInvitations: [
+    createInvitations,
+    createInvitees,
+    getUpdatedInvites,
+    createInvitesResponse, // response sent here
+    useMailbox,
+    (): void => undefined, // to stop after mailbox
+  ],
   updateInvitation,
   removeInvitation,
 };
