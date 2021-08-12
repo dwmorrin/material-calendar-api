@@ -82,13 +82,17 @@ app.use(
           "--- END UNHANDLED EXCEPTION ---",
         ].join("\n")
       );
-      res.status(500).json({
-        error:
-          process.env.NODE_ENV === "development"
-            ? { message: error.message, stack: error.stack }
-            : { message: "Something went wrong" },
-        context: req.query.context,
-      });
+      if (req.is("application/json")) {
+        res.status(500).json({
+          error:
+            process.env.NODE_ENV === "development"
+              ? { message: error.message, stack: error.stack }
+              : { message: "Something went wrong" },
+          context: req.query.context,
+        });
+      } else {
+        res.redirect(500, "/");
+      }
     } else {
       // eslint-disable-next-line no-console
       console.error(
@@ -99,13 +103,17 @@ app.use(
           "--- END UNHANDLED EXCEPTION ---",
         ].join("\n")
       );
-      res.status(500).json({
-        error:
-          process.env.NODE_ENV === "development"
-            ? { message: JSON.stringify(error) }
-            : { message: "Something went wrong" },
-        context: req.query.context,
-      });
+      if (req.is("application/json")) {
+        res.status(500).json({
+          error:
+            process.env.NODE_ENV === "development"
+              ? { message: JSON.stringify(error) }
+              : { message: "Something went wrong" },
+          context: req.query.context,
+        });
+      } else {
+        res.redirect(500, "/");
+      }
     }
   }
 );
