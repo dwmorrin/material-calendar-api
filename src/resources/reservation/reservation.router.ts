@@ -12,8 +12,6 @@ router.get(`/${numericId}`, controller.getOne);
 router.get("/exceptions", controller.getManyPendingAdminApproval);
 router.put("/exceptions/:reservationId", controller.adminResponse);
 router.post("/", controller.createOne);
-router.put("/equipment/:id", controller.reserveEquipment);
-router.post("/equipment/:id", controller.reserveEquipment);
 router.put("/:id", controller.updateOne);
 
 router.use(sendResults);

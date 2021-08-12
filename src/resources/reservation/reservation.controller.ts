@@ -3,18 +3,25 @@ import {
   controllers,
   withResource,
 } from "../../utils/crud";
-import pool from "../../utils/db";
+import pool, { inflate } from "../../utils/db";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
+import { Request } from "express";
 
 interface Equipment {
   id: number;
   quantity: number;
 }
 
+// just used to stop after useMailbox
+const noop: EC = () => undefined;
+
 const reserveEquipment: EC = (req, res, next) => {
-  const bookingId = Number(req.params.id);
-  const equipment = req.body as Equipment[];
+  const bookingId = res.locals.reservation.insertId;
+  const equipment = req.body.equipment as Equipment[];
+  if (!Array.isArray(equipment))
+    return next("reservation form without equipment");
+  if (!equipment.length) return next();
   pool.query(
     `REPLACE INTO equipment_reservation (
       equipment_id, booking_id, quantity
@@ -24,11 +31,66 @@ const reserveEquipment: EC = (req, res, next) => {
   );
 };
 
-const deleteEquipmentReservationZeros: EC = (_, res, next) =>
+const deleteEquipment: EC = (req, res, next) => {
+  const bookingId = res.locals.reservation.insertId;
+  const equipment = req.body.equipment as Equipment[];
+  // assumes reserveEquipment has already been called and checked isArray
+  if (!equipment.length)
+    pool.query(
+      `DELETE FROM equipment_reservation
+    WHERE booking_id = ?`,
+      bookingId,
+      addResultsToResponse(res, next)
+    );
+  else
+    pool.query(
+      `DELETE FROM equipment_reservation
+    WHERE booking_id = ? AND equipment_id NOT IN (?)`,
+      [bookingId, equipment.map(({ id }) => id)],
+      addResultsToResponse(res, next)
+    );
+};
+
+const getUpdatedEvent: EC = (req, res, next) => {
+  const id = req.body.eventId;
   pool.query(
-    "DELETE FROM equipment_reservation WHERE quantity = 0",
-    addResultsToResponse(res, next)
+    "SELECT * FROM event WHERE id = ?",
+    id,
+    addResultsToResponse(res, next, { key: "event" })
   );
+};
+
+const getUpdatedReservation: EC = (req, res, next) => {
+  const bookingId = res.locals.reservation.insertId;
+  pool.query(
+    "SELECT * FROM reservation WHERE id = ?",
+    bookingId,
+    addResultsToResponse(res, next, { key: "reservation" })
+  );
+};
+
+const editReservationResponse: EC = (req, res, next) => {
+  // event reservation info has changed
+  // reservation has changed
+  res.status(201).json({
+    data: {
+      event: inflate(res.locals.event),
+      reservation: inflate(res.locals.reservation),
+    },
+    context: req.query.context,
+  });
+  next();
+};
+
+const editReservationStack = [
+  reserveEquipment,
+  deleteEquipment,
+  getUpdatedEvent,
+  getUpdatedReservation,
+  editReservationResponse,
+  useMailbox,
+  noop,
+];
 
 export const getOne: EC = (req, res, next) =>
   pool.query(
@@ -81,9 +143,6 @@ const withUpdatedEventsAndReservations = [
   withResource("events", "SELECT * FROM event"),
 ];
 
-// just used to stop after useMailbox
-const noop: EC = () => undefined;
-
 export const getMany: EC = (_, res, next) =>
   pool.query("SELECT * FROM reservation", addResultsToResponse(res, next));
 
@@ -120,46 +179,39 @@ export const adminResponse: EC = (req, res, next) => {
   );
 };
 
+// .id is a url param and .equipment is dealt with separately
+const getReservationFromBody = (req: Request) => ({
+  allotment_id: req.body.eventId,
+  contact_phone: req.body.phone,
+  group_id: req.body.groupId,
+  guests: req.body.guests,
+  live_room: req.body.liveRoom,
+  notes: req.body.notes,
+  project_id: req.body.projectId,
+  purpose: req.body.description,
+});
+
 export const createOne: EC = (req, res, next) =>
   pool.query(
     "INSERT INTO booking SET ?",
-    [
-      {
-        allotment_id: req.body.allotmentId,
-        group_id: req.body.groupId,
-        purpose: req.body.description,
-        guests: req.body.guests,
-        live_room: req.body.liveRoom,
-        contact_phone: req.body.phone,
-        notes: req.body.notes,
-        project_id: req.body.projectId,
-      },
-    ],
-    addResultsToResponse(res, next)
+    [getReservationFromBody(req)],
+    addResultsToResponse(res, next, { key: "reservation" })
   );
 
-export const updateOne: EC = (req, res, next) =>
+export const updateOne: EC = (req, res, next) => {
+  // a bit of a hack, but this makes for the same as createOne
+  res.locals.reservation.insertId = req.params.id;
   pool.query(
     "UPDATE booking SET ? WHERE id = ?",
-    [
-      {
-        allotment_id: req.body.allotmentId,
-        group_id: req.body.groupId,
-        purpose: req.body.description,
-        guests: req.body.guests,
-        live_room: req.body.liveRoom,
-        contact_phone: req.body.phone,
-        notes: req.body.notes,
-      },
-      Number(req.params.id),
-    ],
-    addResultsToResponse(res, next, { one: true })
+    [getReservationFromBody(req), Number(req.params.id)],
+    addResultsToResponse(res, next, { one: true, key: "ignore" })
   );
+};
 
 export default {
   ...controllers("booking", "id"),
-  createOne,
-  updateOne,
+  createOne: [createOne, ...editReservationStack],
+  updateOne: [updateOne, ...editReservationStack],
   getOne,
   getByUser,
   getMany,
@@ -172,5 +224,5 @@ export default {
     useMailbox,
     noop,
   ],
-  reserveEquipment: [reserveEquipment, deleteEquipmentReservationZeros],
+  // reserveEquipment: [reserveEquipment, deleteEquipmentReservationZeros],
 };
