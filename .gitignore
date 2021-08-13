@@ -1,3 +1,6 @@
+# editor settings
+.vscode
+
 # Secrets
 .env
 database-backups/**/*
