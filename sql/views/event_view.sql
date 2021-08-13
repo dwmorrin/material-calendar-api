@@ -1,4 +1,4 @@
-CREATE VIEW event AS
+CREATE VIEW event_view AS
 WITH equipment_list AS
 (
   SELECT
@@ -20,7 +20,7 @@ WITH equipment_list AS
   FROM
     equipment_reservation er
     LEFT JOIN equipment e ON e.id = er.equipment_id
-    LEFT JOIN booking b ON er.booking_id = b.id and b.cancelled=0
+    LEFT JOIN reservation b ON er.booking_id = b.id and b.cancelled=0
   GROUP BY name, b.id
 )
 
@@ -36,8 +36,8 @@ SELECT
       "restriction", s.restriction,
       "allowsWalkIns", s.allows_walk_ins
     )
-    FROM studio s
-    WHERE a.studio_id = s.id
+    FROM location s
+    WHERE a.location_id = s.id
   ) AS location,
   IF (g.title IS NOT NULL, g.title, a.description) AS title,
   a.bookable AS reservable,
@@ -60,8 +60,8 @@ SELECT
     ),
     NULL
   ) AS reservation
-FROM allotment a
-  LEFT JOIN booking b ON a.id = b.allotment_id and b.cancelled=0
+FROM event a
+  LEFT JOIN reservation b ON a.id = b.event_id and b.cancelled=0
   LEFT JOIN equipment_list el ON el.booking_id = b.id
   LEFT JOIN project_group g on g.id = b.group_id
 GROUP BY a.id

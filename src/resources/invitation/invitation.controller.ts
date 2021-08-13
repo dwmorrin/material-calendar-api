@@ -2,6 +2,7 @@ import pool, { inflate } from "../../utils/db";
 import { addResultsToResponse } from "../../utils/crud";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
+import { getUpdatedGroups } from "../group/group.controller";
 
 export const getInvitationsQuery = `
 SELECT
@@ -194,6 +195,8 @@ export const getUpdatedInvites: EC = (_, res, next) => {
   );
 };
 
+const getUpdatedGroupsAndInvites = [getUpdatedInvites, getUpdatedGroups];
+
 const createInvitesResponse: EC = (req, res, next) => {
   res.status(201).json({
     data: res.locals.invitations.map(inflate),
@@ -238,9 +241,19 @@ export const adminResponse: EC = (req, res, next) => {
   );
 };
 
-export const removeInvitation: EC = (req, res, next) =>
+// TODO make sure the denier is invitor, invitee, or admin
+const denyInvitation: EC = (req, res, next) =>
   pool.query(
-    `delete from invitation where id=?`,
+    "UPDATE invitation SET denied_id = ? WHERE id = ?",
+    [res.locals.user.id, req.params.invitationId],
+    addResultsToResponse(res, next)
+  );
+
+const abandonGroup: EC = (req, res, next) =>
+  pool.query(
+    `UPDATE project_group SET abandoned = TRUE WHERE id = (
+        SELECT group_id FROM invitation WHERE id = ?
+      )`,
     [req.params.invitationId],
     addResultsToResponse(res, next)
   );
@@ -255,11 +268,15 @@ export default {
     createPendingGroupMembers,
     createInvitation,
     createInvitees,
-    getUpdatedInvites,
+    ...getUpdatedGroupsAndInvites,
     createInvitesResponse, // response sent here
     useMailbox,
     (): void => undefined, // to stop after mailbox
   ],
   updateInvitation,
-  removeInvitation,
+  removeInvitation: [
+    denyInvitation,
+    abandonGroup,
+    ...getUpdatedGroupsAndInvites,
+  ],
 };

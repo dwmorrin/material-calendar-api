@@ -1,8 +1,8 @@
-CREATE VIEW reservation AS
+CREATE VIEW reservation_view AS
 SELECT
   b.id,
   b.purpose AS description,
-  b.allotment_id AS eventId,
+  b.event_id AS eventId,
   b.group_id AS groupId,
   IFNULL (b.project_id, 0) AS projectId,
   b.guests,
@@ -46,8 +46,8 @@ SELECT
     NULL
   ) AS cancellation
 FROM
-  booking b
-    LEFT JOIN allotment a ON a.id = b.allotment_id
-    LEFT JOIN studio s ON a.studio_id = s.id
-    LEFT JOIN user_group u ON b.group_id = u.id
+  reservation b
+    LEFT JOIN event a ON a.id = b.event_id
+    LEFT JOIN location s ON a.location_id = s.id
+    LEFT JOIN project_group_view u ON b.group_id = u.id
     LEFT JOIN project p ON u.projectId = p.id;

@@ -25,15 +25,15 @@ SELECT
     (
       SELECT DISTINCT JSON_ARRAYAGG(
         JSON_OBJECT(
-          'locationId', vw.studio_id,
+          'locationId', vw.location_id,
           'virtualWeekId', vw.id,
           'start', IF(vw.start >= p.start, vw.start, p.start),
           'end', IF(vw.end <= p.end, vw.end, p.end),
           'hours', IFNULL(ph.hours, 0)
         )
       )
-      FROM project_studio_hours psh
-        JOIN virtual_week vw USING (studio_id)
+      FROM project_location_hours psh
+        JOIN virtual_week vw USING (location_id)
         LEFT JOIN project_virtual_week_hours ph
           ON ph.project_id = psh.project_id
           AND ph.virtual_week_id = vw.id
@@ -55,11 +55,11 @@ SELECT
     (
       SELECT JSON_ARRAYAGG(
         JSON_OBJECT(
-            'locationId', ps.studio_id,
+            'locationId', ps.location_id,
             'hours', ps.hours
           )
         )
-      FROM project_studio_hours ps
+      FROM project_location_hours ps
       WHERE ps.project_id = p.id
     ),
     '[]'

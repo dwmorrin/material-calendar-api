@@ -55,7 +55,7 @@ const insert: EC = (req, res, next) => {
   const { inserts } = res.locals;
   if (!inserts || !inserts.length) return next();
   const location = inserts.shift();
-  pool.query("INSERT INTO studio SET ?", [location], (err) => {
+  pool.query("INSERT INTO location SET ?", [location], (err) => {
     if (err) return next(err);
     insert(req, res, next);
   });
@@ -66,7 +66,7 @@ const update: EC = (req, res, next) => {
   if (!updates || !updates.length) return next();
   const location = updates.shift();
   pool.query(
-    "UPDATE studio SET ? WHERE id = ?",
+    "UPDATE location SET ? WHERE id = ?",
     [location, location.id],
     (err) => {
       if (err) return next(err);
@@ -92,7 +92,7 @@ const onError: EEH = (err, _, res, next) => {
 
 export default [
   setup,
-  withResource("locations", "SELECT * FROM studio"),
+  withResource("locations", "SELECT * FROM location"),
   process,
   insert,
   update,

@@ -151,8 +151,8 @@ const byUserQuery = `SELECT
 FROM
   reservation res
   INNER JOIN project_group pg ON pg.id = res.groupId
-  INNER JOIN student_group sg ON sg.group_id = pg.id
-  INNER JOIN user u on u.id = sg.student_id
+  INNER JOIN project_group_user pgu ON pgu.group_id = pg.id
+  INNER JOIN user u on u.id = pgu.user_id
 WHERE u.id = ?`;
 
 const getByUser: EC = (req, res, next) =>
@@ -181,7 +181,7 @@ export const adminResponse: EC = (req, res, next) => {
 
 // .id is a url param and .equipment is dealt with separately
 const getReservationFromBody = (req: Request) => ({
-  allotment_id: req.body.eventId,
+  event_id: req.body.eventId,
   contact_phone: req.body.phone,
   group_id: req.body.groupId,
   guests: req.body.guests,

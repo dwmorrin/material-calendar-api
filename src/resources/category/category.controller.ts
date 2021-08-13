@@ -8,7 +8,7 @@ const query = `
     title,
     parent_id AS parentId
   FROM
-    category
+    equipment_category
 `;
 
 export const getMany: EC = (_, res, next) =>
@@ -18,10 +18,14 @@ const updateOne: EC = (req, res, next) => {
   const { id } = req.params;
   const { title, parentId } = req.body;
   pool.query(
-    "UPDATE category SET ? WHERE id = ?",
+    "UPDATE equipment_category SET ? WHERE id = ?",
     [{ title, parent_id: parentId }, id],
     addResultsToResponse(res, next, { one: true })
   );
 };
 
-export default { ...controllers("category", "id"), getMany, updateOne };
+export default {
+  ...controllers("equipment_category", "id"),
+  getMany,
+  updateOne,
+};

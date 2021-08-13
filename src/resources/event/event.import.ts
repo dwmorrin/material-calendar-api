@@ -87,8 +87,8 @@ const process: EC = (_, res, next) => {
 
 const insert: EC = (req, res, next) =>
   pool.query(
-    `REPLACE INTO allotment (
-      start, end, studio_id, bookable, description
+    `REPLACE INTO event (
+      start, end, location_id, bookable, description
     ) VALUES ?`,
     [
       res.locals.inserts.map(
@@ -112,14 +112,14 @@ const update: EC = (req, res, next) => {
   if (!updates || !updates.length) return next();
   const event = updates.shift();
   pool.query(
-    "UPDATE allotment SET ? WHERE id = ?",
+    "UPDATE event SET ? WHERE id = ?",
     [
       {
         title: event.title,
         start: event.start,
         end: event.end,
         reservable: event.reservable,
-        studio_id: event.location.id,
+        location_id: event.location.id,
       },
       event.id,
     ],
@@ -151,20 +151,20 @@ SELECT
   end,
   (
     SELECT JSON_OBJECT(
-      'id', studio.id,
-      'title', studio.title
+      'id', location.id,
+      'title', location.title
     )
-    FROM studio
-    WHERE studio.id = studio_id
+    FROM location
+    WHERE location.id = location_id
   ) AS location,
   bookable AS reservable
-  FROM allotment
+  FROM event
 `;
 
 export default [
   setup,
   withResource("events", eventQuery),
-  withResource("locations", "SELECT id, title FROM studio"),
+  withResource("locations", "SELECT id, title FROM location"),
   process,
   insert,
   update,

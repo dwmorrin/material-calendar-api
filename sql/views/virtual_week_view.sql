@@ -3,7 +3,7 @@ SELECT
   vw.id,
   vw.start,
   vw.end,
-  vw.studio_id AS locationId,
+  vw.location_id AS locationId,
   vw.semester_id AS semesterId,
   IFNULL(
     (

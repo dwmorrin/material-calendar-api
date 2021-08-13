@@ -26,7 +26,7 @@ export const createOne: EC = (req, res, next) =>
       {
         start: req.body.start,
         end: req.body.end,
-        studio_id: req.body.locationId,
+        location_id: req.body.locationId,
         semester_id: req.body.semesterId,
       },
     ],
@@ -63,7 +63,7 @@ const splitOneInsert: EC = (req, res, next) => {
       {
         start: newWeek.start,
         end: newWeek.end,
-        studio_id: newWeek.locationId,
+        location_id: newWeek.locationId,
         semester_id: newWeek.semesterId,
       },
     ],

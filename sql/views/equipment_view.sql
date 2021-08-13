@@ -10,8 +10,8 @@ WITH reservation_list AS (
     ) AS booking
   FROM
     equipment_reservation r
-    LEFT JOIN booking b ON b.id = r.booking_id
-    LEFT JOIN allotment a ON b.allotment_id = a.id
+    LEFT JOIN reservation b ON b.id = r.booking_id
+    LEFT JOIN event a ON b.event_id = a.id
 )
 
 SELECT
@@ -35,6 +35,6 @@ SELECT
   e.notes
 FROM
   equipment e
-  LEFT JOIN category c ON c.id = e.category
+  LEFT JOIN equipment_category c ON c.id = e.category
   LEFT JOIN reservation_list r on r.id = e.id
 GROUP BY e.id

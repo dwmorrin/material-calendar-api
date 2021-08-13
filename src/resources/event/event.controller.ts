@@ -3,8 +3,8 @@ import pool from "../../utils/db";
 import { EC } from "../../utils/types";
 
 /**
- * Reading: use the `event` view.
- * Writing: use the `allotment` table.
+ * Reading: use the `event_view` view.
+ * Writing: use the `event` table.
  */
 
 const getMany: EC = (_, res, next) =>
@@ -19,8 +19,8 @@ const getOne: EC = (req, res, next) =>
 
 const createMany: EC = (req, res, next) =>
   pool.query(
-    `REPLACE INTO allotment (
-      start, end, studio_id, bookable, description
+    `REPLACE INTO event (
+      start, end, location_id, bookable, description
     ) VALUES ?`,
     [
       req.body.map(
@@ -38,12 +38,12 @@ const createMany: EC = (req, res, next) =>
 
 const updateOne: EC = (req, res, next) =>
   pool.query(
-    `UPDATE allotment SET ? WHERE id = ?`,
+    `UPDATE event SET ? WHERE id = ?`,
     [
       {
         start: req.body.start,
         end: req.body.end,
-        studio_id: req.body.locationId,
+        location_id: req.body.locationId,
         bookable: req.body.reservable,
         description: req.body.title,
       },
@@ -65,7 +65,7 @@ const range: EC = (req, res, next) => {
 };
 
 export default {
-  ...controllers("allotment", "id"),
+  ...controllers("event", "id"),
   createMany,
   getMany,
   getOne,

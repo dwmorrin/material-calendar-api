@@ -7,23 +7,17 @@ import pool, { inflate } from "../../utils/db";
 import { EC, EEH } from "../../utils/types";
 
 /**
- * Reading: use `location` view
- * Writing: use `studio` table
+ * Reading: use `location_view` view
+ * Writing: use `location` table
  */
 
 export const getMany: EC = (_, res, next) =>
-  pool.query("SELECT * from location", addResultsToResponse(res, next));
+  pool.query("SELECT * FROM location_view", addResultsToResponse(res, next));
 
-export const getOne: EC = (req, res, next) =>
+const getOne: EC = (req, res, next) =>
   pool.query(
-    "SELECT * FROM location WHERE id = ?",
+    "SELECT * FROM location_view WHERE id = ?",
     [req.params.id],
-    addResultsToResponse(res, next, { one: true })
-  );
-
-export const getDefaultId: EC = (_, res, next) =>
-  pool.query(
-    "SELECT id FROM studio WHERE id = (SELECT MIN(id) FROM studio)",
     addResultsToResponse(res, next, { one: true })
   );
 
@@ -32,15 +26,15 @@ SELECT
   v.id,
   v.start,
   v.end,
-  v.studio_id AS locationId,
+  v.location_id AS locationId,
   (
     SELECT
       SUM(IF(w.date BETWEEN v2.start AND v2.end, w.hours, 0)) as hours
     FROM
       virtual_week v2
-      JOIN studio_hours w ON w.studio_id = v2.studio_id
+      JOIN location_hours w ON w.location_id = v2.location_id
     WHERE
-      v2.studio_id = ? AND v.id = v2.id
+      v2.location_id = ? AND v.id = v2.id
     GROUP BY
       v2.id
   ) AS 'locationHours',
@@ -53,11 +47,11 @@ FROM
   virtual_week v
   JOIN project_virtual_week_hours pa ON pa.virtual_week_id = v.id
 WHERE
-  v.studio_id = ?
+  v.location_id = ?
 GROUP BY v.id
 `;
 
-export const getVirtualWeeks: EC = (req, res, next) =>
+const getVirtualWeeks: EC = (req, res, next) =>
   pool.query(
     calculatedVirtualWeekHoursQuery,
     [req.params.id, req.params.id],
@@ -79,7 +73,7 @@ const createOrUpdateHours: EC = (req, res, next) => {
     return next("Daily hours update handler not configured.");
   if (!res.locals.updates.length) return next();
   pool.query(
-    "REPLACE INTO studio_hours (studio_id, date, hours) VALUES ?",
+    "REPLACE INTO location_hours (location_id, date, hours) VALUES ?",
     [
       (res.locals.updates as { date: string; hours: number }[]).map(
         ({ date, hours }) => [req.params.id, date, hours]
@@ -94,7 +88,7 @@ const deleteHours: EC = (req, res, next) => {
     return next("Daily hours delete handler not configured.");
   if (!res.locals.deletes.length) return next();
   pool.query(
-    "DELETE FROM studio_hours WHERE studio_id = ? AND date in (?)",
+    "DELETE FROM location_hours WHERE location_id = ? AND date in (?)",
     [req.params.id, res.locals.deletes.map((d) => d.date)],
     addResultsToResponse(res, next, { key: "ignore" })
   );
@@ -106,7 +100,7 @@ const onHoursError: EEH = (err, _, res, next) => {
   else next(err);
 };
 
-export const createOne: EC = (req, res, next) => {
+const createOne: EC = (req, res, next) => {
   const { title, groupId, restriction, allowsWalkIns, defaultHours } = req.body;
   const defaultHoursValid = Object.values(defaultHours).every(
     (value) =>
@@ -117,7 +111,7 @@ export const createOne: EC = (req, res, next) => {
       error: { message: "Default hours must be between 0 and 24" },
     });
   pool.query(
-    "INSERT INTO studio SET ?",
+    "INSERT INTO location SET ?",
     [
       {
         title: title,
@@ -138,14 +132,15 @@ export const createOne: EC = (req, res, next) => {
 };
 
 // returns sum of event hours in a location
+// TODO id AS locationId looks wrong - we are pulling from event table
 export const sumHours: EC = (req, res, next) =>
   pool.query(
     `SELECT
       id AS locationId,
       DATE(start) as date,
       SUM(TIMESTAMPDIFF(HOUR, start, end)) AS hours
-    FROM allotment
-    WHERE studio_id = ?
+    FROM event
+    WHERE location_id = ?
     GROUP BY YEAR(start), MONTH(start), DAY(start)
     `,
     [req.params.id],
@@ -172,7 +167,7 @@ const updateOne: EC = (req, res, next) => {
       error: { message: "Default hours must be between 0 and 24" },
     });
   pool.query(
-    "UPDATE studio SET ? WHERE id = ?",
+    "UPDATE location SET ? WHERE id = ?",
     [
       {
         title,
@@ -194,19 +189,18 @@ const updateOne: EC = (req, res, next) => {
 };
 
 export default {
-  ...controllers("studio", "id"),
+  ...controllers("location", "id"),
   createOne,
   bulkLocationHours: [
     createOrUpdateHoursSetup,
     createOrUpdateHours,
     deleteHours,
-    withResource("locations", "SELECT * FROM location"),
+    withResource("locations", "SELECT * FROM location_view"),
     bulkHoursResponse,
     onHoursError,
   ],
   getMany,
   getOne,
-  getDefaultId,
   getVirtualWeeks,
   sumHours,
   updateOne,

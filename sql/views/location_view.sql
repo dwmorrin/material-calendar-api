@@ -1,4 +1,4 @@
-CREATE VIEW location AS
+CREATE VIEW location_view AS
 SELECT
   s.id,
   s.title,
@@ -23,8 +23,8 @@ SELECT
     'sunday', s.default_hours_sunday
   ) AS defaultHours
 FROM
-  studio s
+  location s
   LEFT JOIN
-    studio_hours sh ON s.id = sh.studio_id
+    location_hours sh ON s.id = sh.location_id
 GROUP BY
   s.id

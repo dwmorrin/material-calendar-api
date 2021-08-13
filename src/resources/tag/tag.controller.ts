@@ -11,8 +11,8 @@ const query = `
       'title', c.title,
       'parentId', c.parent_id
     ) as 'category'
-  FROM tag
-  LEFT JOIN category c ON tag.category = c.id
+  FROM equipment_tag tag
+  LEFT JOIN equipment_category c ON tag.category = c.id
 `;
 
 export const getMany: EC = (_, res, next) =>
@@ -33,7 +33,7 @@ export const getBySubCategory: EC = (req, res, next) =>
   );
 
 export default {
-  ...controllers("tag", "id"),
+  ...controllers("equipment_tag", "id"),
   getMany,
   getByCategory,
   getBySubCategory,

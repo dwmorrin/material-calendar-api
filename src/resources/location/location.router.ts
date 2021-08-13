@@ -5,8 +5,6 @@ import { numericId, sendResults } from "../../utils/crud";
 
 const router = Router();
 
-router.get("/default", controller.getDefaultId);
-
 router.get(`/${numericId}/virtualweeks`, controller.getVirtualWeeks);
 router.post(`/${numericId}/hours/bulk`, controller.bulkLocationHours);
 

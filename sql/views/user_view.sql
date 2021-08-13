@@ -10,6 +10,9 @@ SELECT
   u.email,
   u.phone,
   u.restriction,
+  /**
+   * Roles are an array of strings, e.g. ['admin', 'user']
+   */
   IFNULL (
     (
       SELECT JSON_ARRAYAGG(r.title)
@@ -20,23 +23,23 @@ SELECT
     ),
     JSON_ARRAY()
   ) AS roles,
+  /**
+   * Projects are assigned by the roster table.
+   * Just getting enough info to list available projects.
+   */
   IFNULL (
     (
       SELECT JSON_ARRAYAGG(JSON_OBJECT(
-            'id', rg.project_id,
-            'title', p.title,
-            'groupId', rg.id,
-            'course', JSON_OBJECT(
-              'id', IFNULL (c.id, 0),
-              'title', IFNULL (c.title, '')
-            )
+            'id', p.id,
+            'title', p.title
           )
       )
-      FROM student_group sg
-        LEFT JOIN project_group rg ON rg.id = sg.group_id
-        LEFT JOIN course c ON c.id = rg.course_id
-        LEFT JOIN project p ON rg.project_id = p.id
-      WHERE sg.student_id = u.id
+      FROM
+        roster rst
+        INNER JOIN section sec ON rst.section_id = sec.id
+        INNER JOIN section_project ON sec.id = section_project.section_id
+        INNER JOIN project p ON section_project.project_id = p.id
+      WHERE rst.user_id = u.id
     ),
     JSON_ARRAY()
   ) as projects

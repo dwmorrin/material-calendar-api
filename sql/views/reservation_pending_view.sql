@@ -1,8 +1,8 @@
-CREATE VIEW reservation_pending AS
+CREATE VIEW reservation_pending_view AS
 SELECT
   b.id,
   b.purpose AS description,
-  b.allotment_id AS eventId,
+  b.event_id AS eventId,
   b.group_id AS groupId,
   IFNULL (b.project_id, 0) AS projectId,
   b.guests,
@@ -53,10 +53,10 @@ SELECT
   u.members,
   p.title as projectTitle
 FROM
-  booking b
-    LEFT JOIN allotment a on a.id=b.allotment_id
-    LEFT JOIN studio s on a.studio_id=s.id
-    LEFT JOIN user_group u on b.group_id=u.id
+  reservation b
+    LEFT JOIN event a on a.id=b.event_id
+    LEFT JOIN location s on a.location_id=s.id
+    LEFT JOIN project_group_view u on b.group_id=u.id
     LEFT JOIN project p on u.projectId=p.id
 WHERE (
   refund_request = 1 AND

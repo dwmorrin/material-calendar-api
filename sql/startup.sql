@@ -29,6 +29,15 @@ INSERT INTO semester SET
 
 INSERT INTO active_semester SET semester_id = 1;
 
+INSERT INTO course SET
+  title = 'Walk-in',
+  catalog_id = 'N/A';
+
+INSERT INTO section SET
+  course_id = 1,
+  title = 'Walk-in',
+  instructor = 'N/A';
+
 INSERT INTO project SET
   title = "Walk-in",
   group_hours = 999,
@@ -38,8 +47,24 @@ INSERT INTO project SET
   end = '9999-12-31',
   group_size = 1;
 
-INSERT INTO project_group SET
-  title = 'Admin Walk-in',
+INSERT INTO section_project SET
+  section_id = 1,
   project_id = 1;
 
-INSERT INTO student_group SET student_id = 1, group_id = 1;
+INSERT INTO roster SET
+  user_id = 1,
+  course_id = 1,
+  section_id = 1,
+  semester_id = 1;
+
+INSERT INTO project_group SET
+  title = '{{ADMIN_FIRST_NAME}} {{ADMIN_FIRST_NAME}} Walk-in',
+  project_id = 1,
+  creator_id = 1,
+  admin_approved_id = 1,
+  pending = FALSE;
+
+INSERT INTO project_group_user SET
+  user_id = 1,
+  project_group_id = 1,
+  invitation_accepted = TRUE;

@@ -45,7 +45,7 @@ const getUsersByIdList: EC = (req, res, next) => {
     });
 };
 
-// note: this gets ALL inviations, not just the ones for the project
+// note: this gets ALL invitations, not just the ones for the project
 const getProjectInvites: EC = (_, res, next) => {
   pool.query(
     getInvitationsQuery,
@@ -54,7 +54,7 @@ const getProjectInvites: EC = (_, res, next) => {
   );
 };
 
-const dashboardReponse: EC = (req, res) => {
+const dashboardResponse: EC = (req, res) => {
   const { users, invitations } = res.locals;
   res
     .status(200)
@@ -130,7 +130,7 @@ const createOrUpdateProjectLocationHours: EC = (req, res, next) => {
   } = req;
   if (!locationHours || !locationHours.length) return next();
   pool.query(
-    "REPLACE INTO project_studio_hours (project_id, studio_id, hours) VALUES ?",
+    "REPLACE INTO project_location_hours (project_id, location_id, hours) VALUES ?",
     [
       locationHours.map(({ locationId, hours }: Record<string, unknown>) => [
         method === CrudAction.Create ? res.locals.project.insertId : id,
@@ -147,8 +147,8 @@ const deleteProjectLocationHours: EC = (req, res, next) => {
     body: { id, locationHours },
   } = req;
   const query = !(Array.isArray(locationHours) && locationHours.length)
-    ? `DELETE FROM project_studio_hours WHERE project_id = ${pool.escape(id)}`
-    : `DELETE FROM project_studio_hours WHERE studio_id NOT IN (${pool.escape(
+    ? `DELETE FROM project_location_hours WHERE project_id = ${pool.escape(id)}`
+    : `DELETE FROM project_location_hours WHERE location_id NOT IN (${pool.escape(
         (locationHours as { locationId: number }[]).map(
           ({ locationId }) => locationId
         )
@@ -214,7 +214,7 @@ const createLocationHours: EC = (req, res, next) => {
     projects: { id: number; title: string }[];
   };
   const query =
-    "REPLACE INTO project_studio_hours (project_id, studio_id, hours) VALUES ?";
+    "REPLACE INTO project_location_hours (project_id, location_id, hours) VALUES ?";
   pool.query(
     query,
     [
@@ -261,7 +261,7 @@ export default {
     withResource("projects", "SELECT id, title FROM project"),
     createLocationHours,
     withResource("projects", "SELECT * FROM project_view"),
-    withResource("locations", "SELECT * FROM location"),
+    withResource("locations", "SELECT * FROM location_view"),
     respondWith("projects", "locations"),
   ],
   getMany,
@@ -271,7 +271,7 @@ export default {
     getUserIdsByProject,
     getUsersByIdList,
     getProjectInvites,
-    dashboardReponse,
+    dashboardResponse,
   ],
   updateAllotment: [
     updateAllotment,

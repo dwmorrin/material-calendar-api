@@ -5,22 +5,25 @@ import { useMailbox } from "../../utils/mailer";
 import { getUpdatedInvites } from "../invitation/invitation.controller";
 
 /**
- * Reading: use the `user_group` view.
+ * Reading: use the `project_group_view` view.
  * Writing: use the `project_group` table.
  */
 
 export const getGroups: EC = (_, res, next) =>
-  pool.query("SELECT * FROM user_group", addResultsToResponse(res, next));
+  pool.query(
+    "SELECT * FROM project_group_view",
+    addResultsToResponse(res, next)
+  );
 
 export const getOneGroup: EC = (req, res, next) =>
   pool.query(
-    "SELECT * FROM user_group WHERE id = ?",
+    "SELECT * FROM project_group_view WHERE id = ?",
     [req.params.groupId],
     addResultsToResponse(res, next, { one: true })
   );
 
 const getGroupsByUserQuery =
-  "SELECT * FROM user_group WHERE JSON_CONTAINS(members, JSON_OBJECT('id', ?))";
+  "SELECT * FROM project_group_view WHERE JSON_CONTAINS(members, JSON_OBJECT('id', ?))";
 
 export const getGroupsByUser: EC = (req, res, next) =>
   pool.query(
@@ -31,7 +34,7 @@ export const getGroupsByUser: EC = (req, res, next) =>
 
 export const getGroupsByProject: EC = (req, res, next) =>
   pool.query(
-    "SELECT * FROM user_group WHERE projectId = ?",
+    "SELECT * FROM project_group_view WHERE projectId = ?",
     [req.params.projectId],
     addResultsToResponse(res, next)
   );
@@ -101,7 +104,7 @@ const deleteEmptyGroup: EC = (req, res, next) => {
 };
 
 // surely we can refactor to share code, but this is just to update after leaving a group
-const getUpdatedGroups: EC = (_, res, next) => {
+export const getUpdatedGroups: EC = (_, res, next) => {
   pool.query(
     getGroupsByUserQuery,
     [res.locals.user.id],

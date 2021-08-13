@@ -1,4 +1,4 @@
-CREATE VIEW user_group AS
+CREATE VIEW project_group_view AS
 SELECT
   g.id,
   g.projectId,
@@ -15,14 +15,22 @@ FROM
         JSON_OBJECT(
           'id', u.id,
           'username', u.user_id,
-          'name', JSON_OBJECT('first', u.first_name,'last',u.last_name),
+          'name', JSON_OBJECT(
+            'first', u.first_name,
+            'middle', u.middle_name,
+            'last',u.last_name
+          ),
+          'invitation', JSON_OBJECT(
+            'accepted', pgu.invitation_accepted,
+            'rejected', pgu.invitation_rejected
+          ),
           'email', u.email
         )
       ) AS members
     FROM
-      user u
-      INNER JOIN student_group sg ON sg.student_id = u.id
-      INNER JOIN project_group pg ON pg.id = sg.group_id
+      project_group_user pgu
+      INNER JOIN user u ON pgu.user_id = u.id
+      INNER JOIN project_group pg ON pg.id = pgu.project_group_id
     GROUP BY
       pg.id
   ) g
@@ -36,8 +44,8 @@ FROM
         ) AS reservedHours
       FROM
         project_group pg
-        LEFT JOIN booking b on b.group_id = pg.id
-        LEFT JOIN allotment a on a.id = b.allotment_id
+        LEFT JOIN reservation b on b.group_id = pg.id
+        LEFT JOIN event a on a.id = b.event_id
       GROUP BY
         pg.id
     ) r ON g.id = r.id

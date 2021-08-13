@@ -92,7 +92,7 @@ const insertCategories: EC = (_, res, next) => {
   } = res.locals;
   if (!categories.length) return next();
   pool.query(
-    "INSERT INTO category (title) VALUES ?",
+    "INSERT INTO equipment_category (title) VALUES ?",
     [(categories as Category[]).map(({ title }) => [title])],
     (err) => {
       if (err) return next(err);
@@ -189,12 +189,12 @@ const onError: EEH = (err, _, res, next) => {
 
 export default [
   withResource("equipment", "SELECT * FROM equipment"),
-  withResource("categories", "SELECT * FROM category"),
+  withResource("categories", "SELECT * FROM equipment_category"),
   setup,
   process,
   insertCategories,
   // get new ids for categories
-  withResource("categories", "SELECT * FROM category"),
+  withResource("categories", "SELECT * FROM equipment_category"),
   insertEquipment,
   update,
   // refresh equipment
