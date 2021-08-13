@@ -335,7 +335,7 @@ CREATE TABLE `project` (
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `project_group` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL DEFAULT '',
+  `title` varchar(255) NOT NULL,
   `project_id` int NOT NULL,
   `course_id` int DEFAULT NULL,
   `creator` int DEFAULT NULL,
@@ -607,7 +607,7 @@ CREATE TABLE `virtual_week` (
   KEY `semester_idx` (`semester_id`),
   CONSTRAINT `virtual_week_semester_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`),
   CONSTRAINT `virtual_week_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -706,7 +706,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `event` AS with `equipment_list` as (select `er`.`booking_id` AS `booking_id`,if(((`e`.`manufacturer` is not null) and (`e`.`model` is not null)),concat(`e`.`manufacturer`,' ',`e`.`model`),`e`.`description`) AS `name`,json_object('quantity',sum(`er`.`quantity`),'items',json_arrayagg(json_object('id',`e`.`id`,'quantity',`er`.`quantity`))) AS `gear` from ((`equipment_reservation` `er` left join `equipment` `e` on((`e`.`id` = `er`.`equipment_id`))) left join `booking` `b` on(((`er`.`booking_id` = `b`.`id`) and (`b`.`cancelled` = 0)))) group by `name`,`b`.`id`) select `a`.`id` AS `id`,`a`.`start` AS `start`,`a`.`end` AS `end`,(select json_object('id',`s`.`id`,'title',`s`.`title`,'groupId',`s`.`location`,'restriction',`s`.`restriction`,'allowsWalkIns',`s`.`allows_walk_ins`) from `studio` `s` where (`a`.`studio_id` = `s`.`id`)) AS `location`,if((`g`.`name` is not null),`g`.`name`,`a`.`description`) AS `title`,`a`.`bookable` AS `reservable`,if((`b`.`id` is not null),json_object('id',`b`.`id`,'projectId',`b`.`project_id`,'description',`b`.`purpose`,'groupId',`b`.`group_id`,'liveRoom',`b`.`live_room`,'guests',`b`.`guests`,'contact',`b`.`contact_phone`,'created',date_format(`b`.`created`,'%Y-%m-%d %T'),'equipment',if((`el`.`gear` is not null),json_objectagg(ifnull(`el`.`name`,'unknown'),`el`.`gear`),NULL)),NULL) AS `reservation` from (((`allotment` `a` left join `booking` `b` on(((`a`.`id` = `b`.`allotment_id`) and (`b`.`cancelled` = 0)))) left join `equipment_list` `el` on((`el`.`booking_id` = `b`.`id`))) left join `project_group` `g` on((`g`.`id` = `b`.`group_id`))) group by `a`.`id` */;
+/*!50001 VIEW `event` AS with `equipment_list` as (select `er`.`booking_id` AS `booking_id`,if(((`e`.`manufacturer` is not null) and (`e`.`model` is not null)),concat(`e`.`manufacturer`,' ',`e`.`model`),`e`.`description`) AS `name`,json_object('quantity',sum(`er`.`quantity`),'items',json_arrayagg(json_object('id',`e`.`id`,'quantity',`er`.`quantity`))) AS `gear` from ((`equipment_reservation` `er` left join `equipment` `e` on((`e`.`id` = `er`.`equipment_id`))) left join `booking` `b` on(((`er`.`booking_id` = `b`.`id`) and (`b`.`cancelled` = 0)))) group by `name`,`b`.`id`) select `a`.`id` AS `id`,`a`.`start` AS `start`,`a`.`end` AS `end`,(select json_object('id',`s`.`id`,'groupId',`s`.`location`,'title',`s`.`title`,'restriction',`s`.`restriction`,'allowsWalkIns',`s`.`allows_walk_ins`) from `studio` `s` where (`a`.`studio_id` = `s`.`id`)) AS `location`,if((`g`.`title` is not null),`g`.`title`,`a`.`description`) AS `title`,`a`.`bookable` AS `reservable`,if((`b`.`id` is not null),json_object('id',`b`.`id`,'projectId',`b`.`project_id`,'description',`b`.`purpose`,'groupId',`b`.`group_id`,'liveRoom',`b`.`live_room`,'guests',`b`.`guests`,'contact',`b`.`contact_phone`,'created',date_format(`b`.`created`,'%Y-%m-%d %T'),'equipment',if((`el`.`gear` is not null),json_objectagg(ifnull(`el`.`name`,'unknown'),`el`.`gear`),NULL)),NULL) AS `reservation` from (((`allotment` `a` left join `booking` `b` on(((`a`.`id` = `b`.`allotment_id`) and (`b`.`cancelled` = 0)))) left join `equipment_list` `el` on((`el`.`booking_id` = `b`.`id`))) left join `project_group` `g` on((`g`.`id` = `b`.`group_id`))) group by `a`.`id` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -797,7 +797,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `user_group` AS select `g`.`id` AS `id`,`g`.`projectId` AS `projectId`,`r`.`name` AS `title`,`g`.`members` AS `members`,ifnull(`r`.`reservedHours`,0) AS `reservedHours` from ((select `rg`.`id` AS `id`,`rg`.`project_id` AS `projectId`,json_arrayagg(json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'last',`u`.`last_name`),'email',`u`.`email`)) AS `members` from ((`user` `u` join `student_group` `sg` on((`sg`.`student_id` = `u`.`id`))) join `project_group` `rg` on((`rg`.`id` = `sg`.`group_id`))) group by `rg`.`id`) `g` left join (select `rg`.`id` AS `id`,`rg`.`name` AS `name`,cast((sum(time_to_sec(timediff(`a`.`end`,`a`.`start`))) / 3600) as decimal(8,2)) AS `reservedHours` from ((`project_group` `rg` left join `booking` `b` on((`b`.`group_id` = `rg`.`id`))) left join `allotment` `a` on((`a`.`id` = `b`.`allotment_id`))) group by `rg`.`id`) `r` on((`g`.`id` = `r`.`id`))) */;
+/*!50001 VIEW `user_group` AS select `g`.`id` AS `id`,`g`.`projectId` AS `projectId`,`g`.`title` AS `title`,`g`.`members` AS `members`,ifnull(`r`.`reservedHours`,0) AS `reservedHours` from ((select `pg`.`id` AS `id`,`pg`.`project_id` AS `projectId`,`pg`.`title` AS `title`,json_arrayagg(json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'last',`u`.`last_name`),'email',`u`.`email`)) AS `members` from ((`user` `u` join `student_group` `sg` on((`sg`.`student_id` = `u`.`id`))) join `project_group` `pg` on((`pg`.`id` = `sg`.`group_id`))) group by `pg`.`id`) `g` left join (select `pg`.`id` AS `id`,cast((sum(time_to_sec(timediff(`a`.`end`,`a`.`start`))) / 3600) as decimal(8,2)) AS `reservedHours` from ((`project_group` `pg` left join `booking` `b` on((`b`.`group_id` = `pg`.`id`))) left join `allotment` `a` on((`a`.`id` = `b`.`allotment_id`))) group by `pg`.`id`) `r` on((`g`.`id` = `r`.`id`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;

@@ -144,7 +144,7 @@ const updateOne: EC = (req, res, next) => {
   const { projectId, title } = req.body;
   pool.query(
     "UPDATE project_group SET ? WHERE id = ?",
-    [{ project_id: projectId, name: title }, req.params.groupId],
+    [{ project_id: projectId, title }, req.params.groupId],
     addResultsToResponse(res, next, { one: true })
   );
 };

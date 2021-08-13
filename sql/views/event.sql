@@ -39,7 +39,7 @@ SELECT
     FROM studio s
     WHERE a.studio_id = s.id
   ) AS location,
-  IF (g.name IS NOT NULL, g.name, a.description) AS title,
+  IF (g.title IS NOT NULL, g.title, a.description) AS title,
   a.bookable AS reservable,
   IF (
     b.id IS NOT NULL,

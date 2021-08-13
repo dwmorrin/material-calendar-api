@@ -39,7 +39,7 @@ INSERT INTO project SET
   group_size = 1;
 
 INSERT INTO project_group SET
-  name = 'Admin Walk-in',
+  title = 'Admin Walk-in',
   project_id = 1;
 
 INSERT INTO student_group SET student_id = 1, group_id = 1;
