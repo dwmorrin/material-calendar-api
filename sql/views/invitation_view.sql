@@ -10,7 +10,7 @@ SELECT
   /* can we use the IF instead of CASE? */
   -- (SELECT IF (COUNT(iv.accepted) = SUM(iv.accepted), 1, 0)) AS confirmed,
   (SELECT (CASE WHEN COUNT(iv.accepted) = SUM(iv.accepted) THEN 1 ELSE 0 END)) AS confirmed,
-  rm.id AS group_id,
+  pg.id AS group_id,
   inv.approved_id AS approvedId
   inv.denied_id AS deniedId
 FROM
@@ -33,6 +33,6 @@ FROM
     GROUP BY vt.invitation_id
   ) tv ON tv.invitation_id = inv.id
   LEFT JOIN user uin ON uin.id=inv.invitor
-  LEFT JOIN project_group rm
-    ON uin.id = rm.creator AND inv.project_id = rm.project_id
+  LEFT JOIN project_group pg
+    ON uin.id = pg.creator AND inv.group_id = pg.id
   -- WHERE (iv.invitee=? or inv.invitor=?) group by inv.id

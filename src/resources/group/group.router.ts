@@ -7,7 +7,6 @@ const router = Router();
 router.get("/user/:userId", controller.getGroupsByUser);
 router.get("/", controller.getGroups);
 router.get("/project/:projectId", controller.getGroupsByProject);
-router.post("/invitation/:invitationId", controller.createGroupFromInvitation);
 router.get("/:groupId", controller.getOneGroup);
 router.delete("/:groupId", controller.removeOneGroup);
 router.put("/:groupId", controller.updateOne);

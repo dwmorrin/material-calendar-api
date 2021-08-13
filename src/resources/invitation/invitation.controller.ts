@@ -125,31 +125,65 @@ export const getInvitationsPendingAdminApproval: EC = (req, res, next) =>
     addResultsToResponse(res, next)
   );
 
-const createInvitations: EC = (req, res, next) => {
-  const { mail } = req.body;
+const createPendingGroup: EC = (req, res, next) => {
+  const { invitation, group } = req.body;
+  if (!group) next("no group");
+  if (!invitation) next("no invitation");
+  res.locals.invitation = invitation;
+  pool.query(
+    "INSERT INTO project_group SET ?",
+    {
+      title: group.title,
+      project_id: group.projectId,
+      creator: res.locals.user.id,
+      admin_id: res.locals.admin ? res.locals.user.id : null,
+    },
+    addResultsToResponse(res, next, { key: "group" })
+  );
+};
+
+const createPendingGroupMembers: EC = (req, res, next) => {
+  const { invitation } = res.locals;
+  if (!invitation) next("no group");
+  const { insertId: groupId } = res.locals.group;
+  if (!groupId) next("no group ID after insert");
+  const members: number[] = invitation.invitees;
+  pool.query(
+    "REPLACE INTO student_group (student_id, group_id) VALUES ?",
+    [members.map((id) => [id, groupId])],
+    addResultsToResponse(res, next, { key: "ignore" })
+  );
+};
+
+const createInvitation: EC = (req, res, next) => {
+  const { invitation, group } = res.locals;
+  if (!invitation) next("no invitation");
+  const { insertId: groupId } = group;
+  if (!groupId) next("no group ID after insert");
+  const { invitorId, approved, mail } = invitation;
   // checks if 'to' is empty string; useMailbox requires mailbox be an array
   res.locals.mailbox = mail.to ? [mail] : [];
   pool.query(
-    `insert into invitation (project_id,invitor,approved_id) VALUES (?,?,?)`,
-    [
-      req.body.projectId,
-      req.body.invitorId,
-      req.body.approved ? req.body.invitorId : null,
-    ],
+    "INSERT INTO invitation SET ?",
+    {
+      group_id: groupId,
+      invitor: invitorId,
+      approved_id: approved ? req.body.invitorId : null,
+    },
     addResultsToResponse(res, next)
   );
 };
 
 const createInvitees: EC = (req, res, next) => {
   const { results } = res.locals;
-  const { invitees } = req.body;
+  const invitees: number[] = req.body.invitees;
   if (invitees.length > 0) {
     pool.query(
-      `replace into invitee (invitation_id,invitee) VALUES ?`,
-      [(invitees as number[]).map((invitee) => [results.insertId, invitee])],
+      "REPLACE INTO invitee (invitation_id, invitee) VALUES ?",
+      [invitees.map((invitee) => [results.insertId, invitee])],
       addResultsToResponse(res, next)
     );
-  } else pool.query(`select '[]'`, addResultsToResponse(res, next));
+  } else next();
 };
 
 export const getUpdatedInvites: EC = (_, res, next) => {
@@ -182,9 +216,9 @@ export const updateInvitation: EC = (req, res, next) => {
     );
   pool.query(
     `UPDATE invitee
-      SET accepted = ?, rejected = ?
+      SET ?
       WHERE invitation_id = ? and invitee = ?`,
-    [accepted ? 1 : 0, rejected ? 1 : 0, req.params.invitationId, userId],
+    [{ accepted, rejected }, req.params.invitationId, userId],
     addResultsToResponse(res, next)
   );
 };
@@ -217,7 +251,9 @@ export default {
   getInvitationsPendingAdminApproval,
   adminResponse,
   createInvitations: [
-    createInvitations,
+    createPendingGroup,
+    createPendingGroupMembers,
+    createInvitation,
     createInvitees,
     getUpdatedInvites,
     createInvitesResponse, // response sent here

@@ -43,25 +43,6 @@ export const removeOneGroup: EC = (req, res, next) =>
     addResultsToResponse(res, next)
   );
 
-export const createGroupFromInvitation: EC = (req, res, next) =>
-  pool.query(
-    `INSERT INTO project_group (
-      project_id, course_id, creator
-    )
-    SELECT
-      invitation.project_id,
-      course.id as course_id,
-      invitation.invitor as creator
-    FROM invitation
-      INNER JOIN project ON invitation.project_id = project.id
-      INNER JOIN section_project ON project.id = section_project.project_id
-      INNER JOIN section ON section_project.section_id = section.id
-      INNER JOIN course ON section.course_id = course.id
-    WHERE invitation.id = ? limit 1`,
-    [req.params.invitationId],
-    addResultsToResponse(res, next)
-  );
-
 export const joinGroup: EC = (req, res, next) =>
   pool.query(
     `REPLACE INTO student_group (
@@ -154,7 +135,6 @@ export default {
   getGroupsByUser,
   getGroupsByProject,
   getOneGroup,
-  createGroupFromInvitation,
   removeOneGroup,
   joinGroup,
   leaveGroup: [

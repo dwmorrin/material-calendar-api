@@ -243,19 +243,17 @@ CREATE TABLE `group_request` (
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `invitation` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `invitor` int DEFAULT NULL,
-  `hash` varchar(32) DEFAULT NULL,
-  `message` text,
-  `project_id` int DEFAULT NULL,
+  `invitor` int NOT NULL,
+  `group_id` int NOT NULL,
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `approved_id` int DEFAULT NULL,
   `denied_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `invitor_idx` (`invitor`),
-  KEY `project_id_idx` (`project_id`),
-  CONSTRAINT `invitation_invitor_user_id` FOREIGN KEY (`invitor`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `invitation_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+  KEY `invitation_group_id` (`group_id`),
+  CONSTRAINT `invitation_ibfk_1` FOREIGN KEY (`group_id`) REFERENCES `project_group` (`id`),
+  CONSTRAINT `invitation_invitor_user_id` FOREIGN KEY (`invitor`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -337,10 +335,10 @@ CREATE TABLE `project_group` (
   `id` int NOT NULL AUTO_INCREMENT,
   `title` varchar(255) NOT NULL,
   `project_id` int NOT NULL,
-  `course_id` int DEFAULT NULL,
   `creator` int DEFAULT NULL,
-  `byadmin` tinyint(1) DEFAULT '0',
   `admin_id` int DEFAULT NULL,
+  `pending` tinyint(1) NOT NULL DEFAULT '1',
+  `abandoned` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `creator_idx` (`creator`),
   KEY `project_id_idx` (`project_id`),
@@ -581,250 +579,4 @@ CREATE TABLE `user_role` (
   CONSTRAINT `user_role_ibfk_2` FOREIGN KEY (`role_id`) REFERENCES `role` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-SET @saved_cs_client     = @@character_set_client;
-/*!50503 SET character_set_client = utf8mb4 */;
-/*!50001 CREATE VIEW `user_view` AS SELECT 
- 1 AS `id`,
- 1 AS `username`,
- 1 AS `name`,
- 1 AS `email`,
- 1 AS `phone`,
- 1 AS `restriction`,
- 1 AS `roles`,
- 1 AS `projects`*/;
-SET character_set_client = @saved_cs_client;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `virtual_week` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `start` date NOT NULL,
-  `end` date NOT NULL,
-  `studio_id` int NOT NULL,
-  `semester_id` int NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `start_studio_idx` (`start`,`studio_id`),
-  KEY `studio_id_idx` (`studio_id`),
-  KEY `semester_idx` (`semester_id`),
-  CONSTRAINT `virtual_week_semester_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`),
-  CONSTRAINT `virtual_week_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-SET @saved_cs_client     = @@character_set_client;
-/*!50503 SET character_set_client = utf8mb4 */;
-/*!50001 CREATE VIEW `virtual_week_view` AS SELECT 
- 1 AS `id`,
- 1 AS `start`,
- 1 AS `end`,
- 1 AS `locationId`,
- 1 AS `semesterId`,
- 1 AS `projectHours`*/;
-SET character_set_client = @saved_cs_client;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `week_name` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) DEFAULT NULL,
-  `start` date DEFAULT NULL,
-  `end` date DEFAULT NULL,
-  `studio_id` int DEFAULT NULL,
-  `semester` int DEFAULT NULL,
-  `background` varchar(10) DEFAULT NULL,
-  `color` varchar(10) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `start_studio_idx` (`start`,`studio_id`),
-  KEY `studio_id_idx` (`studio_id`),
-  KEY `semester_idx` (`semester`),
-  CONSTRAINT `week_name_semester_semester_id` FOREIGN KEY (`semester`) REFERENCES `semester` (`id`),
-  CONSTRAINT `week_name_studio_id_studio_id` FOREIGN KEY (`studio_id`) REFERENCES `studio` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-/*!40101 SET character_set_client = @saved_cs_client */;
-/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
-/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
-/*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = utf8mb4 */ ;
-/*!50003 SET character_set_results = utf8mb4 */ ;
-/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
-/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
-/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
-DELIMITER ;;
-CREATE  FUNCTION `cast_to_bool`(n INT) RETURNS tinyint(1)
-    READS SQL DATA
-    DETERMINISTIC
-BEGIN
-    RETURN n;
-END ;;
-DELIMITER ;
-/*!50003 SET sql_mode              = @saved_sql_mode */ ;
-/*!50003 SET character_set_client  = @saved_cs_client */ ;
-/*!50003 SET character_set_results = @saved_cs_results */ ;
-/*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50001 DROP VIEW IF EXISTS `active_semester_view`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `active_semester_view` AS select `semester`.`id` AS `id`,`semester`.`title` AS `title`,`semester`.`start` AS `start`,`semester`.`end` AS `end`,`cast_to_bool`(1) AS `active` from `semester` where (`semester`.`id` = (select `active_semester`.`semester_id` from `active_semester`)) */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `category_path`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `category_path` AS with recursive `category_path` (`id`,`title`,`path`) as (select `category`.`id` AS `id`,`category`.`title` AS `title`,`category`.`title` AS `path` from `category` where (`category`.`parent_id` is null) union all select `c`.`id` AS `id`,`c`.`title` AS `title`,concat(`cp`.`path`,'/',`c`.`title`) AS `CONCAT(cp.path, '/', c.title)` from (`category_path` `cp` join `category` `c` on((`cp`.`id` = `c`.`parent_id`)))) select `category_path`.`id` AS `id`,`category_path`.`title` AS `title`,`category_path`.`path` AS `path` from `category_path` order by `category_path`.`path` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `equipment_view`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `equipment_view` AS with `reservation_list` as (select `r`.`equipment_id` AS `id`,json_object('quantity',`r`.`quantity`,'bookingId',`r`.`booking_id`,'start',`a`.`start`,'end',`a`.`end`) AS `booking` from ((`equipment_reservation` `r` left join `booking` `b` on((`b`.`id` = `r`.`booking_id`))) left join `allotment` `a` on((`b`.`allotment_id` = `a`.`id`)))) select `e`.`id` AS `id`,`e`.`manufacturer` AS `manufacturer`,`e`.`model` AS `model`,`e`.`serial` AS `serial`,`e`.`description` AS `description`,`e`.`sku` AS `sku`,`e`.`barcode` AS `barcode`,`e`.`restriction` AS `restriction`,`e`.`quantity` AS `quantity`,json_object('id',`c`.`id`,'title',`c`.`title`,'parentId',`c`.`parent_id`) AS `category`,'[]' AS `tags`,`e`.`consumable` AS `consumable`,if((`r`.`booking` is not null),json_arrayagg(`r`.`booking`),json_array()) AS `reservations`,`e`.`notes` AS `notes` from ((`equipment` `e` left join `category` `c` on((`c`.`id` = `e`.`category`))) left join `reservation_list` `r` on((`r`.`id` = `e`.`id`))) group by `e`.`id` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `event`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `event` AS with `equipment_list` as (select `er`.`booking_id` AS `booking_id`,if(((`e`.`manufacturer` is not null) and (`e`.`model` is not null)),concat(`e`.`manufacturer`,' ',`e`.`model`),`e`.`description`) AS `name`,json_object('quantity',sum(`er`.`quantity`),'items',json_arrayagg(json_object('id',`e`.`id`,'quantity',`er`.`quantity`))) AS `gear` from ((`equipment_reservation` `er` left join `equipment` `e` on((`e`.`id` = `er`.`equipment_id`))) left join `booking` `b` on(((`er`.`booking_id` = `b`.`id`) and (`b`.`cancelled` = 0)))) group by `name`,`b`.`id`) select `a`.`id` AS `id`,`a`.`start` AS `start`,`a`.`end` AS `end`,(select json_object('id',`s`.`id`,'groupId',`s`.`location`,'title',`s`.`title`,'restriction',`s`.`restriction`,'allowsWalkIns',`s`.`allows_walk_ins`) from `studio` `s` where (`a`.`studio_id` = `s`.`id`)) AS `location`,if((`g`.`title` is not null),`g`.`title`,`a`.`description`) AS `title`,`a`.`bookable` AS `reservable`,if((`b`.`id` is not null),json_object('id',`b`.`id`,'projectId',`b`.`project_id`,'description',`b`.`purpose`,'groupId',`b`.`group_id`,'liveRoom',`b`.`live_room`,'guests',`b`.`guests`,'contact',`b`.`contact_phone`,'created',date_format(`b`.`created`,'%Y-%m-%d %T'),'equipment',if((`el`.`gear` is not null),json_objectagg(ifnull(`el`.`name`,'unknown'),`el`.`gear`),NULL)),NULL) AS `reservation` from (((`allotment` `a` left join `booking` `b` on(((`a`.`id` = `b`.`allotment_id`) and (`b`.`cancelled` = 0)))) left join `equipment_list` `el` on((`el`.`booking_id` = `b`.`id`))) left join `project_group` `g` on((`g`.`id` = `b`.`group_id`))) group by `a`.`id` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `location`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `location` AS select `s`.`id` AS `id`,`s`.`title` AS `title`,`s`.`location` AS `groupId`,if((`sh`.`date` is null),'[]',json_arrayagg(json_object('date',`sh`.`date`,'hours',`sh`.`hours`))) AS `hours`,`s`.`restriction` AS `restriction`,`s`.`allows_walk_ins` AS `allowsWalkIns`,json_object('monday',`s`.`default_hours_monday`,'tuesday',`s`.`default_hours_tuesday`,'wednesday',`s`.`default_hours_wednesday`,'thursday',`s`.`default_hours_thursday`,'friday',`s`.`default_hours_friday`,'saturday',`s`.`default_hours_saturday`,'sunday',`s`.`default_hours_sunday`) AS `defaultHours` from (`studio` `s` left join `studio_hours` `sh` on((`s`.`id` = `sh`.`studio_id`))) group by `s`.`id` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `project_view`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `project_view` AS select `p`.`id` AS `id`,`p`.`title` AS `title`,ifnull((select json_object('id',`c`.`id`,'title',`c`.`title`,'sections',json_arrayagg(`s`.`title`)) from ((`section_project` `sp` join `section` `s` on((`s`.`id` = `sp`.`section_id`))) join `course` `c`) where ((`sp`.`project_id` = `p`.`id`) and (`s`.`course_id` = `c`.`id`)) limit 1),json_object('id',-(1),'title','')) AS `course`,`p`.`start` AS `start`,`p`.`end` AS `end`,`p`.`book_start` AS `reservationStart`,ifnull((select json_arrayagg(json_object('locationId',`vw`.`studio_id`,'virtualWeekId',`vw`.`id`,'start',if((`vw`.`start` >= `p`.`start`),`vw`.`start`,`p`.`start`),'end',if((`vw`.`end` <= `p`.`end`),`vw`.`end`,`p`.`end`),'hours',ifnull(`ph`.`hours`,0))) from ((`project_studio_hours` `psh` join `virtual_week` `vw` on((`psh`.`studio_id` = `vw`.`studio_id`))) left join `project_virtual_week_hours` `ph` on(((`ph`.`project_id` = `psh`.`project_id`) and (`ph`.`virtual_week_id` = `vw`.`id`)))) where ((`psh`.`project_id` = `p`.`id`) and (`vw`.`end` >= `p`.`start`) and (`vw`.`start` <= `p`.`end`))),'[]') AS `allotments`,ifnull((select sum(`ph`.`hours`) from `project_virtual_week_hours` `ph` where (`ph`.`project_id` = `p`.`id`)),0) AS `totalAllottedHours`,ifnull((select json_arrayagg(json_object('locationId',`ps`.`studio_id`,'hours',`ps`.`hours`)) from `project_studio_hours` `ps` where (`ps`.`project_id` = `p`.`id`)),'[]') AS `locationHours`,`p`.`open` AS `open`,`p`.`group_size` AS `groupSize`,`p`.`group_hours` AS `groupAllottedHours` from `project` `p` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `reservation`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `reservation` AS select `b`.`id` AS `id`,`b`.`purpose` AS `description`,`b`.`allotment_id` AS `eventId`,`b`.`group_id` AS `groupId`,ifnull(`b`.`project_id`,0) AS `projectId`,`b`.`guests` AS `guests`,`b`.`created` AS `created`,if((`b`.`cancelled` = 1),if((`b`.`refund_request` = 1),json_object('canceled',json_object('on',date_format(`b`.`cancelled_time`,'%Y-%m-%d %T'),'by',`b`.`cancelled_user_id`,'comment',`b`.`refund_request_comment`),'refund',json_object('approved',json_object('on',if((`b`.`refund_approval_id` is not null),date_format(`b`.`refund_response_time`,'%Y-%m-%d %T'),''),'by',`b`.`refund_approval_id`),'rejected',json_object('on',if((`b`.`refund_denial_id` is not null),date_format(`b`.`refund_response_time`,'%Y-%m-%d %T'),''),'by',`b`.`refund_denial_id`))),json_object('canceled',json_object('on',date_format(`b`.`cancelled_time`,'%Y-%m-%d %T'),'by',`b`.`cancelled_user_id`,'comment',`b`.`refund_request_comment`))),NULL) AS `cancellation` from ((((`booking` `b` left join `allotment` `a` on((`a`.`id` = `b`.`allotment_id`))) left join `studio` `s` on((`a`.`studio_id` = `s`.`id`))) left join `user_group` `u` on((`b`.`group_id` = `u`.`id`))) left join `project` `p` on((`u`.`projectId` = `p`.`id`))) */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `reservation_pending`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `reservation_pending` AS select `b`.`id` AS `id`,`b`.`purpose` AS `description`,`b`.`allotment_id` AS `eventId`,`b`.`group_id` AS `groupId`,ifnull(`b`.`project_id`,0) AS `projectId`,`b`.`guests` AS `guests`,if((`b`.`cancelled` = 1),if((`b`.`refund_request` = 1),json_object('canceled',json_object('on',date_format(`b`.`cancelled_time`,'%Y-%m-%d %T'),'by',`b`.`cancelled_user_id`,'comment',`b`.`refund_request_comment`),'refund',json_object('approved',json_object('on',if((`b`.`refund_approval_id` is not null),date_format(`b`.`refund_response_time`,'%Y-%m-%d %T'),''),'by',`b`.`refund_approval_id`),'rejected',json_object('on',if((`b`.`refund_denial_id` is not null),date_format(`b`.`refund_response_time`,'%Y-%m-%d %T'),''),'by',`b`.`refund_denial_id`))),json_object('canceled',json_object('on',date_format(`b`.`cancelled_time`,'%Y-%m-%d %T'),'by',`b`.`cancelled_user_id`,'comment',`b`.`refund_request_comment`))),NULL) AS `cancellation`,json_object('start',date_format(`a`.`start`,'%Y-%m-%d %T'),'end',date_format(`a`.`end`,'%Y-%m-%d %T'),'location',`s`.`title`) AS `event`,`u`.`members` AS `members`,`p`.`title` AS `projectTitle` from ((((`booking` `b` left join `allotment` `a` on((`a`.`id` = `b`.`allotment_id`))) left join `studio` `s` on((`a`.`studio_id` = `s`.`id`))) left join `user_group` `u` on((`b`.`group_id` = `u`.`id`))) left join `project` `p` on((`u`.`projectId` = `p`.`id`))) where ((`b`.`refund_request` = 1) and (`b`.`refund_approval_id` is null) and (`b`.`refund_denial_id` is null)) */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `section_view`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `section_view` AS select `section`.`id` AS `id`,`section`.`course_id` AS `courseId`,`section`.`title` AS `title`,`section`.`instructor` AS `instructor` from `section` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `semester_view`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `semester_view` AS select `semester`.`id` AS `id`,`semester`.`title` AS `title`,`semester`.`start` AS `start`,`semester`.`end` AS `end`,`cast_to_bool`(if((`semester`.`id` = (select `active_semester`.`semester_id` from `active_semester`)),1,0)) AS `active` from `semester` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `user_group`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `user_group` AS select `g`.`id` AS `id`,`g`.`projectId` AS `projectId`,`g`.`title` AS `title`,`g`.`members` AS `members`,ifnull(`r`.`reservedHours`,0) AS `reservedHours` from ((select `pg`.`id` AS `id`,`pg`.`project_id` AS `projectId`,`pg`.`title` AS `title`,json_arrayagg(json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'last',`u`.`last_name`),'email',`u`.`email`)) AS `members` from ((`user` `u` join `student_group` `sg` on((`sg`.`student_id` = `u`.`id`))) join `project_group` `pg` on((`pg`.`id` = `sg`.`group_id`))) group by `pg`.`id`) `g` left join (select `pg`.`id` AS `id`,cast((sum(time_to_sec(timediff(`a`.`end`,`a`.`start`))) / 3600) as decimal(8,2)) AS `reservedHours` from ((`project_group` `pg` left join `booking` `b` on((`b`.`group_id` = `pg`.`id`))) left join `allotment` `a` on((`a`.`id` = `b`.`allotment_id`))) group by `pg`.`id`) `r` on((`g`.`id` = `r`.`id`))) */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `user_view`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `user_view` AS select `u`.`id` AS `id`,`u`.`user_id` AS `username`,json_object('first',`u`.`first_name`,'middle',`u`.`middle_name`,'last',`u`.`last_name`) AS `name`,`u`.`email` AS `email`,`u`.`phone` AS `phone`,`u`.`restriction` AS `restriction`,ifnull((select json_arrayagg(`r`.`title`) from (`role` `r` join `user_role` `ur` on((`ur`.`role_id` = `r`.`id`))) where (`ur`.`user_id` = `u`.`id`)),json_array()) AS `roles`,ifnull((select json_arrayagg(json_object('id',`rg`.`project_id`,'title',`p`.`title`,'groupId',`rg`.`id`,'course',json_object('id',ifnull(`c`.`id`,0),'title',ifnull(`c`.`title`,'')))) from (((`student_group` `sg` left join `project_group` `rg` on((`rg`.`id` = `sg`.`group_id`))) left join `course` `c` on((`c`.`id` = `rg`.`course_id`))) left join `project` `p` on((`rg`.`project_id` = `p`.`id`))) where (`sg`.`student_id` = `u`.`id`)),json_array()) AS `projects` from `user` `u` group by `u`.`id` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-/*!50001 DROP VIEW IF EXISTS `virtual_week_view`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 */
-/*!50001 VIEW `virtual_week_view` AS select `vw`.`id` AS `id`,`vw`.`start` AS `start`,`vw`.`end` AS `end`,`vw`.`studio_id` AS `locationId`,`vw`.`semester_id` AS `semesterId`,ifnull((select sum(`pa`.`hours`) from `project_virtual_week_hours` `pa` where (`pa`.`virtual_week_id` = `vw`.`id`)),0) AS `projectHours` from `virtual_week` `vw` */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
 SET FOREIGN_KEY_CHECKS = @OLD_FOREIGN_KEY_CHECKS;
