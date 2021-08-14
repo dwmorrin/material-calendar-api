@@ -1,11 +1,10 @@
 import pool from "../../utils/db";
 import { addResultsToResponse } from "../../utils/crud";
-import query from "./roster.query";
 import { EC } from "../../utils/types";
 import withActiveSemester from "../../utils/withActiveSemester";
 
 const getMany: EC = (_, res, next) =>
-  pool.query(query, addResultsToResponse(res, next));
+  pool.query("SELECT * FROM roster_view", addResultsToResponse(res, next));
 
 interface RosterRecord {
   id: number;

@@ -1,4 +1,4 @@
-import mysql from "mysql";
+import mysql, { Connection, ConnectionConfig, PoolConfig } from "mysql";
 import { map, tryCatch } from "ramda";
 
 /**
@@ -30,7 +30,7 @@ export const inflate = (data = {}): Record<string, unknown> =>
  * pattern when you are doing complex queries such as transactions or doing
  * serial queries where the next query depends upon the previous results.
  */
-const pool = mysql.createPool({
+const config: PoolConfig & ConnectionConfig = {
   //timezone: "Z",
   dateStrings: true,
   connectionLimit: 10,
@@ -46,6 +46,14 @@ const pool = mysql.createPool({
       return next();
     }
   },
-});
+};
+
+export const getUnsafeMultipleStatement = (): Connection =>
+  mysql.createConnection({
+    ...config,
+    multipleStatements: true,
+  });
+
+const pool = mysql.createPool(config);
 
 export default pool;

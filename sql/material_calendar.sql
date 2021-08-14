@@ -376,6 +376,13 @@ CREATE TABLE `roster` (
   CONSTRAINT `roster_student_id_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `roster_view` AS SELECT 
+ 1 AS `id`,
+ 1 AS `course`,
+ 1 AS `student`*/;
+SET character_set_client = @saved_cs_client;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `section` (
@@ -614,6 +621,19 @@ DELIMITER ;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
 /*!50001 VIEW `reservation_view` AS select `b`.`id` AS `id`,`b`.`purpose` AS `description`,`b`.`event_id` AS `eventId`,`b`.`group_id` AS `groupId`,ifnull(`b`.`project_id`,0) AS `projectId`,`b`.`guests` AS `guests`,`b`.`created` AS `created`,if((`b`.`cancelled` = 1),if((`b`.`refund_request` = 1),json_object('canceled',json_object('on',date_format(`b`.`cancelled_time`,'%Y-%m-%d %T'),'by',`b`.`cancelled_user_id`,'comment',`b`.`refund_request_comment`),'refund',json_object('approved',json_object('on',if((`b`.`refund_approval_id` is not null),date_format(`b`.`refund_response_time`,'%Y-%m-%d %T'),''),'by',`b`.`refund_approval_id`),'rejected',json_object('on',if((`b`.`refund_denial_id` is not null),date_format(`b`.`refund_response_time`,'%Y-%m-%d %T'),''),'by',`b`.`refund_denial_id`))),json_object('canceled',json_object('on',date_format(`b`.`cancelled_time`,'%Y-%m-%d %T'),'by',`b`.`cancelled_user_id`,'comment',`b`.`refund_request_comment`))),NULL) AS `cancellation` from ((((`reservation` `b` left join `event` `a` on((`a`.`id` = `b`.`event_id`))) left join `location` `s` on((`a`.`location_id` = `s`.`id`))) left join `project_group_view` `u` on((`b`.`group_id` = `u`.`id`))) left join `project` `p` on((`u`.`projectId` = `p`.`id`))) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP VIEW IF EXISTS `roster_view`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
+/*!50001 VIEW `roster_view` AS select `r`.`id` AS `id`,json_object('title',`c`.`title`,'catalogId',`c`.`catalog_id`,'section',`s`.`title`,'instructor',`s`.`instructor`) AS `course`,json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'middle',`u`.`middle_name`,'last',`u`.`last_name`)) AS `student` from (((`roster` `r` join `user` `u` on((`r`.`user_id` = `u`.`id`))) join `section` `s` on((`r`.`section_id` = `s`.`id`))) join `course` `c` on((`s`.`course_id` = `c`.`id`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;

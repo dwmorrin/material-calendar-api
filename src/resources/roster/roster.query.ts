@@ -1,27 +1,3 @@
-const query = `
-  SELECT
-    r.id,
-    JSON_OBJECT(
-      'title', c.title,
-      'catalogId', c.catalog_id,
-      'section', s.title,
-      'instructor', s.instructor
-    ) as course,
-    JSON_OBJECT(
-      'id', u.id,
-      'username', u.user_id,
-      'name', JSON_OBJECT(
-        'first', u.first_name,
-        'middle', u.middle_name,
-        'last', u.last_name
-      )
-    ) AS student
-  FROM
-    roster r LEFT JOIN user u ON r.user_id = u.id
-    LEFT JOIN course c ON r.course_id = c.id
-    LEFT JOIN section s ON s.course_id = c.id
-`;
-
 // only need limited set of info about users
 export const userQuery = `
   SELECT
@@ -71,4 +47,16 @@ export const rosterInputQuery = `
   WHERE r.semester_id = ?
 `;
 
-export default query;
+// need to match projects to sections
+export const projectQuery = `
+  SELECT
+    p.id,
+    IFNULL(
+      JSON_ARRAYAGG(sp.section_id),
+      JSON_ARRAY()
+    ) as sectionIds,
+    p.title
+  FROM project p
+    INNER JOIN section_project sp ON sp.project_id = p.id
+  GROUP BY p.id
+`;
