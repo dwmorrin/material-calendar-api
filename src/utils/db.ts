@@ -1,5 +1,7 @@
+/* eslint-disable no-console */
 import mysql, { Connection, ConnectionConfig, PoolConfig } from "mysql";
 import { map, tryCatch } from "ramda";
+import { EC, EEH } from "./types";
 
 /**
  * Tries to parse each data as JSON.  If there's no data, or the datum is not
@@ -53,6 +55,57 @@ export const getUnsafeMultipleStatementConnection = (): Connection =>
     ...config,
     multipleStatements: true,
   });
+
+const commitTransaction: EC = (_, res, next) => {
+  const connection: Connection = res.locals.connection;
+  connection.commit((err) => {
+    if (err) return next(err);
+    connection.end((error) => {
+      if (error) return next(error);
+      delete res.locals.connection;
+      next();
+    });
+  });
+};
+
+const rollbackGuard: EEH = (error, _, res, next) => {
+  const connection: Connection = res.locals.connection;
+  if (!connection) return next(error);
+  console.log("error during transaction; calling rollback");
+  connection.rollback(() => next(error));
+};
+
+const unsafeConnectionErrorHandler: EEH = (error, _, res, next) => {
+  const connection: Connection = res.locals.connection;
+  if (!connection) return next(error);
+  console.log("terminating unsafe connection due to error:");
+  console.log(error);
+  connection.end((error2) => {
+    if (error2) return next(error2);
+    delete res.locals.unsafeConnection;
+    next(error);
+  });
+};
+
+const _startTransaction: EC = (_, res, next) => {
+  const unsafeConnection = getUnsafeMultipleStatementConnection();
+  res.locals.connection = unsafeConnection;
+  unsafeConnection.beginTransaction((err) => {
+    if (err) return next(err);
+    next();
+  });
+};
+
+// wrapped in an array for consistency with endTransaction
+// usage: router.method(path, [...startTransaction, doStuff, ...endTransaction])
+export const startTransaction = [_startTransaction];
+
+// requires res.locals.connection is a Connection
+export const endTransaction = [
+  commitTransaction,
+  rollbackGuard,
+  unsafeConnectionErrorHandler,
+];
 
 const pool = mysql.createPool(config);
 

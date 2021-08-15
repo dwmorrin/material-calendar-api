@@ -1,131 +1,126 @@
-import pool, { inflate } from "../../utils/db";
+/* eslint-disable no-console */
+import { Connection } from "mysql";
+import { endTransaction, inflate, startTransaction } from "../../utils/db";
 import { withResource } from "../../utils/crud";
 import { EC, EEH } from "../../utils/types";
 import controllers from "./event.controller";
 
+// returned from withResource query
+interface Location {
+  id: number;
+  title: string;
+}
+
+// returned from withResource query
+interface Event {
+  id: number;
+  title: string;
+  start: string;
+  end: string;
+  location: Location;
+  reservable: boolean;
+}
+
+interface EventInputRecord {
+  title: string;
+  locationId: string; // actually locationTitle
+  start: string;
+  end: string;
+  reservable: number;
+  // missing restriction
+}
+
+interface EventRecord {
+  id?: number;
+  start: string;
+  end: string;
+  location_id: number;
+  bookable: boolean;
+  description: string;
+}
+
+type EventUpdate = Omit<EventRecord, "start" | "end" | "location_id">;
+
 const setup: EC = (req, res, next) => {
-  const input = req.body;
+  const input: EventInputRecord[] = req.body;
   if (!input || !(Array.isArray(input) && input.length))
     return next("no input");
   res.locals.input = input;
   res.locals.inserts = [];
   res.locals.updates = [];
+  res.locals.seen = {};
   next();
 };
-interface EventRecord {
-  id: number;
-  title: string;
-  start: string;
-  end: string;
-  location: { id: number; title: string };
-  reservable: number;
-}
 
-/**
- * req.body = {
- *   title: string,
- *   location: string,
- *   start: string,
- *   end: string
- *   reservable: number,
- * }[]
- */
 const process: EC = (_, res, next) => {
-  const { input, events = [] } = res.locals;
-  // loops until input is empty
-  if (!input || !input.length) return next();
-  const locations = res.locals.locations as { id: number; title: string }[];
+  const input: EventInputRecord[] = res.locals.input;
+  if (!input.length) return next();
+  const locations: Location[] = res.locals.locations;
+  const events: Event[] = res.locals.events;
   const locationDict = locations.reduce((dict, l) => {
     dict[l.title] = l.id;
     return dict;
   }, {} as { [k: string]: number });
-  try {
-    const [inserts, updates] = (
-      input as {
-        id: number;
-        title: string;
-        start: string;
-        end: string;
-        locationId: string;
-        reservable: number;
-      }[]
-    ).reduce(
-      ([inserts, updates], e) => {
-        const foundIndex = (events as EventRecord[]).findIndex(
-          (ev) =>
-            ev.location.title === e.locationId &&
-            ev.start === e.start &&
-            ev.end === e.end
-        );
-        if (foundIndex === -1) {
-          if (!(e.locationId in locationDict))
-            throw new Error(`${e.locationId}: location does not exist`);
-          inserts.push({
-            title: e.title,
-            start: e.start,
-            end: e.end,
-            locationId: locationDict[e.locationId],
-            reservable: e.reservable,
-          });
-        } else {
-          updates.push(e);
-          events.splice(foundIndex, 1);
-        }
-        return [inserts, updates];
-      },
-      [[], []] as Record<string, unknown>[][]
-    );
-    res.locals.inserts = inserts;
-    res.locals.updates = updates;
-    next();
-  } catch (err) {
-    if (err.message.includes("location does not exist"))
-      return next(err.message);
-    return next(err);
-  }
+
+  const [inserts, updates] = input.reduce(
+    ([inserts, updates], { start, end, locationId, title, reservable }) => {
+      const foundIndex = events.findIndex(
+        (ev) =>
+          ev.location.title === locationId &&
+          ev.start === start &&
+          ev.end === end
+      );
+      if (foundIndex === -1) {
+        if (!(locationId in locationDict))
+          throw new Error(`${locationId}: location does not exist`);
+        inserts.push({
+          description: title,
+          start: start,
+          end: end,
+          location_id: locationDict[locationId],
+          bookable: !!reservable,
+        });
+      } else {
+        const existing = events[foundIndex];
+        updates.push({
+          description: title,
+          bookable: !!reservable,
+        });
+        updates.push(existing.id);
+      }
+      return [inserts, updates];
+    },
+    [[], []] as [EventRecord[], (EventUpdate | number)[]]
+  );
+  res.locals.inserts = inserts;
+  res.locals.updates = updates;
+  next();
 };
 
-const insert: EC = (req, res, next) =>
-  pool.query(
-    `REPLACE INTO event (
-      start, end, location_id, bookable, description
-    ) VALUES ?`,
-    [
-      res.locals.inserts.map(
-        ({
-          start = "",
-          end = "",
-          locationId = 0,
-          reservable = false,
-          title = "",
-        }) => [start, end, locationId, reservable, title]
-      ),
-    ],
+const insert: EC = (_, res, next) => {
+  const inserts: EventRecord[] = res.locals.inserts;
+  if (!inserts.length) return next();
+  const connection: Connection = res.locals.connection;
+  connection.query(
+    "INSERT INTO event SET ?;".repeat(inserts.length),
+    inserts,
     (err) => {
       if (err) return next(err);
       next();
     }
   );
+};
 
-const update: EC = (req, res, next) => {
-  const { updates } = res.locals;
-  if (!updates || !updates.length) return next();
-  const event = updates.shift();
-  pool.query(
-    "UPDATE event SET ? WHERE id = ?",
-    [
-      {
-        title: event.title,
-        start: event.start,
-        end: event.end,
-        reservable: event.reservable,
-        location_id: event.location.id,
-      },
-      event.id,
-    ],
+const update: EC = (_, res, next) => {
+  const updates: EventUpdate[] = res.locals.updates;
+  if (!updates.length) return next();
+  const connection: Connection = res.locals.connection;
+  connection.query(
+    "UPDATE event SET ? WHERE id = ?;".repeat(updates.length / 2),
+    updates,
     (err) => {
       if (err) return next(err);
-      update(req, res, next);
+      next();
     }
   );
 };
@@ -166,8 +161,10 @@ export default [
   withResource("events", eventQuery),
   withResource("locations", "SELECT id, title FROM location"),
   process,
+  ...startTransaction,
   insert,
   update,
+  ...endTransaction,
   controllers.getMany,
   response,
   onError,

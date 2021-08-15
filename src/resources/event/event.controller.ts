@@ -8,11 +8,11 @@ import { EC } from "../../utils/types";
  */
 
 const getMany: EC = (_, res, next) =>
-  pool.query("SELECT * FROM event", addResultsToResponse(res, next));
+  pool.query("SELECT * FROM event_view", addResultsToResponse(res, next));
 
 const getOne: EC = (req, res, next) =>
   pool.query(
-    "SELECT * FROM event WHERE id = ?",
+    "SELECT * FROM event_view WHERE id = ?",
     [req.params.id],
     addResultsToResponse(res, next, { one: true })
   );
@@ -55,7 +55,7 @@ const updateOne: EC = (req, res, next) =>
 const range: EC = (req, res, next) => {
   const { start, end } = req.body;
   pool.query(
-    "SELECT * FROM event WHERE a.start BETWEEN ? AND ?",
+    "SELECT * FROM event_view WHERE a.start BETWEEN ? AND ?",
     [start, end],
     (err, results) => {
       if (err) return next(err);
