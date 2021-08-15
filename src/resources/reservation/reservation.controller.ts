@@ -54,7 +54,7 @@ const deleteEquipment: EC = (req, res, next) => {
 const getUpdatedEvent: EC = (req, res, next) => {
   const id = req.body.eventId;
   pool.query(
-    "SELECT * FROM event WHERE id = ?",
+    "SELECT * FROM event_view WHERE id = ?",
     id,
     addResultsToResponse(res, next, { key: "event" })
   );
@@ -63,7 +63,7 @@ const getUpdatedEvent: EC = (req, res, next) => {
 const getUpdatedReservation: EC = (req, res, next) => {
   const bookingId = res.locals.reservation.insertId;
   pool.query(
-    "SELECT * FROM reservation WHERE id = ?",
+    "SELECT * FROM reservation_view WHERE id = ?",
     bookingId,
     addResultsToResponse(res, next, { key: "reservation" })
   );
@@ -94,7 +94,7 @@ const editReservationStack = [
 
 export const getOne: EC = (req, res, next) =>
   pool.query(
-    "SELECT * FROM reservation WHERE id = ?",
+    "SELECT * FROM reservation_view WHERE id = ?",
     [req.params.id],
     addResultsToResponse(res, next, { one: true })
   );
@@ -139,19 +139,19 @@ const cancelResponse: EC = (_, res, next) => {
 };
 
 const withUpdatedEventsAndReservations = [
-  withResource("reservations", "SELECT * FROM reservation"),
+  withResource("reservations", "SELECT * FROM reservation_view"),
   withResource("events", "SELECT * FROM event"),
 ];
 
 export const getMany: EC = (_, res, next) =>
-  pool.query("SELECT * FROM reservation", addResultsToResponse(res, next));
+  pool.query("SELECT * FROM reservation_view", addResultsToResponse(res, next));
 
 const byUserQuery = `SELECT
   res.*
 FROM
-  reservation res
+  reservation_view res
   INNER JOIN project_group pg ON pg.id = res.groupId
-  INNER JOIN project_group_user pgu ON pgu.group_id = pg.id
+  INNER JOIN project_group_user pgu ON pgu.project_group_id = pg.id
   INNER JOIN user u on u.id = pgu.user_id
 WHERE u.id = ?`;
 
@@ -193,7 +193,7 @@ const getReservationFromBody = (req: Request) => ({
 
 export const createOne: EC = (req, res, next) =>
   pool.query(
-    "INSERT INTO booking SET ?",
+    "INSERT INTO reservation SET ?",
     [getReservationFromBody(req)],
     addResultsToResponse(res, next, { key: "reservation" })
   );
@@ -202,14 +202,22 @@ export const updateOne: EC = (req, res, next) => {
   // a bit of a hack, but this makes for the same as createOne
   res.locals.reservation.insertId = req.params.id;
   pool.query(
-    "UPDATE booking SET ? WHERE id = ?",
+    "UPDATE reservation SET ? WHERE id = ?",
     [getReservationFromBody(req), Number(req.params.id)],
     addResultsToResponse(res, next, { one: true, key: "ignore" })
   );
 };
 
+// TODO untested
+const removeOne: EC = (req, res, next) => {
+  pool.query(
+    "DELETE FROM reservation WHERE id = ?",
+    [req.params.id],
+    addResultsToResponse(res, next, { one: true })
+  );
+};
+
 export default {
-  ...controllers("booking", "id"),
   createOne: [createOne, ...editReservationStack],
   updateOne: [updateOne, ...editReservationStack],
   getOne,
@@ -224,5 +232,5 @@ export default {
     useMailbox,
     noop,
   ],
-  // reserveEquipment: [reserveEquipment, deleteEquipmentReservationZeros],
+  removeOne,
 };
