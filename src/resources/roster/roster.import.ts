@@ -12,17 +12,22 @@
  *  Uses withResource and some custom functions in this file.
  * Step 2: compare the input data to the current data
  *  See the ./processors.ts file
- * Step 3: make inserts where needed
+ * Step 3: make inserts where needed (TRANSACTION STARTS HERE)
  *  See the ./inserts.ts file
- * Step 4: make updates where needed
+ * Step 4: make updates where needed (TRANSACTION ENDS HERE)
  *  See the ./updates.ts file
  * Step 5: gather updated data from the database
  *  Uses withResource
  * Step 6: return the updated data to the client
+ *
+ * TODO rollback is not tested. put in bad data and see what happens.
  */
 
 import { NextFunction, Request, Response } from "express";
-import pool, { inflate, getUnsafeMultipleStatement } from "../../utils/db";
+import pool, {
+  inflate,
+  getUnsafeMultipleStatementConnection,
+} from "../../utils/db";
 import { withResource } from "../../utils/crud";
 import withActiveSemester from "../../utils/withActiveSemester";
 import { query as courseQuery } from "../course/course.controller";
@@ -39,7 +44,7 @@ import {
   RosterRecordInput,
   RosterUpdates,
 } from "./types";
-import { EC } from "../../utils/types";
+import { EC, EEH } from "../../utils/types";
 import {
   processCourse,
   processProject,
@@ -88,7 +93,7 @@ const setup: EC = (req, res, next) => {
     users: [],
   };
   res.locals.updates = updates;
-  res.locals.unsafeMultiStatementPool = getUnsafeMultipleStatement();
+  res.locals.unsafeConnection = getUnsafeMultipleStatementConnection();
   next();
 };
 
@@ -125,11 +130,49 @@ const processInputRecords: EC = (_, res, next) => {
   next();
 };
 
+const beginTransaction: EC = (_, res, next) => {
+  const connection: Connection = res.locals.unsafeConnection;
+  connection.beginTransaction((error) => {
+    if (error) return next(error);
+    next();
+  });
+};
+
+const commitTransaction: EC = (_, res, next) => {
+  const connection: Connection = res.locals.unsafeConnection;
+  connection.commit((error) => {
+    if (error) return next(error);
+    connection.end((error) => {
+      if (error) return next(error);
+      delete res.locals.unsafeConnection;
+      next();
+    });
+  });
+};
+
+const rollbackGuard: EEH = (error, _, res, next) => {
+  const connection: Connection = res.locals.unsafeConnection;
+  if (!connection) return next(error);
+  console.log("error during transaction; calling rollback");
+  connection.rollback(() => next(error));
+};
+
+const unsafeConnectionErrorHandler: EEH = (error, _, res, next) => {
+  const connection: Connection = res.locals.unsafeConnection;
+  if (!connection) return next(error);
+  console.log("terminating unsafe connection due to error:");
+  console.log(error);
+  connection.end((error2) => {
+    if (error2) return next(error2);
+    delete res.locals.unsafeConnection;
+    next(error);
+  });
+};
+
 /**
  * roster import is done; respond with success
  */
-function successResponder(_: Request, res: Response): void {
-  (res.locals.unsafeMultiStatementPool as Connection).end();
+const successResponder: EC = (_, res) => {
   res.status(201).json({
     data: {
       courses: res.locals.courses.map(inflate),
@@ -140,7 +183,7 @@ function successResponder(_: Request, res: Response): void {
       users: res.locals.users.map(inflate),
     },
   });
-}
+};
 
 function mySqlErrorResponder(
   error: Error & MysqlError,
@@ -149,8 +192,6 @@ function mySqlErrorResponder(
   next: NextFunction
 ): void {
   if (error.code && error.errno) {
-    if (res.locals.unsafeMultiStatementPool)
-      (res.locals.unsafeMultiStatementPool as Connection).end();
     // mysql error
     console.error("MYSQL ERROR");
     console.error(error);
@@ -158,7 +199,24 @@ function mySqlErrorResponder(
     const message = `Database error: (${error.code}[${error.errno}]${
       process.env.NODE_ENV === "development" ? `: ${error.sql}` : ""
     })`;
-    res.status(500).json({ error: { message } });
+    const connection: Connection = res.locals.unsafeConnection;
+    if (connection) {
+      connection.rollback((error) => {
+        console.log("Inside MySQL error catching rollback");
+        console.log({ error });
+        if (error) next(error);
+        else {
+          connection.end((error) => {
+            if (error) return next(error);
+            res.status(500).json({ error: { message } });
+          });
+        }
+      });
+      connection.end((error) => {
+        if (error) return next(error);
+        res.status(500).json({ error: { message } });
+      });
+    }
   } else next(error);
 }
 
@@ -170,15 +228,18 @@ function errorResponder(
   _: Request,
   res: Response,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  __: NextFunction
+  next: NextFunction
 ): void {
-  if (res.locals.unsafeMultiStatementPool)
-    (res.locals.unsafeMultiStatementPool as Connection).end();
   // eslint-disable-next-line no-console
   console.error("UNHANDLED ERROR");
   console.error(error);
   console.error("END UNHANDLED ERROR");
-  res.status(500).json({ error });
+  const onEnd = () => res.status(500).json({ error });
+  const connection: Connection = res.locals.unsafeConnection;
+  if (connection) {
+    connection.rollback(next);
+    connection.end();
+  } else onEnd();
 }
 
 // middleware stack to process roster import
@@ -192,6 +253,7 @@ export default [
   withResource("users", userQuery),
   withResource("projects", projectQuery),
   processInputRecords,
+  beginTransaction,
   insertCourses,
   insertSections,
   insertProjects,
@@ -203,6 +265,9 @@ export default [
   updateCourses,
   updateSections,
   updateUsers,
+  rollbackGuard,
+  commitTransaction,
+  unsafeConnectionErrorHandler,
   withResource("courses", courseQuery),
   withResource("groups", "SELECT * FROM project_group_view"),
   withResource("projects", "SELECT * FROM project_view"),

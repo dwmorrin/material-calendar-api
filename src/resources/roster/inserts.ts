@@ -1,7 +1,7 @@
 /**
  * See ./processors for information on the res.locals.* objects.
  *
- * res.locals.unsafeMultiStatementPool
+ * res.locals.unsafeConnection
  *   * Using the unsafe multiple statement feature (see SQL injection for why it is unsafe)
  *   * Since this is an admin route and we would like to be able to insert many records at once,
  *     we are using the unsafe connection.
@@ -30,7 +30,7 @@ export const insertCourses: EC = (_, res, next) => {
     const course = seen.course[key];
     return { title: course.title, catalog_id: course.catalogId };
   });
-  (res.locals.unsafeMultiStatementPool as Connection).query(
+  (res.locals.unsafeConnection as Connection).query(
     "INSERT INTO course SET ?;".repeat(courses.length),
     courses,
     (error, results) => {
@@ -59,7 +59,7 @@ export const insertSections: EC = (_, res, next) => {
       course_id: course.id,
     };
   });
-  (res.locals.unsafeMultiStatementPool as Connection).query(
+  (res.locals.unsafeConnection as Connection).query(
     "INSERT INTO section SET ?;".repeat(sections.length),
     sections,
     (error, results) => {
@@ -91,7 +91,7 @@ export const insertProjects: EC = (_, res, next) => {
       open: true,
     };
   });
-  (res.locals.unsafeMultiStatementPool as Connection).query(
+  (res.locals.unsafeConnection as Connection).query(
     "INSERT INTO project SET ?;".repeat(projects.length),
     projects,
     (error, results) => {
@@ -126,7 +126,7 @@ export const insertSectionProjects: EC = (_, res, next) => {
       return { project_id: project.id, section_id: section.id };
     }
   );
-  (res.locals.unsafeMultiStatementPool as Connection).query(
+  (res.locals.unsafeConnection as Connection).query(
     "INSERT INTO section_project SET ?;".repeat(projectSections.length),
     projectSections,
     (error) => {
@@ -149,7 +149,7 @@ export const insertUsers: EC = (_, res, next) => {
       restriction: user.restriction,
     };
   });
-  (res.locals.unsafeMultiStatementPool as Connection).query(
+  (res.locals.unsafeConnection as Connection).query(
     "INSERT INTO user SET ?;".repeat(users.length),
     users,
     (error, results) => {
@@ -173,7 +173,7 @@ export const insertUserRoles: EC = (_, res, next) => {
     if (!user.id) throw new Error("undefined user ID while creating roles");
     return { user_id: user.id, role_id: res.locals.userRoleId };
   });
-  (res.locals.unsafeMultiStatementPool as Connection).query(
+  (res.locals.unsafeConnection as Connection).query(
     "INSERT INTO user_role SET ?;".repeat(userRoles.length),
     userRoles,
     (error) => {
@@ -213,7 +213,7 @@ export const insertRosterRecords: EC = (_, res, next) => {
       };
     }
   );
-  (res.locals.unsafeMultiStatementPool as Connection).query(
+  (res.locals.unsafeConnection as Connection).query(
     "INSERT INTO roster SET ?;".repeat(rosterRecords.length),
     rosterRecords,
     (error) => {
@@ -249,7 +249,7 @@ export const insertWalkIns: EC = (_, res, next) => {
     },
     [] as ProjectGroupRecord[]
   );
-  (res.locals.unsafeMultiStatementPool as Connection).query(
+  (res.locals.unsafeConnection as Connection).query(
     "INSERT INTO project_group SET ?;".repeat(projectGroupRecords.length),
     projectGroupRecords,
     (error, results) => {
@@ -269,7 +269,7 @@ export const insertWalkIns: EC = (_, res, next) => {
             invitation_accepted: true,
           };
         });
-      (res.locals.unsafeMultiStatementPool as Connection).query(
+      (res.locals.unsafeConnection as Connection).query(
         "INSERT INTO project_group_user SET ?;".repeat(
           projectGroupUsers.length
         ),

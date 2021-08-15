@@ -18,12 +18,12 @@ export const inflate = (data = {}): Record<string, unknown> =>
 
 /**
  * Pool reuses connections, up to the connection limit.
- * Creates connectiontions lazily.  When no connections are available, requests
+ * Creates connections lazily.  When no connections are available, requests
  * a put in a queue.
  *
  * Use
  *   pool.query()
- * for simple queries as it implicity gets and releases connections.
+ * for simple queries as it implicitly gets and releases connections.
  *
  * Use explicit
  *   pool.getConnection() -> connection.query() -> connection.release()
@@ -48,7 +48,7 @@ const config: PoolConfig & ConnectionConfig = {
   },
 };
 
-export const getUnsafeMultipleStatement = (): Connection =>
+export const getUnsafeMultipleStatementConnection = (): Connection =>
   mysql.createConnection({
     ...config,
     multipleStatements: true,
