@@ -1,4 +1,4 @@
-import pool from "../../utils/db";
+import pool, { inflate } from "../../utils/db";
 import {
   addResultsToResponse,
   controllers,
@@ -58,7 +58,13 @@ const dashboardResponse: EC = (req, res) => {
   const { users, invitations } = res.locals;
   res
     .status(200)
-    .json({ data: { users, invitations }, context: req.query.context });
+    .json({
+      data: {
+        users: users.map(inflate),
+        invitations: invitations.map(inflate),
+      },
+      context: req.query.context,
+    });
 };
 
 export const getOneLocationAllotment: EC = (req, res, next) =>
