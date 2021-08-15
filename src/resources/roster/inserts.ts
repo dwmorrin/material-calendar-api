@@ -227,6 +227,7 @@ type ProjectGroupRecord = {
   title: string;
   project_id: number;
   creator_id: number;
+  admin_created_id: number;
   admin_approved_id: number;
   pending: boolean;
 };
@@ -243,6 +244,7 @@ export const insertWalkIns: EC = (_, res, next) => {
         title: `${name} Walk-in`,
         project_id: 1, //! warning: using hardcoded walk-in project ID = 1
         creator_id: res.locals.user.id,
+        admin_created_id: res.locals.user.id,
         admin_approved_id: res.locals.user.id,
         pending: false,
       };
