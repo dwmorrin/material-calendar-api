@@ -2,6 +2,7 @@ CREATE VIEW project_group_view AS
 SELECT
   g.id,
   g.projectId,
+  g.creatorId,
   g.title,
   g.pending,
   g.members,
@@ -11,6 +12,7 @@ FROM
     SELECT
       pg.id,
       pg.project_id AS projectId,
+      pg.creator_id AS creatorId,
       pg.title,
       pg.pending,
       JSON_ARRAYAGG(
