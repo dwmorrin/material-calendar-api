@@ -3,6 +3,7 @@ SELECT
   g.id,
   g.projectId,
   g.title,
+  g.pending,
   g.members,
   IFNULL (r.reservedHours, 0) AS reservedHours
 FROM
@@ -11,6 +12,7 @@ FROM
       pg.id,
       pg.project_id AS projectId,
       pg.title,
+      pg.pending,
       JSON_ARRAYAGG(
         JSON_OBJECT(
           'id', u.id,
@@ -31,6 +33,7 @@ FROM
       project_group_user pgu
       INNER JOIN user u ON pgu.user_id = u.id
       INNER JOIN project_group pg ON pg.id = pgu.project_group_id
+    WHERE NOT pg.abandoned
     GROUP BY
       pg.id
   ) g
@@ -46,6 +49,7 @@ FROM
         project_group pg
         LEFT JOIN reservation b on b.group_id = pg.id
         LEFT JOIN event a on a.id = b.event_id
+      WHERE NOT pg.abandoned
       GROUP BY
         pg.id
     ) r ON g.id = r.id
