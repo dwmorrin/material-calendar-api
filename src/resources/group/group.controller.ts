@@ -133,7 +133,118 @@ const updateOne: EC = (req, res, next) => {
   );
 };
 
+interface UserGroupRecord {
+  id?: number;
+  title: string;
+  project_id: number;
+  creator_id: number;
+  admin_created_id?: number;
+  admin_approved_id?: number;
+  admin_rejected_id?: number;
+  pending: boolean;
+  abandoned: boolean;
+}
+
+interface CreateGroupRequest {
+  title: string;
+  projectId: number;
+  members: number[];
+  approved: boolean;
+  mail: {
+    to: string;
+    subject: string;
+    text: string;
+  };
+}
+
+const getProjectGroupSize: EC = (req, res, next) => {
+  const request: CreateGroupRequest = req.body;
+  const { projectId } = request;
+  pool.query(
+    "SELECT group_size FROM project WHERE id = ?",
+    projectId,
+    (err, result) => {
+      if (err) return next(err);
+      const groupSize = result[0].group_size;
+      if (!(typeof groupSize === "number"))
+        return next(new Error("Invalid group size"));
+      res.locals.groupSize = groupSize;
+      next();
+    }
+  );
+};
+
+const createPendingGroup: EC = (req, res, next) => {
+  const request: CreateGroupRequest = req.body;
+  const groupSize: number = res.locals.groupSize;
+  // assuming that only group size === 1 can be auto-approved
+  const pending = !(
+    groupSize === 1 &&
+    request.members.length === 1 &&
+    request.approved
+  );
+  const userGroup: UserGroupRecord = {
+    title: request.title,
+    project_id: request.projectId,
+    creator_id: res.locals.user.id,
+    admin_created_id: res.locals.admin ? res.locals.user.id : null,
+    pending,
+    abandoned: false,
+  };
+  pool.query(
+    "INSERT INTO project_group SET ?",
+    userGroup,
+    addResultsToResponse(res, next, { key: "group" })
+  );
+};
+
+const createPendingGroupMembers: EC = (req, res, next) => {
+  const request: CreateGroupRequest = req.body;
+  const groupId: number = res.locals.group.insertId;
+  if (!groupId) next("no group ID after insert");
+  const members: number[] = request.members;
+  if (!Array.isArray(members) || !members.length) next("no members");
+  pool.query(
+    "REPLACE INTO project_group_user (user_id, project_group_id) VALUES ?",
+    [members.map((id) => [id, groupId])],
+    addResultsToResponse(res, next, { key: "ignore" })
+  );
+};
+
+const acceptOwnInvitation: EC = (_, res, next) => {
+  const groupId: number = res.locals.group.insertId;
+  pool.query(
+    `UPDATE project_group_user SET
+       invitation_accepted = TRUE
+     WHERE user_id = ? AND project_group_id = ?`,
+    [res.locals.user.id, groupId],
+    addResultsToResponse(res, next, { key: "ignore" })
+  );
+};
+
+const createResponse: EC = (req, res) => {
+  const { invitations, groups } = res.locals;
+  res.status(201).json({
+    data: {
+      invitations: invitations.map(inflate),
+      groups: groups.map(inflate),
+    },
+    context: req.query.context,
+  });
+};
+
+const createGroup = [
+  getProjectGroupSize,
+  createPendingGroup,
+  createPendingGroupMembers,
+  acceptOwnInvitation,
+  getUpdatedGroups,
+  getUpdatedInvites,
+  createResponse,
+];
+
 export default {
+  createOne: createGroup,
   getGroups,
   getGroupsByUser,
   getGroupsByProject,

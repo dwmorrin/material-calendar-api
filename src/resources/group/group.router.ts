@@ -6,6 +6,7 @@ const router = Router();
 
 router.get("/user/:userId", controller.getGroupsByUser);
 router.get("/", controller.getGroups);
+router.post("/", controller.createOne);
 router.get("/project/:projectId", controller.getGroupsByProject);
 router.get("/:groupId", controller.getOneGroup);
 router.delete("/:groupId", controller.removeOneGroup);
