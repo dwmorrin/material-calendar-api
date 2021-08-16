@@ -1,8 +1,4 @@
-import {
-  addResultsToResponse,
-  controllers,
-  withResource,
-} from "../../utils/crud";
+import { addResultsToResponse, withResource } from "../../utils/crud";
 import pool, { inflate } from "../../utils/db";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
@@ -12,9 +8,6 @@ interface Equipment {
   id: number;
   quantity: number;
 }
-
-// just used to stop after useMailbox
-const noop: EC = () => undefined;
 
 const reserveEquipment: EC = (req, res, next) => {
   const bookingId = res.locals.reservation.insertId;
@@ -89,7 +82,6 @@ const editReservationStack = [
   getUpdatedReservation,
   editReservationResponse,
   useMailbox,
-  noop,
 ];
 
 export const getOne: EC = (req, res, next) =>
@@ -230,7 +222,6 @@ export default {
     ...withUpdatedEventsAndReservations,
     cancelResponse,
     useMailbox,
-    noop,
   ],
   removeOne,
 };

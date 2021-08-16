@@ -2,6 +2,12 @@ import nodemailer from "nodemailer";
 import { Router } from "express";
 import { EC } from "./types";
 
+interface Mail {
+  to: string;
+  subject: string;
+  text: string;
+}
+
 const mailer = nodemailer.createTransport({
   host: "localhost",
   port: Number(process.env.EMAIL_PORT) || 25,
@@ -9,15 +15,16 @@ const mailer = nodemailer.createTransport({
   tls: { rejectUnauthorized: false },
 });
 
+// must be placed **last**.  does not call next unless there's an error.
 export const useMailbox: EC = (req, res, next) => {
-  const { mailbox } = res.locals;
+  const mailbox: Mail[] = res.locals.mailbox;
   if (!Array.isArray(mailbox))
     return next(new Error("useMail called without mailbox on res.locals"));
-  if (!mailbox.length) return next();
   const mail = mailbox.pop();
+  if (!mail) return; // DONE
   mailer.sendMail(mail, (err) => {
     if (err) return next(err);
-    // recursively call useMailbox until mailbox is empty
+    // recursively call sendMail until mailbox is empty
     useMailbox(req, res, next);
   });
 };

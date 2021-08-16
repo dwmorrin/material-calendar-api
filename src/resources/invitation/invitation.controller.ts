@@ -240,7 +240,6 @@ export default {
     ...getUpdatedGroupsAndInvites,
     createInvitesResponse, // response sent here
     useMailbox,
-    (): void => undefined, // to stop after mailbox
   ],
   updateInvitation,
   removeInvitation: [

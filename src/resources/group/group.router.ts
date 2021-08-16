@@ -14,6 +14,7 @@ router.put("/:groupId", controller.updateOne);
 
 // Joining and Leaving Groups
 router.post("/:groupId/invitation/:invitationId", controller.joinGroup);
+router.delete("/:groupId/invitation", controller.cancelInvite);
 router.delete("/:groupId/user/:userId/", controller.leaveGroup);
 
 router.use(sendResults);

@@ -1,4 +1,9 @@
-import pool, { inflate } from "../../utils/db";
+import { Connection } from "mysql";
+import pool, {
+  startTransaction,
+  endTransaction,
+  inflate,
+} from "../../utils/db";
 import { addResultsToResponse } from "../../utils/crud";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
@@ -233,6 +238,36 @@ const createResponse: EC = (req, res) => {
   });
 };
 
+// using transaction
+const cancelInvite: EC = (req, res, next) => {
+  const connection: Connection = res.locals.connection;
+  const groupId = Number(req.params.groupId);
+  if (isNaN(groupId)) return next("invalid group ID");
+  const userId: number = res.locals.user.id;
+  connection.query(
+    [
+      "UPDATE project_group_user SET invitation_rejected = TRUE",
+      "WHERE project_group_id = ? AND user_id = ?;",
+      "UPDATE project_group SET abandoned = TRUE",
+      "WHERE id = ?",
+    ].join(" "),
+    [groupId, userId, groupId],
+    addResultsToResponse(res, next)
+  );
+};
+
+const cancelInviteResponse: EC = (req, res, next) => {
+  const groups: unknown[] = res.locals.groups;
+  if (!Array.isArray(groups))
+    return next("no groups in cancel invite response");
+  res.status(201).json({
+    data: {
+      groups: groups.map(inflate),
+    },
+    context: req.query.context,
+  });
+};
+
 const createGroup = [
   getProjectGroupSize,
   createPendingGroup,
@@ -245,6 +280,14 @@ const createGroup = [
 
 export default {
   createOne: createGroup,
+  cancelInvite: [
+    ...startTransaction,
+    cancelInvite,
+    ...endTransaction,
+    getUpdatedGroups,
+    cancelInviteResponse,
+    useMailbox,
+  ],
   getGroups,
   getGroupsByUser,
   getGroupsByProject,
@@ -259,7 +302,6 @@ export default {
     getUpdatedInvites,
     leaveResponse,
     useMailbox,
-    (): void => undefined,
   ],
   updateOne,
 };
