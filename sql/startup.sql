@@ -58,7 +58,7 @@ INSERT INTO roster SET
   semester_id = 1;
 
 INSERT INTO project_group SET
-  title = '{{ADMIN_FIRST_NAME}} {{ADMIN_FIRST_NAME}} Walk-in',
+  title = '{{ADMIN_FIRST_NAME}} {{ADMIN_LAST_NAME}} Walk-in',
   project_id = 1,
   creator_id = 1,
   admin_approved_id = 1,
