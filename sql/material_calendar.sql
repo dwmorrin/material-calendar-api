@@ -216,6 +216,7 @@ CREATE TABLE `project_group` (
   `admin_rejected_id` int DEFAULT NULL,
   `pending` tinyint(1) NOT NULL DEFAULT '1',
   `abandoned` tinyint(1) NOT NULL DEFAULT '0',
+  `exception_size` tinyint(1) NOT NULL DEFAULT '0',
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -250,6 +251,7 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `title`,
  1 AS `pending`,
  1 AS `members`,
+ 1 AS `exceptionalSize`,
  1 AS `reservedHours`*/;
 SET character_set_client = @saved_cs_client;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -607,7 +609,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `project_group_view` AS select `g`.`id` AS `id`,`g`.`projectId` AS `projectId`,`g`.`creatorId` AS `creatorId`,`g`.`title` AS `title`,`g`.`pending` AS `pending`,`g`.`members` AS `members`,ifnull(`r`.`reservedHours`,0) AS `reservedHours` from ((select `pg`.`id` AS `id`,`pg`.`project_id` AS `projectId`,`pg`.`creator_id` AS `creatorId`,`pg`.`title` AS `title`,`pg`.`pending` AS `pending`,json_arrayagg(json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'middle',`u`.`middle_name`,'last',`u`.`last_name`),'invitation',json_object('accepted',`pgu`.`invitation_accepted`,'rejected',`pgu`.`invitation_rejected`),'email',`u`.`email`)) AS `members` from ((`project_group_user` `pgu` join `user` `u` on((`pgu`.`user_id` = `u`.`id`))) join `project_group` `pg` on((`pg`.`id` = `pgu`.`project_group_id`))) where (0 = `pg`.`abandoned`) group by `pg`.`id`) `g` left join (select `pg`.`id` AS `id`,cast((sum(time_to_sec(timediff(`a`.`end`,`a`.`start`))) / 3600) as decimal(8,2)) AS `reservedHours` from ((`project_group` `pg` left join `reservation` `b` on((`b`.`group_id` = `pg`.`id`))) left join `event` `a` on((`a`.`id` = `b`.`event_id`))) where (0 = `pg`.`abandoned`) group by `pg`.`id`) `r` on((`g`.`id` = `r`.`id`))) */;
+/*!50001 VIEW `project_group_view` AS select `g`.`id` AS `id`,`g`.`projectId` AS `projectId`,`g`.`creatorId` AS `creatorId`,`g`.`title` AS `title`,`g`.`pending` AS `pending`,`g`.`members` AS `members`,`g`.`exceptionalSize` AS `exceptionalSize`,ifnull(`r`.`reservedHours`,0) AS `reservedHours` from ((select `pg`.`id` AS `id`,`pg`.`project_id` AS `projectId`,`pg`.`creator_id` AS `creatorId`,`pg`.`title` AS `title`,`pg`.`pending` AS `pending`,json_arrayagg(json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'middle',`u`.`middle_name`,'last',`u`.`last_name`),'invitation',json_object('accepted',`pgu`.`invitation_accepted`,'rejected',`pgu`.`invitation_rejected`),'email',`u`.`email`)) AS `members`,`pg`.`exception_size` AS `exceptionalSize` from ((`project_group_user` `pgu` join `user` `u` on((`pgu`.`user_id` = `u`.`id`))) join `project_group` `pg` on((`pg`.`id` = `pgu`.`project_group_id`))) where (0 = `pg`.`abandoned`) group by `pg`.`id`) `g` left join (select `pg`.`id` AS `id`,cast((sum(time_to_sec(timediff(`a`.`end`,`a`.`start`))) / 3600) as decimal(8,2)) AS `reservedHours` from ((`project_group` `pg` left join `reservation` `b` on((`b`.`group_id` = `pg`.`id`))) left join `event` `a` on((`a`.`id` = `b`.`event_id`))) where (0 = `pg`.`abandoned`) group by `pg`.`id`) `r` on((`g`.`id` = `r`.`id`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;

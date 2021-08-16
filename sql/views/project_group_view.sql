@@ -6,6 +6,7 @@ SELECT
   g.title,
   g.pending,
   g.members,
+  g.exceptionalSize,
   IFNULL (r.reservedHours, 0) AS reservedHours
 FROM
   (
@@ -30,7 +31,8 @@ FROM
           ),
           'email', u.email
         )
-      ) AS members
+      ) AS members,
+      pg.exception_size AS exceptionalSize
     FROM
       project_group_user pgu
       INNER JOIN user u ON pgu.user_id = u.id
