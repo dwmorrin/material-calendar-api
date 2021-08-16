@@ -35,14 +35,14 @@ export const processCourse = (
   const seen: RosterInputHashTable = res.locals.seen;
   const inserts: RosterInserts = res.locals.inserts;
   const updates: RosterUpdates = res.locals.updates;
-  const courses = res.locals.courses as Course[];
+  const courses: Course[] = res.locals.courses;
   if (!(Course in seen.course)) {
     const course = courses.find(({ title }) => title === Course) || {
       id: undefined,
       title: Course,
       catalogId: Catalog,
     };
-    res.locals.seen.course[Course] = course;
+    seen.course[Course] = course;
     // if no course, create it
     if (!course.id) inserts.courses.push(Course);
     // catalog should match course catalog, else update course
@@ -66,7 +66,7 @@ export const processSection = (
     sectionTitle: Section,
   });
   if (!(sectionKey in seen.section)) {
-    const sections = res.locals.sections as Section[];
+    const sections: Section[] = res.locals.sections;
     const section = sections.find(
       ({ title, course }) => course.title === Course && title === Section
     ) || {
@@ -96,7 +96,7 @@ export const processUser = (res: Response, record: RosterRecordInput): void => {
   if (!(NetID in seen.user)) {
     // name is a comma separated string: "last, first"
     const [last = "", first = ""] = Student.trim().split(/\s*,\s*/);
-    const users = res.locals.users as User[];
+    const users: User[] = res.locals.users;
     const user = users.find(({ username }) => username === NetID) || {
       id: undefined,
       username: NetID,
