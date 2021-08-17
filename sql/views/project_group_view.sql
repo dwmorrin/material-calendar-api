@@ -32,7 +32,11 @@ FROM
           'email', u.email
         )
       ) AS members,
-      pg.exception_size AS exceptionalSize
+      IF (
+        pg.exception_size AND NOT pg.admin_approved_id,
+        cast_to_bool(1),
+        cast_to_bool(0)
+      ) AS exceptionalSize
     FROM
       project_group_user pgu
       INNER JOIN user u ON pgu.user_id = u.id
