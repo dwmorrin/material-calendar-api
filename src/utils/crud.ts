@@ -3,7 +3,7 @@
  * For use with simple CRUD operations, or as templates when writing custom
  * CRUD handlers.
  */
-import { NextFunction, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import pool, { inflate } from "./db";
 import { MysqlError } from "mysql";
 import { EC } from "./types";
@@ -19,14 +19,33 @@ export enum CrudAction {
   Delete = "DELETE",
 }
 
+type ParamBuilder<T> = (req: Request, res: Response) => T | T[];
+
 export const withResource =
-  (key: string, query: string, vars = []): EC =>
+  (key: string, query: string): EC =>
   (_, res, next) =>
-    pool.query(query, vars, (error, results) => {
+    pool.query(query, [], (error, results) => {
       if (error) return next(error);
       res.locals[key] = results.map(inflate);
       next();
     });
+
+export function $<T>(
+  query: string,
+  builder: ParamBuilder<T>,
+  key?: string
+): EC {
+  return (req, res, next) => {
+    const values: T | T[] = builder(req, res);
+    pool.query(query, values, (error, results) => {
+      if (error) return next(error);
+      if (!key) return next();
+      if (Array.isArray(results)) res.locals[key] = results.map(inflate);
+      else res.locals[key] = results;
+      next();
+    });
+  };
+}
 
 export const respondWith =
   (...keys: string[]): EC =>

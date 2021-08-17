@@ -12,8 +12,13 @@ router.get("/:groupId", controller.getOneGroup);
 router.delete("/:groupId", controller.removeOneGroup);
 router.put("/:groupId", controller.updateOne);
 
-// Joining and Leaving Groups
-router.post("/:groupId/invitation/:invitationId", controller.joinGroup);
+/**
+ * Projects are created when users invite other users to a group.
+ * If any invitee rejects the invitation, the group is abandoned.
+ * An inviter can also rescind the invitation and abandon the group.
+ * (Abandon === soft delete)
+ */
+router.put("/:groupId/invitation", controller.updateInvite);
 router.delete("/:groupId/invitation", controller.cancelInvite);
 router.delete("/:groupId/user/:userId/", controller.leaveGroup);
 

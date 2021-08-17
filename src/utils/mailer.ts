@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { Router } from "express";
+import { NextFunction, Router } from "express";
 import { EC } from "./types";
 
 interface Mail {
@@ -17,15 +17,19 @@ const mailer = nodemailer.createTransport({
 
 // must be placed **last**.  does not call next unless there's an error.
 export const useMailbox: EC = (req, res, next) => {
-  const mailbox: Mail[] = res.locals.mailbox;
-  if (!Array.isArray(mailbox))
-    return next(new Error("useMail called without mailbox on res.locals"));
-  const mail = mailbox.pop();
-  if (!mail) return; // DONE
-  mailer.sendMail(mail, (err) => {
+  const mail: Mail[] = req.body.mail;
+  if (!Array.isArray(mail))
+    return next("useMail called without mail in request body");
+  res.locals.mailbox = mail;
+  sendMail(mail, next);
+};
+
+const sendMail = (mail: Mail[], next: NextFunction) => {
+  const envelope = mail.pop();
+  if (!envelope) return; // DONE
+  mailer.sendMail(envelope, (err) => {
     if (err) return next(err);
-    // recursively call sendMail until mailbox is empty
-    useMailbox(req, res, next);
+    sendMail(mail, next);
   });
 };
 
