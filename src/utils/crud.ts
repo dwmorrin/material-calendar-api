@@ -30,11 +30,42 @@ export const withResource =
 
 type ParamBuilder<T> = (req: Request, res: Response) => T | T[];
 
-// a terse variation of "withResource" that can use res, req
-export function $<T>(
+interface QueryProps<T> {
+  sql: string;
+  using?: ParamBuilder<T>;
+  then?: (
+    results: Record<string, unknown>[],
+    req: Request,
+    res: Response
+  ) => void;
+  next?: EC;
+}
+
+export function query<T>({
+  sql,
+  using,
+  then,
+  next: optNext,
+}: QueryProps<T>): EC {
+  return (req, res, next) => {
+    const values: T | T[] = using ? using(req, res) : [];
+    pool.query(sql, values, (error, results) => {
+      if (error) return next(error);
+      if (then) {
+        if (!Array.isArray(results))
+          return next("query results must be an array to use 'then'");
+        then(results.map(inflate), req, res);
+      }
+      if (optNext) return optNext(req, res, next);
+      next();
+    });
+  };
+}
+
+export function queryAndRespond<T>(
   query: string,
   builderOrKey: ParamBuilder<T> | string = () => [],
-  key = "results"
+  key?: string
 ): EC {
   return (req, res, next) => {
     if (typeof builderOrKey === "string") key = builderOrKey;
@@ -42,48 +73,11 @@ export function $<T>(
       typeof builderOrKey === "function" ? builderOrKey(req, res) : [];
     pool.query(query, values, (error, results) => {
       if (error) return next(error);
-      if (!key) return next();
-      if (Array.isArray(results)) res.locals[key] = results.map(inflate);
-      else res.locals[key] = results;
-      next();
-    });
-  };
-}
-
-// handles results with a callback
-export function $$<T>(
-  query: string,
-  builder: ParamBuilder<T>,
-  cb: (results: Record<string, unknown>[], req: Request, res: Response) => void
-): EC {
-  return (req, res, next) => {
-    const values: T | T[] = builder(req, res);
-    pool.query(query, values, (error, results) => {
-      if (error) return next(error);
-      if (!Array.isArray(results)) return next("$$ results must be an array");
-      cb(results, req, res);
-      cb(results.map(inflate), req, res);
-      next();
-    });
-  };
-}
-
-// combines $ and $$
-export function _<T>(
-  query: string,
-  builderOrKey: ParamBuilder<T> | string = () => [],
-  key = "results"
-): EC {
-  return (req, res, next) => {
-    if (typeof builderOrKey === "string") key = builderOrKey;
-    const values: T | T[] =
-      typeof builderOrKey === "function" ? builderOrKey(req, res) : [];
-    pool.query(query, values, (error, results) => {
-      if (error) return next(error);
-      if (!key) return next();
-      const data = Array.isArray(results) ? results.map(inflate) : results;
+      if (!Array.isArray(results))
+        return next("query results must be an array");
+      const data = results.map(inflate);
       const { context } = req.query;
-      res.status(200).json({ data: { [key]: data }, context });
+      res.status(200).json({ data: key ? { [key]: data } : data, context });
     });
   };
 }

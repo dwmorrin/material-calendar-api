@@ -2,8 +2,7 @@ import { Connection } from "mysql";
 import pool, { startTransaction, endTransaction } from "../../utils/db";
 import {
   addResultsToResponse,
-  $,
-  $$,
+  query,
   respondAndContinueWith,
 } from "../../utils/crud";
 import { EC } from "../../utils/types";
@@ -52,11 +51,11 @@ export const removeOneGroup: EC = (req, res, next) =>
     addResultsToResponse(res, next)
   );
 
-export const getUpdatedGroups = $(
-  getGroupsByUserQuery,
-  (_, res) => res.locals.user.id,
-  "groups"
-);
+export const getUpdatedGroups = query({
+  sql: getGroupsByUserQuery,
+  using: (_, res) => res.locals.user.id,
+  then: (results, _, res) => (res.locals.groups = results),
+});
 
 // TODO this one needs to be updated to use the new group model
 const updateOne: EC = (req, res, next) => {
@@ -112,22 +111,21 @@ const createPendingGroup: EC = (req, res, next) => {
   );
 };
 
-const createProjectGroupUsers = $(
-  "REPLACE INTO project_group_user (user_id, project_group_id) VALUES ?",
-  (_, res) => [
+const createProjectGroupUsers = query({
+  sql: "REPLACE INTO project_group_user (user_id, project_group_id) VALUES ?",
+  using: (_, res) => [
     (res.locals.members as number[]).map((id) => [
       id,
       res.locals.group.insertId,
     ]),
-  ]
-);
+  ],
+});
 
-const acceptOwnInvitation = $(
-  `UPDATE project_group_user SET
-       invitation_accepted = TRUE
-     WHERE user_id = ? AND project_group_id = ?`,
-  (_, res) => [res.locals.user.id, res.locals.group.insertId]
-);
+const acceptOwnInvitation = query({
+  sql: `UPDATE project_group_user SET invitation_accepted = TRUE
+        WHERE user_id = ? AND project_group_id = ?`,
+  using: (_, res) => [res.locals.user.id, res.locals.group.insertId],
+});
 
 // using transaction
 const cancelInvite: EC = (req, res, next) => {
@@ -191,16 +189,16 @@ const updateInvite: EC = (req, res, next) => {
   }
 };
 
-const abandonGroup = $(
-  "UPDATE project_group SET abandoned = TRUE WHERE group_id = ?",
-  (req) => req.params.groupId
-);
+const abandonGroup = query({
+  sql: "UPDATE project_group SET abandoned = TRUE WHERE group_id = ?",
+  using: (req) => req.params.groupId,
+});
 
-const withGroup = $$(
-  "SELECT * FROM project_group_view WHERE id = ?",
-  (req) => Number(req.params.groupId),
-  (results, _, res) => (res.locals.group = results[0])
-);
+const withGroup = query({
+  sql: "SELECT * FROM project_group_view WHERE id = ?",
+  using: (req) => Number(req.params.groupId),
+  then: (results, _, res) => (res.locals.group = results[0]),
+});
 
 const respondWithGroupsThenSendMail = [
   getUpdatedGroups,
