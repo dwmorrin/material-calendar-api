@@ -1,10 +1,10 @@
 import { Connection } from "mysql";
-import pool, {
-  startTransaction,
-  endTransaction,
-  inflate,
-} from "../../utils/db";
-import { addResultsToResponse, $ } from "../../utils/crud";
+import pool, { startTransaction, endTransaction } from "../../utils/db";
+import {
+  addResultsToResponse,
+  $,
+  respondAndContinueWith,
+} from "../../utils/crud";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
 import { UserGroup, UserGroupRecord, CreateGroupRequest } from "./types";
@@ -57,17 +57,6 @@ export const getUpdatedGroups = $(
   "groups"
 );
 
-const leaveResponse: EC = (req, res, next) => {
-  const groups: UserGroup[] = res.locals.groups;
-  res.status(201).json({
-    data: {
-      groups: groups.map(inflate),
-    },
-    context: req.query.context,
-  });
-  next();
-};
-
 // TODO this one needs to be updated to use the new group model
 const updateOne: EC = (req, res, next) => {
   const { projectId, title } = req.body;
@@ -78,7 +67,7 @@ const updateOne: EC = (req, res, next) => {
   );
 };
 
-const getProjectGroupSize: EC = (req, res, next) => {
+const withGroupSize: EC = (req, res, next) => {
   const request: CreateGroupRequest = req.body;
   const { projectId } = request;
   pool.query(
@@ -100,7 +89,7 @@ const createPendingGroup: EC = (req, res, next) => {
   const groupSize: number = res.locals.groupSize;
   const members: number[] = request.members;
   if (!Array.isArray(members) || !members.length) next("no group members");
-  res.locals.members = members.map((id) => [id, res.locals.group.insertId]);
+  res.locals.members = members;
   // assuming that only group size === 1 can be auto-approved
   const pending = !(
     groupSize === 1 &&
@@ -113,6 +102,7 @@ const createPendingGroup: EC = (req, res, next) => {
     creator_id: res.locals.user.id,
     admin_created_id: res.locals.admin ? res.locals.user.id : null,
     pending,
+    exception_size: groupSize !== members.length,
   };
   pool.query(
     "INSERT INTO project_group SET ?",
@@ -121,16 +111,22 @@ const createPendingGroup: EC = (req, res, next) => {
   );
 };
 
-const createResponse: EC = (req, res) => {
-  const { invitations, groups } = res.locals;
-  res.status(201).json({
-    data: {
-      invitations: invitations.map(inflate),
-      groups: groups.map(inflate),
-    },
-    context: req.query.context,
-  });
-};
+const createProjectGroupUsers = $(
+  "REPLACE INTO project_group_user (user_id, project_group_id) VALUES ?",
+  (_, res) => [
+    (res.locals.members as number[]).map((id) => [
+      id,
+      res.locals.group.insertId,
+    ]),
+  ]
+);
+
+const acceptOwnInvitation = $(
+  `UPDATE project_group_user SET
+       invitation_accepted = TRUE
+     WHERE user_id = ? AND project_group_id = ?`,
+  (_, res) => [res.locals.user.id, res.locals.group.insertId]
+);
 
 // using transaction
 const cancelInvite: EC = (req, res, next) => {
@@ -148,18 +144,6 @@ const cancelInvite: EC = (req, res, next) => {
     [groupId, userId, groupId],
     addResultsToResponse(res, next)
   );
-};
-
-const cancelInviteResponse: EC = (req, res, next) => {
-  const groups: unknown[] = res.locals.groups;
-  if (!Array.isArray(groups))
-    return next("no groups in cancel invite response");
-  res.status(201).json({
-    data: {
-      groups: groups.map(inflate),
-    },
-    context: req.query.context,
-  });
 };
 
 /**
@@ -207,63 +191,49 @@ const updateInvite: EC = (req, res, next) => {
   next();
 };
 
-const updateInviteResponse: EC = (_, res, next) => {
-  const groups: UserGroup[] = res.locals.groups;
-  if (!Array.isArray(groups)) return next("no groups after update");
-  return res.status(201).json({ data: { groups } });
-};
+const abandonGroup = $(
+  "UPDATE project_group SET abandoned = TRUE WHERE group_id = ?",
+  (req) => req.params.groupId
+);
+
+const withGroup = $(
+  "SELECT * FROM project_group_view WHERE id = ?",
+  (req) => Number(req.params.groupId),
+  "group"
+);
+
+const respondWithGroupsThenSendMail = [
+  getUpdatedGroups,
+  respondAndContinueWith("groups"),
+  useMailbox,
+];
 
 export default {
   createOne: [
-    getProjectGroupSize,
+    withGroupSize,
     createPendingGroup,
-    $(
-      "REPLACE INTO project_group_user (user_id, project_group_id) VALUES ?",
-      (_, res) => [res.locals.members]
-    ),
-    $(
-      `UPDATE project_group_user SET
-       invitation_accepted = TRUE
-     WHERE user_id = ? AND project_group_id = ?`,
-      (_, res) => [res.locals.user.id, res.locals.group.insertId]
-    ),
-    getUpdatedGroups,
-    createResponse,
+    createProjectGroupUsers,
+    acceptOwnInvitation,
+    ...respondWithGroupsThenSendMail,
   ],
   cancelInvite: [
     ...startTransaction,
     cancelInvite,
     ...endTransaction,
-    getUpdatedGroups,
-    cancelInviteResponse,
-    useMailbox,
+    ...respondWithGroupsThenSendMail,
   ],
   getGroups,
   getGroupsByUser,
   getGroupsByProject,
   getOneGroup,
   removeOneGroup,
-  leaveGroup: [
-    $(
-      "UPDATE project_group SET abandoned = TRUE WHERE group_id = ?",
-      (req) => req.params.groupId
-    ),
-    getUpdatedGroups,
-    leaveResponse,
-    useMailbox,
-  ],
+  leaveGroup: [abandonGroup, ...respondWithGroupsThenSendMail],
   updateInvite: [
-    $(
-      "SELECT * FROM project_group_view WHERE id = ?",
-      (req) => Number(req.params.groupId),
-      "group"
-    ),
+    withGroup,
     ...startTransaction,
     updateInvite,
     ...endTransaction,
-    $(getGroupsByUserQuery, (_, res) => res.locals.user.id, "groups"),
-    updateInviteResponse,
-    useMailbox,
+    ...respondWithGroupsThenSendMail,
   ],
   updateOne,
 };

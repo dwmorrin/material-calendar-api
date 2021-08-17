@@ -30,13 +30,16 @@ export const withResource =
       next();
     });
 
+// a terse variation of "withResource" that can use res, req
 export function $<T>(
   query: string,
-  builder: ParamBuilder<T>,
-  key?: string
+  builderOrKey: ParamBuilder<T> | string = () => [],
+  key = "results"
 ): EC {
   return (req, res, next) => {
-    const values: T | T[] = builder(req, res);
+    if (typeof builderOrKey === "string") key = builderOrKey;
+    const values: T | T[] =
+      typeof builderOrKey === "function" ? builderOrKey(req, res) : [];
     pool.query(query, values, (error, results) => {
       if (error) return next(error);
       if (!key) return next();
@@ -47,17 +50,53 @@ export function $<T>(
   };
 }
 
-export const respondWith =
-  (...keys: string[]): EC =>
-  (req, res, next) => {
-    const data = {} as Record<string, unknown>;
-    for (const key of keys) {
-      if (!(key in res.locals)) next("bad key (nothing found): " + key);
-      data[key] = res.locals[key];
-    }
-    const { context } = req.query;
-    res.status(201).json({ data, context });
+// combines $ and $$
+export function _<T>(
+  query: string,
+  builderOrKey: ParamBuilder<T> | string = () => [],
+  key = "results"
+): EC {
+  return (req, res, next) => {
+    if (typeof builderOrKey === "string") key = builderOrKey;
+    const values: T | T[] =
+      typeof builderOrKey === "function" ? builderOrKey(req, res) : [];
+    pool.query(query, values, (error, results) => {
+      if (error) return next(error);
+      if (!key) return next();
+      const data = Array.isArray(results) ? results.map(inflate) : results;
+      const { context } = req.query;
+      res.status(200).json({ data: { [key]: data }, context });
+    });
   };
+}
+
+const getFromResLocals = (
+  keys: string[],
+  res: Response
+): Record<string, unknown> => {
+  const data = {} as Record<string, unknown>;
+  for (const key of keys) {
+    if (!(key in res.locals))
+      throw new Error("bad key (nothing found): " + key);
+    data[key] = res.locals[key];
+  }
+  return data;
+};
+
+const respondWithStatus =
+  (keys: string[], status = 200, callNext = false): EC =>
+  (req, res, next) => {
+    res
+      .status(status)
+      .json({ data: getFromResLocals(keys, res), context: req.query.context });
+    if (callNext) next();
+  };
+
+export const respondWith = (...keys: string[]): EC => respondWithStatus(keys);
+
+// calls next(), unlike respondWith
+export const respondAndContinueWith = (...keys: string[]): EC =>
+  respondWithStatus(keys, 200, true);
 
 interface CrudOptions {
   one?: boolean;
