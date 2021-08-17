@@ -3,6 +3,7 @@ import pool, { startTransaction, endTransaction } from "../../utils/db";
 import {
   addResultsToResponse,
   $,
+  $$,
   respondAndContinueWith,
 } from "../../utils/crud";
 import { EC } from "../../utils/types";
@@ -188,7 +189,6 @@ const updateInvite: EC = (req, res, next) => {
   } else {
     next("invite update was neither accepted or rejected");
   }
-  next();
 };
 
 const abandonGroup = $(
@@ -196,10 +196,10 @@ const abandonGroup = $(
   (req) => req.params.groupId
 );
 
-const withGroup = $(
+const withGroup = $$(
   "SELECT * FROM project_group_view WHERE id = ?",
   (req) => Number(req.params.groupId),
-  "group"
+  (results, _, res) => (res.locals.group = results[0])
 );
 
 const respondWithGroupsThenSendMail = [

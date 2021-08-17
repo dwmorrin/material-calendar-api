@@ -19,8 +19,6 @@ export enum CrudAction {
   Delete = "DELETE",
 }
 
-type ParamBuilder<T> = (req: Request, res: Response) => T | T[];
-
 export const withResource =
   (key: string, query: string): EC =>
   (_, res, next) =>
@@ -29,6 +27,8 @@ export const withResource =
       res.locals[key] = results.map(inflate);
       next();
     });
+
+type ParamBuilder<T> = (req: Request, res: Response) => T | T[];
 
 // a terse variation of "withResource" that can use res, req
 export function $<T>(
@@ -45,6 +45,24 @@ export function $<T>(
       if (!key) return next();
       if (Array.isArray(results)) res.locals[key] = results.map(inflate);
       else res.locals[key] = results;
+      next();
+    });
+  };
+}
+
+// handles results with a callback
+export function $$<T>(
+  query: string,
+  builder: ParamBuilder<T>,
+  cb: (results: Record<string, unknown>[], req: Request, res: Response) => void
+): EC {
+  return (req, res, next) => {
+    const values: T | T[] = builder(req, res);
+    pool.query(query, values, (error, results) => {
+      if (error) return next(error);
+      if (!Array.isArray(results)) return next("$$ results must be an array");
+      cb(results, req, res);
+      cb(results.map(inflate), req, res);
       next();
     });
   };
