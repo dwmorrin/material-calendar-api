@@ -30,5 +30,6 @@ export const useMailbox: EC = (req) => {
   const mail: Mail | Mail[] = req.body.mail;
   if (!Array.isArray(mail) && !mail)
     return console.error("useMailbox called without mail in request body");
-  sendMail(Array.isArray(mail) ? mail : [mail]);
+  // filters out empty "to" strings
+  sendMail((Array.isArray(mail) ? mail : [mail]).filter(({ to }) => to));
 };
