@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console */
 /**
  * a tool for quickly pinging the development app's API
  * usage: node path/to/thisFile.js apiPath
@@ -7,7 +8,6 @@
  * example: node fetch.js /api/data
  *
  * uses the project's .env file for auto-configuration
- * TODO add authentication options (cookies, jwt, etc)
  */
 import { program } from "commander";
 import { config } from "dotenv";
