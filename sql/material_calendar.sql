@@ -125,7 +125,7 @@ CREATE TABLE `event` (
   KEY `user_foreign_key` (`lock_user_id`),
   CONSTRAINT `allotment_studio_id_studio_id` FOREIGN KEY (`location_id`) REFERENCES `location` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `user_foreign_key` FOREIGN KEY (`lock_user_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -165,7 +165,7 @@ CREATE TABLE `location` (
   `default_hours_saturday` int NOT NULL DEFAULT '0',
   `default_hours_sunday` int NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -242,6 +242,25 @@ CREATE TABLE `project_group_user` (
   CONSTRAINT `student_group_student_id_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `project_group_user_active_count` AS SELECT 
+ 1 AS `active_count`,
+ 1 AS `project_id`,
+ 1 AS `project_group_id`,
+ 1 AS `user_id`*/;
+SET character_set_client = @saved_cs_client;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `project_group_user_view` AS SELECT 
+ 1 AS `id`,
+ 1 AS `projectId`,
+ 1 AS `name`,
+ 1 AS `email`,
+ 1 AS `phone`,
+ 1 AS `invitations`,
+ 1 AS `hasGroup`*/;
+SET character_set_client = @saved_cs_client;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `project_group_view` AS SELECT 
@@ -334,7 +353,7 @@ CREATE TABLE `reservation` (
   CONSTRAINT `booking_group_id_rm_group_id` FOREIGN KEY (`group_id`) REFERENCES `project_group` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `booking_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `booking_refund_approval_user_id` FOREIGN KEY (`refund_approval_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -503,7 +522,7 @@ CREATE TABLE `virtual_week` (
   KEY `semester_idx` (`semester_id`),
   CONSTRAINT `virtual_week_location_id_location_id` FOREIGN KEY (`location_id`) REFERENCES `location` (`id`),
   CONSTRAINT `virtual_week_semester_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -600,6 +619,32 @@ DELIMITER ;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP VIEW IF EXISTS `project_group_user_active_count`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
+/*!50001 VIEW `project_group_user_active_count` AS select count(`pg`.`id`) AS `active_count`,`pg`.`project_id` AS `project_id`,`pg`.`id` AS `project_group_id`,`pgu`.`user_id` AS `user_id` from (`project_group` `pg` join `project_group_user` `pgu` on((`pgu`.`project_group_id` = `pg`.`id`))) where ((0 = `pg`.`pending`) and (0 = `pg`.`abandoned`)) group by `pg`.`id`,`pgu`.`user_id` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP VIEW IF EXISTS `project_group_user_view`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
+/*!50001 VIEW `project_group_user_view` AS select `u`.`id` AS `id`,`p`.`id` AS `projectId`,json_object('first',`u`.`first_name`,'middle',`u`.`middle_name`,'last',`u`.`last_name`) AS `name`,`u`.`email` AS `email`,`u`.`phone` AS `phone`,(select count(0) from (`project_group` `pg` join `project_group_user` `pgu` on((`pgu`.`project_group_id` = `pg`.`id`))) where ((`pg`.`project_id` = `p`.`id`) and (0 <> `pg`.`pending`) and (0 = `pg`.`abandoned`) and (`pgu`.`user_id` = `u`.`id`))) AS `invitations`,`cast_to_bool`(ifnull((select `ac`.`active_count` from `project_group_user_active_count` `ac` where ((`ac`.`user_id` = `u`.`id`) and (`ac`.`project_id` = `p`.`id`))),0)) AS `hasGroup` from (((`roster` `r` join `user` `u` on((`r`.`user_id` = `u`.`id`))) join `section_project` `sp` on((`sp`.`section_id` = `r`.`course_id`))) join `project` `p` on((`p`.`id` = `sp`.`project_id`))) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
 /*!50001 DROP VIEW IF EXISTS `project_group_view`*/;
 /*!50001 SET @saved_cs_client          = @@character_set_client */;
 /*!50001 SET @saved_cs_results         = @@character_set_results */;
@@ -609,7 +654,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `project_group_view` AS select `g`.`id` AS `id`,`g`.`projectId` AS `projectId`,`g`.`creatorId` AS `creatorId`,`g`.`title` AS `title`,`g`.`pending` AS `pending`,`g`.`members` AS `members`,`g`.`exceptionalSize` AS `exceptionalSize`,ifnull(`r`.`reservedHours`,0) AS `reservedHours` from ((select `pg`.`id` AS `id`,`pg`.`project_id` AS `projectId`,`pg`.`creator_id` AS `creatorId`,`pg`.`title` AS `title`,`pg`.`pending` AS `pending`,json_arrayagg(json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'middle',`u`.`middle_name`,'last',`u`.`last_name`),'invitation',json_object('accepted',`pgu`.`invitation_accepted`,'rejected',`pgu`.`invitation_rejected`),'email',`u`.`email`)) AS `members`,if(((0 <> `pg`.`exception_size`) and (0 = `pg`.`admin_approved_id`)),`cast_to_bool`(1),`cast_to_bool`(0)) AS `exceptionalSize` from ((`project_group_user` `pgu` join `user` `u` on((`pgu`.`user_id` = `u`.`id`))) join `project_group` `pg` on((`pg`.`id` = `pgu`.`project_group_id`))) where (0 = `pg`.`abandoned`) group by `pg`.`id`) `g` left join (select `pg`.`id` AS `id`,cast((sum(time_to_sec(timediff(`a`.`end`,`a`.`start`))) / 3600) as decimal(8,2)) AS `reservedHours` from ((`project_group` `pg` left join `reservation` `b` on((`b`.`group_id` = `pg`.`id`))) left join `event` `a` on((`a`.`id` = `b`.`event_id`))) where (0 = `pg`.`abandoned`) group by `pg`.`id`) `r` on((`g`.`id` = `r`.`id`))) */;
+/*!50001 VIEW `project_group_view` AS select `g`.`id` AS `id`,`g`.`projectId` AS `projectId`,`g`.`creatorId` AS `creatorId`,`g`.`title` AS `title`,`g`.`pending` AS `pending`,`g`.`members` AS `members`,`g`.`exceptionalSize` AS `exceptionalSize`,ifnull(`r`.`reservedHours`,0) AS `reservedHours` from ((select `pg`.`id` AS `id`,`pg`.`project_id` AS `projectId`,`pg`.`creator_id` AS `creatorId`,`pg`.`title` AS `title`,`pg`.`pending` AS `pending`,json_arrayagg(json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'middle',`u`.`middle_name`,'last',`u`.`last_name`),'invitation',json_object('accepted',`pgu`.`invitation_accepted`,'rejected',`pgu`.`invitation_rejected`),'email',`u`.`email`)) AS `members`,`pg`.`exception_size` AS `exceptionalSize` from ((`project_group_user` `pgu` join `user` `u` on((`pgu`.`user_id` = `u`.`id`))) join `project_group` `pg` on((`pg`.`id` = `pgu`.`project_group_id`))) where (0 = `pg`.`abandoned`) group by `pg`.`id`) `g` left join (select `pg`.`id` AS `id`,cast((sum(time_to_sec(timediff(`a`.`end`,`a`.`start`))) / 3600) as decimal(8,2)) AS `reservedHours` from ((`project_group` `pg` left join `reservation` `b` on((`b`.`group_id` = `pg`.`id`))) left join `event` `a` on((`a`.`id` = `b`.`event_id`))) where (0 = `pg`.`abandoned`) group by `pg`.`id`) `r` on((`g`.`id` = `r`.`id`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;

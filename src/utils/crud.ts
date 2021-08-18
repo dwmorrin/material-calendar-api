@@ -42,7 +42,7 @@ interface QueryProps<T> {
   then?: ResultsHandler;
 }
 
-export const storeResults: ResultsHandler = (results, _, res) =>
+const storeResults: ResultsHandler = (results, _, res) =>
   (res.locals.results = results);
 
 export function query<T>({ sql, using, then }: QueryProps<T>): EC {
@@ -78,19 +78,102 @@ type DataHandler = (req: Request, res: Response) => unknown;
 interface ResponseProps {
   data: DataHandler;
   status?: number;
-  next?: EC;
+  callNext?: boolean;
 }
 
-export const oneResult: DataHandler = (_, res) => res.locals.results[0];
+const oneResult: DataHandler = (_, res) => res.locals.results[0];
+const manyResults: DataHandler = (_, res) => res.locals.results;
+const ok: DataHandler = () => "OK";
+const echoBody: DataHandler = (req) => ({ ...req.body });
+const echoBodyWithInsertId: DataHandler = (req, res) => ({
+  ...req.body,
+  id: res.locals.results.insertId,
+});
 
 export const respond =
-  ({ data, status = 200, next: optNext }: ResponseProps): EC =>
+  ({ data, status = 200, callNext }: ResponseProps): EC =>
   (req, res, next) => {
     res
       .status(status)
       .json({ data: data(req, res), context: req.query.context });
-    if (optNext) optNext(req, res, next);
+    if (callNext) next();
   };
+
+function readOne<T>(sql: string, using?: ParamBuilder<T>): EC[] {
+  return [
+    query({
+      sql,
+      using,
+      then: storeResults,
+    }),
+    respond({
+      data: oneResult,
+    }),
+  ];
+}
+
+function readMany<T>(sql: string, using?: ParamBuilder<T>): EC[] {
+  return [
+    query({
+      sql,
+      using,
+      then: storeResults,
+    }),
+    respond({
+      data: manyResults,
+    }),
+  ];
+}
+
+function deleteOne<T>(sql: string, using?: ParamBuilder<T>): EC[] {
+  return [
+    query({
+      sql,
+      using,
+    }),
+    respond({
+      status: 204,
+      data: ok,
+    }),
+  ];
+}
+
+// TODO rename once old updateOne is gone
+function update1<T>(sql: string, using?: ParamBuilder<T>): EC[] {
+  return [
+    query({
+      sql,
+      using,
+    }),
+    respond({
+      status: 201,
+      data: echoBody,
+    }),
+  ];
+}
+
+// TODO rename once old createOne is gone
+function create1<T>(sql: string, using?: ParamBuilder<T>): EC[] {
+  return [
+    query({
+      sql,
+      using,
+      then: storeResults,
+    }),
+    respond({
+      status: 201,
+      data: echoBodyWithInsertId,
+    }),
+  ];
+}
+
+export const crud = {
+  createOne: create1,
+  deleteOne,
+  readMany,
+  readOne,
+  updateOne: update1,
+};
 
 const respondWithStatus =
   (keys: string[], status = 200, callNext = false): EC =>

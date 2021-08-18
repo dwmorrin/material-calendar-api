@@ -4,13 +4,13 @@ import { sendResults } from "../../utils/crud";
 
 const router = Router();
 
-router.get("/user/:userId", controller.getGroupsByUser);
+router.get("/project/:projectId", controller.getGroupsByProject);
+router.get("/user", controller.getGroupsByUser);
+router.get("/:groupId", controller.getOneGroup);
+router.put("/:groupId", controller.updateOneGroup);
+router.delete("/:groupId", controller.removeOneGroup);
 router.get("/", controller.getGroups);
 router.post("/", controller.createOne);
-router.get("/project/:projectId", controller.getGroupsByProject);
-router.get("/:groupId", controller.getOneGroup);
-router.delete("/:groupId", controller.removeOneGroup);
-router.put("/:groupId", controller.updateOne);
 
 /**
  * Projects are created when users invite other users to a group.

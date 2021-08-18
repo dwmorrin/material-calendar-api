@@ -1,7 +1,8 @@
-import pool, { inflate } from "../../utils/db";
+import pool from "../../utils/db";
 import {
   addResultsToResponse,
   controllers,
+  crud,
   CrudAction,
   respondWith,
   withResource,
@@ -9,63 +10,16 @@ import {
 import { EC } from "../../utils/types";
 import { Project } from "./project.type";
 import { isValidSQLDateInterval } from "../../utils/date";
-import { getInvitationsQuery } from "../invitation/invitation.controller";
 
 /**
  * Reading: use `project_view` view.
  * Writing: use `project` table.
  */
 
-const getUserIdsByProject: EC = (req, res, next) =>
-  pool.query(
-    `SELECT 
-      u.id
-    FROM
-      roster r 
-      INNER JOIN user u ON r.user_id = u.id 
-      INNER JOIN section_project sp ON sp.section_id = r.course_id
-      INNER JOIN project p ON p.id = sp.project_id
-    WHERE p.id = ?`,
-    [req.params.id],
-    addResultsToResponse(res, next)
-  );
-
-const getUsersByIdList: EC = (req, res, next) => {
-  const { results } = res.locals;
-  if (results.length)
-    pool.query(
-      "SELECT * FROM user_view WHERE id IN (?)",
-      [(results as { id: number }[]).map(({ id }) => id)],
-      addResultsToResponse(res, next, { key: "users" })
-    );
-  else
-    res.status(200).json({
-      data: { users: [], invitations: [] },
-      context: req.query.context,
-    });
-};
-
-// note: this gets ALL invitations, not just the ones for the project
-const getProjectInvites: EC = (_, res, next) => {
-  pool.query(
-    getInvitationsQuery,
-    res.locals.user.id,
-    addResultsToResponse(res, next, { key: "invitations" })
-  );
-};
-
-const dashboardResponse: EC = (req, res) => {
-  const { users, invitations } = res.locals;
-  res
-    .status(200)
-    .json({
-      data: {
-        users: users.map(inflate),
-        invitations: invitations.map(inflate),
-      },
-      context: req.query.context,
-    });
-};
+const getProjectMembers = crud.readMany(
+  "SELECT * FROM project_group_user_view WHERE projectId = ?",
+  (req) => Number(req.params.id)
+);
 
 export const getOneLocationAllotment: EC = (req, res, next) =>
   pool.query(
@@ -273,12 +227,7 @@ export default {
   getMany,
   getOne,
   getOneLocationAllotment,
-  getGroupDashboard: [
-    getUserIdsByProject,
-    getUsersByIdList,
-    getProjectInvites,
-    dashboardResponse,
-  ],
+  getGroupDashboard: getProjectMembers,
   updateAllotment: [
     updateAllotment,
     withResource("projects", "SELECT * FROM project_view"),

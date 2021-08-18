@@ -1,13 +1,6 @@
 import { Connection } from "mysql";
 import pool, { startTransaction, endTransaction } from "../../utils/db";
-import {
-  addResultsToResponse,
-  query,
-  oneResult,
-  respond,
-  respondAndContinueWith,
-  storeResults,
-} from "../../utils/crud";
+import { addResultsToResponse, crud, query, respond } from "../../utils/crud";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
 import { UserGroup, UserGroupRecord, CreateGroupRequest } from "./types";
@@ -17,79 +10,49 @@ import { UserGroup, UserGroupRecord, CreateGroupRequest } from "./types";
  * Writing: use the `project_group` table.
  */
 
-export const getGroups: EC = (_, res, next) =>
-  pool.query(
-    "SELECT * FROM project_group_view",
-    addResultsToResponse(res, next)
-  );
+const getGroups = crud.readMany("SELECT * FROM project_group_view");
 
-const getOneGroup = [
-  query({
-    sql: "SELECT * FROM project_group_view WHERE id = ?",
-    using: (req) => req.params.groupId,
-    then: storeResults,
-  }),
-  respond({
-    data: oneResult,
-  }),
-];
+const getOneGroup = crud.readOne(
+  "SELECT * FROM project_group_view WHERE id = ?",
+  (req) => Number(req.params.groupId)
+);
 
 const getGroupsByUserQuery =
   "SELECT * FROM project_group_view WHERE JSON_CONTAINS(members, JSON_OBJECT('id', ?))";
 
-export const getGroupsByUser: EC = (req, res, next) =>
-  pool.query(
-    getGroupsByUserQuery,
-    [Number(req.params.userId)],
-    addResultsToResponse(res, next)
-  );
+const getGroupsByUser = crud.readMany(
+  getGroupsByUserQuery,
+  (_, res) => res.locals.user.id
+);
 
-export const getGroupsByProject: EC = (req, res, next) =>
-  pool.query(
-    "SELECT * FROM project_group_view WHERE projectId = ?",
-    [req.params.projectId],
-    addResultsToResponse(res, next)
-  );
+const getGroupsByProject = crud.readMany(
+  "SELECT * FROM project_group_view WHERE projectId = ?",
+  (req) => Number(req.params.projectId)
+);
 
-export const removeOneGroup: EC = (req, res, next) =>
-  pool.query(
-    "UPDATE project_group SET abandoned = TRUE WHERE id = ?",
-    [req.params.groupId],
-    addResultsToResponse(res, next)
-  );
-
-export const getUpdatedGroups = query({
-  sql: getGroupsByUserQuery,
-  using: (_, res) => res.locals.user.id,
-  then: (results, _, res) => (res.locals.groups = results),
-});
+const removeOneGroup = crud.deleteOne(
+  "UPDATE project_group SET abandoned = TRUE WHERE id = ?",
+  (req) => Number(req.params.groupId)
+);
 
 // TODO this one needs to be updated to use the new group model
-const updateOne: EC = (req, res, next) => {
-  const { projectId, title } = req.body;
-  pool.query(
-    "UPDATE project_group SET ? WHERE id = ?",
-    [{ project_id: projectId, title }, req.params.groupId],
-    addResultsToResponse(res, next, { one: true })
-  );
-};
+const updateOneGroup = crud.updateOne(
+  "UPDATE project_group SET ? WHERE id = ?",
+  (req) => [
+    { project_id: req.body.projectId, title: req.body.title },
+    Number(req.params.groupId),
+  ]
+);
 
-const withGroupSize: EC = (req, res, next) => {
-  const request: CreateGroupRequest = req.body;
-  const { projectId } = request;
-  pool.query(
-    "SELECT group_size FROM project WHERE id = ?",
-    projectId,
-    (err, result) => {
-      if (err) return next(err);
-      const groupSize = result[0].group_size;
-      if (!(typeof groupSize === "number"))
-        return next(new Error("Invalid group size"));
-      res.locals.groupSize = groupSize;
-      next();
-    }
-  );
-};
+const withGroupSize = query({
+  sql: "SELECT group_size FROM project WHERE id = ?",
+  using: (req) => req.body.projectId,
+  then: (results, _, res) => {
+    const groupSize = results[0].group_size;
+    if (!(typeof groupSize === "number")) throw new Error("Invalid group size");
+    res.locals.groupSize = groupSize;
+  },
+});
 
 const createPendingGroup: EC = (req, res, next) => {
   const request: CreateGroupRequest = req.body;
@@ -208,8 +171,16 @@ const withGroup = query({
 });
 
 const respondWithGroupsThenSendMail = [
-  getUpdatedGroups,
-  respondAndContinueWith("groups"),
+  query({
+    sql: getGroupsByUserQuery,
+    using: (_, res) => res.locals.user.id,
+    then: (results, _, res) => (res.locals.groups = results),
+  }),
+  respond({
+    status: 201,
+    data: (_, res) => ({ groups: res.locals.groups }),
+    callNext: true,
+  }),
   useMailbox,
 ];
 
@@ -240,5 +211,5 @@ export default {
     ...endTransaction,
     ...respondWithGroupsThenSendMail,
   ],
-  updateOne,
+  updateOneGroup,
 };
