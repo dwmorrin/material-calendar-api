@@ -3,7 +3,10 @@ import pool, { startTransaction, endTransaction } from "../../utils/db";
 import {
   addResultsToResponse,
   query,
+  oneResult,
+  respond,
   respondAndContinueWith,
+  storeResults,
 } from "../../utils/crud";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
@@ -20,12 +23,16 @@ export const getGroups: EC = (_, res, next) =>
     addResultsToResponse(res, next)
   );
 
-export const getOneGroup: EC = (req, res, next) =>
-  pool.query(
-    "SELECT * FROM project_group_view WHERE id = ?",
-    [req.params.groupId],
-    addResultsToResponse(res, next, { one: true })
-  );
+const getOneGroup = [
+  query({
+    sql: "SELECT * FROM project_group_view WHERE id = ?",
+    using: (req) => req.params.groupId,
+    then: storeResults,
+  }),
+  respond({
+    data: oneResult,
+  }),
+];
 
 const getGroupsByUserQuery =
   "SELECT * FROM project_group_view WHERE JSON_CONTAINS(members, JSON_OBJECT('id', ?))";

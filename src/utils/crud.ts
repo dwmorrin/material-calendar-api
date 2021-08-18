@@ -30,23 +30,22 @@ export const withResource =
 
 type ParamBuilder<T> = (req: Request, res: Response) => T | T[];
 
+type ResultsHandler = (
+  results: Record<string, unknown>[],
+  req: Request,
+  res: Response
+) => void;
+
 interface QueryProps<T> {
   sql: string;
   using?: ParamBuilder<T>;
-  then?: (
-    results: Record<string, unknown>[],
-    req: Request,
-    res: Response
-  ) => void;
-  next?: EC;
+  then?: ResultsHandler;
 }
 
-export function query<T>({
-  sql,
-  using,
-  then,
-  next: optNext,
-}: QueryProps<T>): EC {
+export const storeResults: ResultsHandler = (results, _, res) =>
+  (res.locals.results = results);
+
+export function query<T>({ sql, using, then }: QueryProps<T>): EC {
   return (req, res, next) => {
     const values: T | T[] = using ? using(req, res) : [];
     pool.query(sql, values, (error, results) => {
@@ -56,28 +55,7 @@ export function query<T>({
           return next("query results must be an array to use 'then'");
         then(results.map(inflate), req, res);
       }
-      if (optNext) return optNext(req, res, next);
       next();
-    });
-  };
-}
-
-export function queryAndRespond<T>(
-  query: string,
-  builderOrKey: ParamBuilder<T> | string = () => [],
-  key?: string
-): EC {
-  return (req, res, next) => {
-    if (typeof builderOrKey === "string") key = builderOrKey;
-    const values: T | T[] =
-      typeof builderOrKey === "function" ? builderOrKey(req, res) : [];
-    pool.query(query, values, (error, results) => {
-      if (error) return next(error);
-      if (!Array.isArray(results))
-        return next("query results must be an array");
-      const data = results.map(inflate);
-      const { context } = req.query;
-      res.status(200).json({ data: key ? { [key]: data } : data, context });
     });
   };
 }
@@ -94,6 +72,25 @@ const getFromResLocals = (
   }
   return data;
 };
+
+type DataHandler = (req: Request, res: Response) => unknown;
+
+interface ResponseProps {
+  data: DataHandler;
+  status?: number;
+  next?: EC;
+}
+
+export const oneResult: DataHandler = (_, res) => res.locals.results[0];
+
+export const respond =
+  ({ data, status = 200, next: optNext }: ResponseProps): EC =>
+  (req, res, next) => {
+    res
+      .status(status)
+      .json({ data: data(req, res), context: req.query.context });
+    if (optNext) optNext(req, res, next);
+  };
 
 const respondWithStatus =
   (keys: string[], status = 200, callNext = false): EC =>
