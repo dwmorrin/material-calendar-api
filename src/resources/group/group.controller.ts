@@ -116,6 +116,44 @@ const cancelInvite: EC = (req, res, next) => {
   );
 };
 
+const adminExceptionalSize: EC = (req, res, next) => {
+  const approve: boolean = req.body.approve;
+  if (!(typeof approve === "boolean"))
+    return next("invalid: requires 'approve' to be set");
+  const currentGroup: UserGroup = res.locals.group;
+  if (!currentGroup.pending) return next("cannot update settled group");
+  const userId: number = res.locals.user.id;
+  if (!approve) {
+    pool.query(
+      "UPDATE project_group SET ? WHERE id = ?;",
+      [
+        {
+          abandoned: true,
+          pending: false,
+          admin_rejected_id: userId,
+        },
+        currentGroup.id,
+      ],
+      addResultsToResponse(res, next)
+    );
+  } else if (approve) {
+    const allAccepted = currentGroup.members
+      .filter(({ id }) => id !== userId)
+      .every(({ invitation }) => invitation.accepted && !invitation.rejected);
+    pool.query(
+      "UPDATE project_group SET ? WHERE id = ?",
+      [
+        {
+          pending: !allAccepted,
+          admin_approved_id: userId,
+        },
+        currentGroup.id,
+      ],
+      addResultsToResponse(res, next)
+    );
+  }
+};
+
 /**
  * Group invitees can accept or reject the invite.
  * On reject, the group is marked as abandoned.
@@ -167,7 +205,7 @@ const abandonGroup = query({
 
 const withGroup = query({
   sql: "SELECT * FROM project_group_view WHERE id = ?",
-  using: (req) => Number(req.params.groupId),
+  using: (req) => Number(req.params.id),
   then: (results, _, res) => (res.locals.group = results[0]),
 });
 
@@ -206,6 +244,20 @@ export default {
     cancelInvite,
     ...endTransaction,
     ...respondWithGroupsAndProjectMembersAndMail,
+  ],
+  exceptionalSize: [
+    withGroup,
+    adminExceptionalSize,
+    query({
+      sql: "SELECT * FROM project_group_view",
+      then: (results, _, res) => (res.locals.groups = results),
+    }),
+    respond({
+      status: 201,
+      data: (_, res) => ({ groups: res.locals.groups }),
+      callNext: true,
+    }),
+    useMailbox,
   ],
   getGroups,
   getGroupsByUser,

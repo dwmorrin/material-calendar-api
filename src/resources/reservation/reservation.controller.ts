@@ -141,7 +141,7 @@ WHERE u.id = ?`;
 
 const getByUser = crud.readMany(byUserQuery, (_, res) => res.locals.user.id);
 
-const exceptionalSize = [
+const refund = [
   query({
     sql: "UPDATE booking SET ? WHERE id = ?",
     using: (req, res) => [
@@ -208,7 +208,7 @@ export default {
   getOne,
   getByUser,
   getMany,
-  exceptionalSize,
+  refund,
   cancelReservation: [
     cancelReservation,
     ...withUpdatedEventsAndReservations,

@@ -4,6 +4,7 @@ import { sendResults } from "../../utils/crud";
 
 const router = Router();
 
+router.put("/admin/exceptions/size/:id", controller.exceptionalSize);
 router.get("/project/:projectId", controller.getGroupsByProject);
 router.get("/user", controller.getGroupsByUser);
 
@@ -13,7 +14,7 @@ router.get("/user", controller.getGroupsByUser);
  * An inviter can also rescind the invitation and abandon the group.
  * (Abandon === soft delete)
  */
-router.put("/:groupId/invitation", controller.updateInvite);
+router.put("/:id/invitation", controller.updateInvite);
 router.delete("/:groupId/invitation", controller.cancelInvite);
 router.delete("/:groupId/user/:userId/", controller.leaveGroup);
 

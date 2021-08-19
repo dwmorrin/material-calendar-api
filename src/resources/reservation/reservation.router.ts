@@ -4,7 +4,7 @@ import { sendResults } from "../../utils/crud";
 
 const router = Router();
 
-router.put("/admin/exceptions/size/:id", controller.exceptionalSize);
+router.put("/admin/exceptions/refund/:id", controller.refund);
 router.put("/cancel/:id", controller.cancelReservation);
 router.get("/user", controller.getByUser);
 router.get("/:id", controller.getOne);
