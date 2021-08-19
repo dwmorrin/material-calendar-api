@@ -20,7 +20,7 @@ WITH equipment_list AS
   FROM
     equipment_reservation er
     LEFT JOIN equipment e ON e.id = er.equipment_id
-    LEFT JOIN reservation b ON er.booking_id = b.id and b.cancelled=0
+    LEFT JOIN reservation b ON er.booking_id = b.id and NOT b.canceled
   GROUP BY name, b.id
 )
 
@@ -61,7 +61,7 @@ SELECT
     NULL
   ) AS reservation
 FROM event a
-  LEFT JOIN reservation b ON a.id = b.event_id and b.cancelled=0
+  LEFT JOIN reservation b ON a.id = b.event_id and NOT b.canceled
   LEFT JOIN equipment_list el ON el.booking_id = b.id
   LEFT JOIN project_group g on g.id = b.group_id
 GROUP BY a.id

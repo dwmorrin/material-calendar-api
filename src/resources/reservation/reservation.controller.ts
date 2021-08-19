@@ -1,4 +1,4 @@
-import { addResultsToResponse, withResource } from "../../utils/crud";
+import { addResultsToResponse, crud, withResource } from "../../utils/crud";
 import pool, { inflate } from "../../utils/db";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
@@ -84,12 +84,10 @@ const editReservationStack = [
   useMailbox,
 ];
 
-export const getOne: EC = (req, res, next) =>
-  pool.query(
-    "SELECT * FROM reservation_view WHERE id = ?",
-    [req.params.id],
-    addResultsToResponse(res, next, { one: true })
-  );
+const getOne = crud.readOne(
+  "SELECT * FROM reservation_view WHERE id = ?",
+  (req) => Number(req.params.id)
+);
 
 export const cancelReservation: EC = (req, res, next) => {
   const { mailbox } = req.body;
@@ -98,9 +96,9 @@ export const cancelReservation: EC = (req, res, next) => {
   pool.query(
     `UPDATE booking
     SET
-      cancelled = 1,
-      cancelled_time = CURRENT_TIMESTAMP,
-      cancelled_user_id = ?,
+      canceled = 1,
+      canceled_time = CURRENT_TIMESTAMP,
+      canceled_user_id = ?,
       refund_request = ?,
       refund_request_comment = ?, 
       refund_approval_id = ?,
@@ -135,8 +133,7 @@ const withUpdatedEventsAndReservations = [
   withResource("events", "SELECT * FROM event"),
 ];
 
-export const getMany: EC = (_, res, next) =>
-  pool.query("SELECT * FROM reservation_view", addResultsToResponse(res, next));
+const getMany = crud.readMany("SELECT * FROM reservation_view");
 
 const byUserQuery = `SELECT
   res.*

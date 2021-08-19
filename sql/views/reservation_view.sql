@@ -8,12 +8,12 @@ SELECT
   b.guests,
   b.created as created, 
   IF (
-    b.cancelled = 1,
-    IF (b.refund_request = 1,
+    b.canceled,
+    IF (b.refund_request,
       JSON_OBJECT(
         'canceled', JSON_OBJECT(
-          'on', DATE_FORMAT(b.cancelled_time, "%Y-%m-%d %T"),
-          'by', b.cancelled_user_id,
+          'on', DATE_FORMAT(b.canceled_time, "%Y-%m-%d %T"),
+          'by', b.canceled_user_id,
           'comment', b.refund_request_comment
         ),
         'refund',JSON_OBJECT(
@@ -37,14 +37,14 @@ SELECT
       ),
       JSON_OBJECT(
         'canceled', JSON_OBJECT(
-          'on', DATE_FORMAT(b.cancelled_time, "%Y-%m-%d %T"),
-          'by', b.cancelled_user_id,
+          'on', DATE_FORMAT(b.canceled_time, "%Y-%m-%d %T"),
+          'by', b.canceled_user_id,
           'comment', b.refund_request_comment
         )
       )
     ),
     NULL
-  ) AS cancellation
+  ) AS cancelation
 FROM
   reservation b
     LEFT JOIN event a ON a.id = b.event_id
