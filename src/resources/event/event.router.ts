@@ -5,15 +5,14 @@ import eventImport from "./event.import";
 
 const router = Router();
 
-router.delete("/:id", controller.removeOne);
-router.get("/", controller.getMany);
-router.get("/:id", controller.getOne);
-router.post("/", controller.createOne);
 router.post("/bulk", controller.createMany);
-router.put("/:id", controller.updateOne);
-// bulk route already exists
-router.post("/import", eventImport);
+router.post("/import", ...eventImport);
 router.post("/range", controller.range);
+router.delete("/:id", controller.deleteOne);
+router.get("/:id", controller.getOne);
+router.put("/:id", controller.updateOne);
+router.get("/", controller.getMany);
+router.post("/", controller.createOne);
 
 router.use(sendResults);
 

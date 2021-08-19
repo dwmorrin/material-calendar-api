@@ -1,28 +1,9 @@
-import { addResultsToResponse, controllers } from "../../utils/crud";
-import pool from "../../utils/db";
-import { EC } from "../../utils/types";
+import { crud, query, respond } from "../../utils/crud";
 
-/**
- * Reading: use the `event_view` view.
- * Writing: use the `event` table.
- */
-
-const getMany: EC = (_, res, next) =>
-  pool.query("SELECT * FROM event_view", addResultsToResponse(res, next));
-
-const getOne: EC = (req, res, next) =>
-  pool.query(
-    "SELECT * FROM event_view WHERE id = ?",
-    [req.params.id],
-    addResultsToResponse(res, next, { one: true })
-  );
-
-const createMany: EC = (req, res, next) =>
-  pool.query(
-    `REPLACE INTO event (
-      start, end, location_id, bookable, description
-    ) VALUES ?`,
-    [
+const createMany = [
+  query({
+    sql: "REPLACE INTO event (start, end, location_id, bookable, description) VALUES ?",
+    using: (req) => [
       req.body.map(
         ({
           start = "",
@@ -33,42 +14,56 @@ const createMany: EC = (req, res, next) =>
         }) => [start, end, locationId, reservable, title]
       ),
     ],
-    addResultsToResponse(res, next, { many: true })
-  );
+  }),
+  // TODO don't send ALL events; just enough to update view; i.e. get a range from client
+  query({
+    sql: "SELECT * FROM event_view",
+    then: (results, _, res) => (res.locals.events = results),
+  }),
+  respond({
+    status: 204,
+    data: (_, res) => ({ events: res.locals.events }),
+  }),
+];
 
-const updateOne: EC = (req, res, next) =>
-  pool.query(
-    `UPDATE event SET ? WHERE id = ?`,
-    [
+const updateOne = [
+  query({
+    sql: "UPDATE event SET ? WHERE id = ?",
+    using: ({ body, params }) => [
       {
-        start: req.body.start,
-        end: req.body.end,
-        location_id: req.body.locationId,
-        bookable: req.body.reservable,
-        description: req.body.title,
+        start: body.start,
+        end: body.end,
+        location_id: body.locationId,
+        bookable: body.reservable,
+        description: body.title,
       },
-      req.params.id,
+      Number(params.id),
     ],
-    addResultsToResponse(res, next, { one: true })
-  );
-
-const range: EC = (req, res, next) => {
-  const { start, end } = req.body;
-  pool.query(
-    "SELECT * FROM event_view WHERE a.start BETWEEN ? AND ?",
-    [start, end],
-    (err, results) => {
-      if (err) return next(err);
-      res.status(200).json({ data: results });
-    }
-  );
-};
+  }),
+  query({
+    sql: "SELECT * FROM event_view WHERE id = ?",
+    using: (req) => Number(req.params.id),
+    then: (results, _, res) => (res.locals.event = results[0]),
+  }),
+  respond({
+    status: 201,
+    data: (_, res) => ({ event: res.locals.event }),
+  }),
+];
 
 export default {
-  ...controllers("event", "id"),
+  createOne: crud.createOne("INSERT INTO event ?", ({ body }) => body),
   createMany,
-  getMany,
-  getOne,
+  deleteOne: crud.deleteOne("DELETE FROM event WHERE id = ?", (req) =>
+    Number(req.params.id)
+  ),
+  getMany: crud.readMany("SELECT * FROM event_view"),
+  getOne: crud.readOne("SELECT * FROM event_view WHERE id = ?", (req) =>
+    Number(req.params.id)
+  ),
   updateOne,
-  range,
+  range: crud.readMany(
+    "SELECT * FROM event_view WHERE a.start BETWEEN ? AND ?",
+    ({ body }) => [body.start, body.end]
+  ),
 };
