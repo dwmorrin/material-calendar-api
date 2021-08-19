@@ -6,11 +6,6 @@ const router = Router();
 
 router.get("/project/:projectId", controller.getGroupsByProject);
 router.get("/user", controller.getGroupsByUser);
-router.get("/:groupId", controller.getOneGroup);
-router.put("/:groupId", controller.updateOneGroup);
-router.delete("/:groupId", controller.removeOneGroup);
-router.get("/", controller.getGroups);
-router.post("/", controller.createOne);
 
 /**
  * Projects are created when users invite other users to a group.
@@ -21,6 +16,12 @@ router.post("/", controller.createOne);
 router.put("/:groupId/invitation", controller.updateInvite);
 router.delete("/:groupId/invitation", controller.cancelInvite);
 router.delete("/:groupId/user/:userId/", controller.leaveGroup);
+
+router.get("/:groupId", controller.getOneGroup);
+router.put("/:groupId", controller.updateOneGroup);
+router.delete("/:groupId", controller.removeOneGroup);
+router.get("/", controller.getGroups);
+router.post("/", controller.createOne);
 
 router.use(sendResults);
 

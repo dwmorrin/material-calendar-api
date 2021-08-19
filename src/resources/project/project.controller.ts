@@ -16,9 +16,11 @@ import { isValidSQLDateInterval } from "../../utils/date";
  * Writing: use `project` table.
  */
 
-const getProjectMembers = crud.readMany(
-  "SELECT * FROM project_group_user_view WHERE projectId = ?",
-  (req) => Number(req.params.id)
+export const projectMembersQuery =
+  "SELECT * FROM project_group_user_view WHERE projectId = ?";
+
+const getProjectMembers = crud.readMany(projectMembersQuery, (req) =>
+  Number(req.params.id)
 );
 
 export const getOneLocationAllotment: EC = (req, res, next) =>

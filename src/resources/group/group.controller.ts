@@ -4,6 +4,7 @@ import { addResultsToResponse, crud, query, respond } from "../../utils/crud";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
 import { UserGroup, UserGroupRecord, CreateGroupRequest } from "./types";
+import { projectMembersQuery } from "../project/project.controller";
 
 /**
  * Reading: use the `project_group_view` view.
@@ -141,8 +142,8 @@ const updateInvite: EC = (req, res, next) => {
     );
   } else if (update.accepted) {
     const query: string[] = [
-      "UPDATE project_group_user SET accepted = TRUE",
-      "WHERE project_group_id = ? user_id = ?;",
+      "UPDATE project_group_user SET invitation_accepted = TRUE",
+      "WHERE project_group_id = ? AND user_id = ?;",
     ];
     const params: number[] = [currentGroup.id, userId];
     // check if all members have accepted
@@ -160,8 +161,8 @@ const updateInvite: EC = (req, res, next) => {
 };
 
 const abandonGroup = query({
-  sql: "UPDATE project_group SET abandoned = TRUE WHERE group_id = ?",
-  using: (req) => req.params.groupId,
+  sql: "UPDATE project_group SET abandoned = TRUE WHERE id = ?",
+  using: (req) => Number(req.params.groupId),
 });
 
 const withGroup = query({
@@ -170,15 +171,23 @@ const withGroup = query({
   then: (results, _, res) => (res.locals.group = results[0]),
 });
 
-const respondWithGroupsThenSendMail = [
+const respondWithGroupsAndProjectMembersAndMail = [
   query({
     sql: getGroupsByUserQuery,
     using: (_, res) => res.locals.user.id,
     then: (results, _, res) => (res.locals.groups = results),
   }),
+  query({
+    sql: projectMembersQuery,
+    using: (req) => req.body.projectId,
+    then: (results, _, res) => (res.locals.members = results),
+  }),
   respond({
     status: 201,
-    data: (_, res) => ({ groups: res.locals.groups }),
+    data: (_, res) => ({
+      groups: res.locals.groups,
+      members: res.locals.members,
+    }),
     callNext: true,
   }),
   useMailbox,
@@ -190,26 +199,26 @@ export default {
     createPendingGroup,
     createProjectGroupUsers,
     acceptOwnInvitation,
-    ...respondWithGroupsThenSendMail,
+    ...respondWithGroupsAndProjectMembersAndMail,
   ],
   cancelInvite: [
     ...startTransaction,
     cancelInvite,
     ...endTransaction,
-    ...respondWithGroupsThenSendMail,
+    ...respondWithGroupsAndProjectMembersAndMail,
   ],
   getGroups,
   getGroupsByUser,
   getGroupsByProject,
   getOneGroup,
   removeOneGroup,
-  leaveGroup: [abandonGroup, ...respondWithGroupsThenSendMail],
+  leaveGroup: [abandonGroup, ...respondWithGroupsAndProjectMembersAndMail],
   updateInvite: [
     withGroup,
     ...startTransaction,
     updateInvite,
     ...endTransaction,
-    ...respondWithGroupsThenSendMail,
+    ...respondWithGroupsAndProjectMembersAndMail,
   ],
   updateOneGroup,
 };
