@@ -9,37 +9,29 @@ SELECT
   b.created as created, 
   IF (
     b.canceled,
-    IF (b.refund_request,
-      JSON_OBJECT(
-        'canceled', JSON_OBJECT(
-          'on', DATE_FORMAT(b.canceled_time, "%Y-%m-%d %T"),
-          'by', b.canceled_user_id,
-          'comment', b.refund_request_comment
-        ),
-        'refund',JSON_OBJECT(
-          'approved', JSON_OBJECT(
-            'on', IF (
-              b.refund_approval_id IS NOT NULL,
-              DATE_FORMAT(refund_response_time, "%Y-%m-%d %T"),
-              ""
-            ),
-            'by', refund_approval_id
-          ),
-          'rejected', JSON_OBJECT(
-            'on', IF (
-              refund_denial_id IS NOT NULL,
-              DATE_FORMAT(refund_response_time, "%Y-%m-%d %T"),
-              ""
-            ),
-            'by', refund_denial_id
-          )
-        )
+    JSON_OBJECT(
+      'canceled', JSON_OBJECT(
+        'on', DATE_FORMAT(b.canceled_time, "%Y-%m-%d %T"),
+        'by', b.canceled_user_id,
+        'requestsRefund', b.refund_request,
+        'comment', b.refund_request_comment
       ),
-      JSON_OBJECT(
-        'canceled', JSON_OBJECT(
-          'on', DATE_FORMAT(b.canceled_time, "%Y-%m-%d %T"),
-          'by', b.canceled_user_id,
-          'comment', b.refund_request_comment
+      'refund',JSON_OBJECT(
+        'approved', JSON_OBJECT(
+          'on', IF (
+            b.refund_approval_id IS NOT NULL,
+            DATE_FORMAT(refund_response_time, "%Y-%m-%d %T"),
+            ""
+          ),
+          'by', refund_approval_id
+        ),
+        'rejected', JSON_OBJECT(
+          'on', IF (
+            refund_denial_id IS NOT NULL,
+            DATE_FORMAT(refund_response_time, "%Y-%m-%d %T"),
+            ""
+          ),
+          'by', refund_denial_id
         )
       )
     ),

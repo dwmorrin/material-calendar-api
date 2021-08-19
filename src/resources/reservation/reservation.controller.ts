@@ -1,4 +1,10 @@
-import { addResultsToResponse, crud, withResource } from "../../utils/crud";
+import {
+  addResultsToResponse,
+  crud,
+  query,
+  respond,
+  withResource,
+} from "../../utils/crud";
 import pool, { inflate } from "../../utils/db";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
@@ -89,34 +95,23 @@ const getOne = crud.readOne(
   (req) => Number(req.params.id)
 );
 
-export const cancelReservation: EC = (req, res, next) => {
-  const { mailbox } = req.body;
-  // useMailbox requires res.locals.mailbox be an array
-  res.locals.mailbox = Array.isArray(mailbox) ? mailbox : [];
-  pool.query(
-    `UPDATE booking
-    SET
-      canceled = 1,
-      canceled_time = CURRENT_TIMESTAMP,
-      canceled_user_id = ?,
-      refund_request = ?,
-      refund_request_comment = ?, 
-      refund_approval_id = ?,
-      refund_response_time = ? 
-    WHERE id = ?`,
-    [
-      req.body.userId,
-      req.body.refundApproved ? 1 : req.body.refundRequest ? 1 : 0,
-      req.body.refundApproved
+const cancelReservation = query({
+  sql: "UPDATE reservation SET = ? WHERE id = ?",
+  using: (req, res) => [
+    {
+      canceled: true,
+      canceled_time: new Date(),
+      canceled_user_id: res.locals.user.id,
+      refund_request: req.body.refundApproved || req.body.refundRequest,
+      refund_request_comment: req.body.refundApproved
         ? "Refund Granted Automatically"
         : req.body.refundComment,
-      req.body.refundApproved ? req.body.userId : null,
-      req.body.refundApproved ? new Date() : null,
-      req.params.reservationId,
-    ],
-    addResultsToResponse(res, next, { one: true })
-  );
-};
+      refund_approval_id: req.body.refundApproved ? res.locals.user.id : null,
+      refund_response_time: req.body.refundApproved ? new Date() : null,
+    },
+    req.params.id,
+  ],
+});
 
 const cancelResponse: EC = (_, res, next) => {
   res.status(201).json({
@@ -144,29 +139,30 @@ FROM
   INNER JOIN user u on u.id = pgu.user_id
 WHERE u.id = ?`;
 
-const getByUser: EC = (req, res, next) =>
-  pool.query(byUserQuery, req.params.id, addResultsToResponse(res, next));
+const getByUser = crud.readMany(byUserQuery, (_, res) => res.locals.user.id);
 
-export const getManyPendingAdminApproval: EC = (_, res, next) =>
-  pool.query(
-    "SELECT * FROM reservation_pending",
-    addResultsToResponse(res, next)
-  );
-
-export const adminResponse: EC = (req, res, next) => {
-  const { approved, denied, adminId } = req.body;
-  pool.query(
-    "UPDATE booking SET ? WHERE id = ?",
-    [
+const exceptionalSize = [
+  query({
+    sql: "UPDATE booking SET ? WHERE id = ?",
+    using: (req, res) => [
       {
-        refund_approval_id: approved ? adminId : null,
-        refund_denial_id: denied ? adminId : null,
+        refund_approval_id: req.body.approved ? res.locals.user.id : null,
+        refund_denial_id: req.body.approved ? null : res.locals.user.id,
       },
-      req.params.reservationId,
+      Number(req.params.id),
     ],
-    addResultsToResponse(res, next)
-  );
-};
+  }),
+  query({
+    sql: "SELECT * FROM reservation_view",
+    then: (results, _, res) => (res.locals.reservations = results),
+  }),
+  respond({
+    status: 201,
+    data: (_, res) => ({ reservations: res.locals.reservations }),
+    callNext: true,
+  }),
+  useMailbox,
+];
 
 // .id is a url param and .equipment is dealt with separately
 const getReservationFromBody = (req: Request) => ({
@@ -212,8 +208,7 @@ export default {
   getOne,
   getByUser,
   getMany,
-  getManyPendingAdminApproval,
-  adminResponse,
+  exceptionalSize,
   cancelReservation: [
     cancelReservation,
     ...withUpdatedEventsAndReservations,

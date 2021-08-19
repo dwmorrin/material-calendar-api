@@ -1,18 +1,17 @@
 import { Router } from "express";
 import controller from "./reservation.controller";
-import { numericId, sendResults } from "../../utils/crud";
+import { sendResults } from "../../utils/crud";
 
 const router = Router();
 
-router.put("/cancel/:reservationId", controller.cancelReservation);
+router.put("/admin/exceptions/size/:id", controller.exceptionalSize);
+router.put("/cancel/:id", controller.cancelReservation);
+router.get("/user", controller.getByUser);
+router.get("/:id", controller.getOne);
+router.put("/:id", controller.updateOne);
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);
-router.get("/user/:id", controller.getByUser);
-router.get(`/${numericId}`, controller.getOne);
-router.get("/exceptions", controller.getManyPendingAdminApproval);
-router.put("/exceptions/:reservationId", controller.adminResponse);
 router.post("/", controller.createOne);
-router.put("/:id", controller.updateOne);
 
 router.use(sendResults);
 
