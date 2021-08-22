@@ -21,7 +21,7 @@ const createMany = [
     then: (results, _, res) => (res.locals.events = results),
   }),
   respond({
-    status: 204,
+    status: 201,
     data: (_, res) => ({ events: res.locals.events }),
   }),
 ];
