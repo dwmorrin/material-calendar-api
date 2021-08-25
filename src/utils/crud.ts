@@ -30,6 +30,9 @@ export const withResource =
 
 type ParamBuilder<T> = (req: Request, res: Response) => T | T[];
 
+/** @throws */
+type QueryAssertion = (req: Request, res: Response) => void;
+
 type ResultsHandler = (
   results: Record<string, unknown>[],
   req: Request,
@@ -40,13 +43,20 @@ interface QueryProps<T> {
   sql: string;
   using?: ParamBuilder<T>;
   then?: ResultsHandler;
+  assert?: QueryAssertion;
 }
 
 const storeResults: ResultsHandler = (results, _, res) =>
   (res.locals.results = results);
 
-export function query<T>({ sql, using, then }: QueryProps<T>): EC {
+export function query<T>({ sql, using, then, assert }: QueryProps<T>): EC {
   return (req, res, next) => {
+    if (assert)
+      try {
+        assert(req, res);
+      } catch (error) {
+        return next(error);
+      }
     const values: T | T[] = using ? using(req, res) : [];
     pool.query(sql, values, (error, results) => {
       if (error) return next(error);

@@ -4,17 +4,17 @@ import { sendResults } from "../../utils/crud";
 
 const router = Router();
 
+router.post("/location-hours", controller.createLocationHours);
+
 router.get("/:id/allotments", controller.getOneLocationAllotment);
 router.put("/:id/allotments", controller.updateAllotment);
 router.get("/:id/group-dashboard", controller.getGroupDashboard);
 
-router.post("/location-hours", controller.createLocationHours);
-
 router.delete("/:id", controller.removeOne);
-router.get("/", controller.getMany);
 router.get("/:id", controller.getOne);
-router.post("/", controller.createOne);
 router.put("/:id", controller.updateOne);
+router.get("/", controller.getMany);
+router.post("/", controller.createOne);
 
 router.use(sendResults);
 

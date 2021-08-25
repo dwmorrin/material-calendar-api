@@ -4,6 +4,8 @@ import {
   controllers,
   crud,
   CrudAction,
+  query,
+  respond,
   respondWith,
   withResource,
 } from "../../utils/crud";
@@ -23,27 +25,18 @@ const getProjectMembers = crud.readMany(projectMembersQuery, (req) =>
   Number(req.params.id)
 );
 
-export const getOneLocationAllotment: EC = (req, res, next) =>
-  pool.query(
-    "SELECT * FROM project_virtual_week_hours WHERE project_id = ?",
-    [req.params.id],
-    addResultsToResponse(res, next, { one: true })
-  );
+const getOneLocationAllotment = crud.readOne(
+  "SELECT * FROM project_virtual_week_hours WHERE project_id = ?",
+  (req) => Number(req.params.id)
+);
 
-export const getMany: EC = (_, res, next) => {
-  pool.query("SELECT * from project_view", addResultsToResponse(res, next));
-};
+const getMany = crud.readMany("SELECT * from project_view");
 
-const getOne: EC = (req, res, next) => {
-  const { id } = req.params;
-  pool.query(
-    "SELECT * from project_view WHERE id = ?",
-    id,
-    addResultsToResponse(res, next)
-  );
-};
+const getOne = crud.readOne("SELECT * from project_view WHERE id = ?", (req) =>
+  Number(req.params.id)
+);
 
-export const createOrUpdateOne: EC = (req, res, next) => {
+const createOrUpdateOne: EC = (req, res, next) => {
   const {
     body: {
       end,
@@ -153,14 +146,14 @@ const deleteSectionProject: EC = (req, res, next) => {
   );
 };
 
-export const updateAllotment: EC = (req, res, next) =>
-  pool.query(
-    `REPLACE INTO project_virtual_week_hours (
+const updateAllotment = query({
+  sql: `REPLACE INTO project_virtual_week_hours (
       project_id, virtual_week_id, hours
      ) VALUES ?`,
-    [[[req.body.projectId, req.body.virtualWeekId, req.body.hours]]],
-    addResultsToResponse(res, next)
-  );
+  using: (req) => [
+    [[req.body.projectId, req.body.virtualWeekId, req.body.hours]],
+  ],
+});
 
 interface ProjectLocationHours {
   project: string; // title
@@ -168,47 +161,55 @@ interface ProjectLocationHours {
   hours: number;
 }
 
-const createLocationHours: EC = (req, res, next) => {
-  const locationHours = req.body as ProjectLocationHours[];
-  if (!Array.isArray(locationHours) || !locationHours.length)
-    return next("no input given");
-  const { projects } = res.locals as {
-    projects: { id: number; title: string }[];
-  };
-  const query =
-    "REPLACE INTO project_location_hours (project_id, location_id, hours) VALUES ?";
-  pool.query(
-    query,
-    [
-      locationHours.map(({ project, locationId, hours }) => [
-        projects.find((p) => p.title === project)?.id,
-        locationId,
-        hours,
-      ]),
+const createLocationHours = [
+  query({
+    sql: "SELECT id, title FROM project",
+    then: (results, _, res) => (res.locals.projects = results),
+  }),
+  query({
+    assert: (req) => {
+      if (!Array.isArray(req.body) || !req.body.length) throw "no input given";
+    },
+    sql: "REPLACE INTO project_location_hours (project_id, location_id, hours) VALUES ?",
+    using: (req, res) => [
+      (req.body as ProjectLocationHours[]).map(
+        ({ project, locationId, hours }) => [
+          (res.locals.projects as { id: number; title: string }[]).find(
+            (p) => p.title === project
+          )?.id,
+          locationId,
+          hours,
+        ]
+      ),
     ],
-    addResultsToResponse(res, next, { key: "ignore" })
-  );
-};
+  }),
+  query({
+    sql: "SELECT * FROM project_view",
+    then: (results, _, res) => (res.locals.projects = results),
+  }),
+  query({
+    sql: "SELECT * FROM location_view",
+    then: (results, _, res) => (res.locals.locations = results),
+  }),
+  query({
+    sql: "SELECT * FROM virtual_week_view",
+    then: (results, _, res) => (res.locals.weeks = results),
+  }),
+  respond({
+    status: 201,
+    data: (_, res) => ({
+      projects: res.locals.projects,
+      locations: res.locals.locations,
+      weeks: res.locals.weeks,
+    }),
+  }),
+];
 
-const withSelectedCourseSections: EC = (req, res, next) => {
-  const project = req.body as Project;
-  pool.query(
-    "SELECT id, title FROM section WHERE course_id = ?",
-    [project.courseId],
-    addResultsToResponse(res, next, { key: "sections" })
-  );
-};
-
-const createOneResponse: EC = (req, res) => {
-  res.status(201).json({
-    data: { id: res.locals.project.id, ...req.body },
-    context: req.query.context,
-  });
-};
-
-const updateOneResponse: EC = (req, res) => {
-  res.status(201).json({ data: { ...req.body }, context: req.query.context });
-};
+const withSelectedCourseSections = query({
+  sql: "SELECT id, title FROM section WHERE course_id = ?",
+  using: (req) => (req.body as Project).courseId,
+  then: (results, _, res) => (res.locals.sections = results),
+});
 
 export default {
   ...controllers("project", "id"),
@@ -217,15 +218,12 @@ export default {
     createOrUpdateProjectLocationHours,
     withSelectedCourseSections,
     createOrUpdateSectionProject,
-    createOneResponse,
+    respond({
+      status: 201,
+      data: (req, res) => ({ id: res.locals.project.id, ...req.body }),
+    }),
   ],
-  createLocationHours: [
-    withResource("projects", "SELECT id, title FROM project"),
-    createLocationHours,
-    withResource("projects", "SELECT * FROM project_view"),
-    withResource("locations", "SELECT * FROM location_view"),
-    respondWith("projects", "locations"),
-  ],
+  createLocationHours,
   getMany,
   getOne,
   getOneLocationAllotment,
@@ -243,6 +241,9 @@ export default {
     createOrUpdateSectionProject,
     deleteProjectLocationHours,
     deleteSectionProject,
-    updateOneResponse,
+    respond({
+      status: 201,
+      data: (req) => ({ ...req.body }),
+    }),
   ],
 };
