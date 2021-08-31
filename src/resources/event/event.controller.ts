@@ -2,6 +2,10 @@ import { crud, query, respond } from "../../utils/crud";
 
 const createMany = [
   query({
+    assert: (req) => {
+      if (!(Array.isArray(req.body) && req.body.length))
+        throw "create many without array of events";
+    },
     sql: "REPLACE INTO event (start, end, location_id, bookable, description) VALUES ?",
     using: (req) => [
       req.body.map(
