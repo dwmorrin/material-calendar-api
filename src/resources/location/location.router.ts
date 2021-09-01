@@ -5,11 +5,7 @@ import { numericId, sendResults } from "../../utils/crud";
 
 const router = Router();
 
-router.get(`/${numericId}/virtualweeks`, controller.getVirtualWeeks);
 router.post(`/${numericId}/hours/bulk`, controller.bulkLocationHours);
-
-// sums the hours of the events scheduled in a location
-router.get(`/${numericId}/hours`, controller.sumHours);
 
 router.delete(`/${numericId}`, controller.removeOne);
 router.get("/", controller.getMany);

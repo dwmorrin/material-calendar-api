@@ -31,7 +31,7 @@ export const withResource =
 type ParamBuilder<T> = (req: Request, res: Response) => T | T[];
 
 /** @throws */
-type QueryAssertion = (req: Request, res: Response) => void;
+export type QueryAssertion = (req: Request, res: Response) => void;
 
 type ResultsHandler = (
   results: Record<string, unknown>[],
@@ -55,6 +55,7 @@ export function query<T>({ sql, using, then, assert }: QueryProps<T>): EC {
       try {
         assert(req, res);
       } catch (error) {
+        if (error === "continue") return next();
         return next(error);
       }
     const values: T | T[] = using ? using(req, res) : [];
@@ -64,6 +65,8 @@ export function query<T>({ sql, using, then, assert }: QueryProps<T>): EC {
         if (!Array.isArray(results))
           return next("query results must be an array to use 'then'");
         then(results.map(inflate), req, res);
+      } else {
+        res.locals.results = results;
       }
       next();
     });
@@ -99,6 +102,14 @@ const echoBodyWithInsertId: DataHandler = (req, res) => ({
   ...req.body,
   id: res.locals.results.insertId,
 });
+
+export const dataHandlers = {
+  echoBody,
+  echoBodyWithInsertId,
+  manyResults,
+  ok,
+  oneResult,
+};
 
 export const respond =
   ({ data, status = 200, callNext }: ResponseProps): EC =>

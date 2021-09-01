@@ -15,6 +15,7 @@ const authorization: EC = (_, res, next) => {
     `SELECT
       u.id,
       u.user_id,
+      u.restriction,
       JSON_ARRAYAGG(r.title) AS roles
     FROM user u
       INNER JOIN user_role ur ON ur.user_id = u.id
@@ -30,6 +31,7 @@ const authorization: EC = (_, res, next) => {
       res.locals.user = {
         id: user.id,
         userId: user.user_id,
+        restriction: Number(user.restriction) || 0,
         roles,
       };
       res.locals.admin = user.roles.includes("admin");

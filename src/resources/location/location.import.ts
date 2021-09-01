@@ -1,9 +1,8 @@
 /* eslint-disable no-console */
 import { Connection } from "mysql";
-import { getUnsafeMultipleStatementConnection, inflate } from "../../utils/db";
-import { withResource } from "../../utils/crud";
+import { getUnsafeMultipleStatementConnection } from "../../utils/db";
+import { query, respond, withResource } from "../../utils/crud";
 import { EC, EEH } from "../../utils/types";
-import { getMany } from "./location.controller";
 
 type LocationInputRecord = {
   title: string;
@@ -128,11 +127,6 @@ const unsafeConnectionErrorHandler: EEH = (error, _, res, next) => {
   });
 };
 
-// requires getMany to be run first to populate res.locals.results
-const response: EC = (_, res) => {
-  res.status(201).json({ data: res.locals.results.map(inflate) });
-};
-
 const onError: EEH = (err, _, res, next) => {
   if (err === "no input") {
     res.status(400).json({ error: { message: err } });
@@ -153,7 +147,13 @@ export default [
   commitTransaction,
   rollbackGuard,
   unsafeConnectionErrorHandler,
-  getMany,
-  response,
+  query({
+    sql: "SELECT * FROM location_view",
+    then: (results, _, res) => (res.locals.results = results),
+  }),
+  respond({
+    status: 201,
+    data: (_, res) => res.locals.results,
+  }),
   onError,
 ];
