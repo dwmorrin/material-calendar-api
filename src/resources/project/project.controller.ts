@@ -111,23 +111,23 @@ const deleteProjectLocationHours: EC = (req, res, next) => {
   pool.query(query, addResultsToResponse(res, next, { key: "ignore" }));
 };
 
-// update will require deletions of old sections
-const createOrUpdateSectionProject: EC = (req, res, next) => {
-  if (!Array.isArray(res.locals.sections) || !res.locals.sections.length)
-    return next();
-  const method = req.method;
-  const project = req.body as Project;
-  const id =
-    method === CrudAction.Create ? res.locals.project.insertId : project.id;
-  const sections = (
-    res.locals.sections as { id: number; title: string }[]
-  ).filter(({ title }) => project.course.sections.includes(title));
-  pool.query(
-    "REPLACE INTO section_project (section_id, project_id) VALUES ?",
-    [sections.map(({ id: sectionId }) => [sectionId, id])],
-    addResultsToResponse(res, next, { key: "ignore" })
-  );
-};
+const createOrUpdateSectionProject = query({
+  assert: (_, res) => {
+    if (!Array.isArray(res.locals.sections) || !res.locals.sections.length)
+      throw "continue";
+  },
+  sql: "REPLACE INTO section_project (section_id, project_id) VALUES ?",
+  using: (req, res) => {
+    const method = req.method;
+    const project = req.body as Project;
+    const id =
+      method === CrudAction.Create ? res.locals.project.insertId : project.id;
+    const sections = (
+      res.locals.sections as { id: number; title: string }[]
+    ).filter(({ title }) => project.course.sections.includes(title));
+    return [sections.map(({ id: sectionId }) => [sectionId, id])];
+  },
+});
 
 const deleteSectionProject: EC = (req, res, next) => {
   if (!Array.isArray(res.locals.sections) || !res.locals.sections.length)
@@ -206,6 +206,10 @@ const createLocationHours = [
 ];
 
 const withSelectedCourseSections = query({
+  assert: (req) => {
+    const courseId = Number((req.body as Project).courseId);
+    if (isNaN(courseId) || courseId < 1) throw "continue";
+  },
   sql: "SELECT id, title FROM section WHERE course_id = ?",
   using: (req) => (req.body as Project).courseId,
   then: (results, _, res) => (res.locals.sections = results),
