@@ -13,6 +13,7 @@ SOURCE sql/material_calendar.sql; -- This is the SQL file that contains the sche
 
 INSERT INTO user SET
   user_id = '{{AUTH_ID}}',
+  restriction = 1000,
   password = AES_ENCRYPT('{{ADMIN_PASSWORD}}', UNHEX(SHA2('{{MYSQL_SHA2_PASSPHRASE}}', 512))),
   first_name = '{{ADMIN_FIRST_NAME}}',
   last_name = '{{ADMIN_LAST_NAME}}',
