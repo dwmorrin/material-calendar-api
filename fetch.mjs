@@ -34,13 +34,12 @@ const options = {
   port: process.env.PORT,
   path: program.path || "/",
   method: program.method || "GET",
+  headers: {},
 };
 
 if (program.data) {
-  options.headers = {
-    "Content-Type": "application/json",
-    "Content-Length": program.data.length,
-  };
+  options.headers["Content-Type"] = "application/json";
+  options.headers["Content-Length"] = program.data.length;
 }
 
 const onResponse = (res) => {
