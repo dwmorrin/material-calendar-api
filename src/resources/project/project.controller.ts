@@ -224,7 +224,7 @@ export default {
     createOrUpdateSectionProject,
     respond({
       status: 201,
-      data: (req, res) => ({ id: res.locals.project.id, ...req.body }),
+      data: (req, res) => ({ ...req.body, id: res.locals.project.id }),
     }),
   ],
   createLocationHours,
