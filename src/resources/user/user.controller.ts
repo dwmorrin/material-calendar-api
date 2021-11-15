@@ -1,23 +1,97 @@
-import pool from "../../utils/db";
-import { addResultsToResponse } from "../../utils/crud";
-import { EC } from "../../utils/types";
+import { Connection } from "mysql";
+import pool, { getUnsafeMultipleStatementConnection } from "../../utils/db";
+import {
+  addResultsToResponse,
+  crud,
+  respond,
+  withResource,
+} from "../../utils/crud";
+import { EC, EEH } from "../../utils/types";
 
-const getOne: EC = (req, res, next) =>
-  pool.query(
-    "SELECT * FROM user_view WHERE id = ?",
-    [req.params.id],
-    addResultsToResponse(res, next, { one: true })
-  );
+const getOne = crud.readOne(
+  "SELECT * FROM user_view WHERE id = ?",
+  (req) => req.params.id
+);
 
-const getMany: EC = (_, res, next) =>
-  pool.query("SELECT * FROM user_view", addResultsToResponse(res, next));
+const getMany = crud.readMany("SELECT * FROM user_view");
 
-const createOne: EC = (req, res, next) =>
-  pool.query(
+const startCreateOne: EC = (_, res, next) => {
+  const unsafeConnection = getUnsafeMultipleStatementConnection();
+  res.locals.connection = unsafeConnection;
+  unsafeConnection.beginTransaction((err) => {
+    if (err) return next(err);
+    next();
+  });
+};
+
+const createOne: EC = (req, res, next) => {
+  const connection: Connection = res.locals.connection;
+  const { username, name, email, phone, restriction } = req.body;
+  connection.query(
     "INSERT INTO user SET ?",
-    [{ ...req.body }],
+    {
+      user_id: username,
+      first_name: name.first,
+      last_name: name.last,
+      email,
+      phone,
+      restriction,
+    },
+    addResultsToResponse(res, next, { one: true, key: "user" })
+  );
+};
+
+// only for new users; does not remove roles
+const createRoles: EC = (req, res, next) => {
+  const connection: Connection = res.locals.connection;
+  const { insertId } = res.locals.user;
+  const { roles } = req.body as { roles: string[] };
+  const roleTable: { id: number; title: string }[] = res.locals.roles;
+  const rolesToInsert = [];
+  for (const role of roles) {
+    const role_id = (
+      roleTable.find(({ title }) => title === role) || { id: -1 }
+    ).id;
+    if (role_id === -1) throw new Error(`Role ${role} does not exist`);
+    rolesToInsert.push({ user_id: insertId, role_id });
+  }
+  connection.query(
+    "INSERT INTO user_role SET ?;".repeat(rolesToInsert.length),
+    rolesToInsert,
     addResultsToResponse(res, next)
   );
+};
+
+const commitCreateOne: EC = (req, res, next) => {
+  const connection: Connection = res.locals.connection;
+  connection.commit((err) => {
+    if (err) return next(err);
+    connection.end((err) => {
+      if (err) return next(err);
+      delete res.locals.connection;
+      next();
+    });
+  });
+};
+
+const createOneRollback: EEH = (error, _, res, next) => {
+  const connection: Connection = res.locals.connection;
+  if (!connection) return next(error);
+  console.log("error making new user; calling rollback");
+  connection.rollback(() => next(error));
+};
+
+const createOneErrorHandler: EEH = (error, _, res, next) => {
+  const connection: Connection = res.locals.connection;
+  if (!connection) return next(error);
+  console.log("terminating create new user due to error:");
+  console.log(error);
+  connection.end((error2) => {
+    if (error2) return next(error2);
+    delete res.locals.unsafeConnection;
+    next(error);
+  });
+};
 
 const updateSetup: EC = (req, res, next) => {
   res.locals.roles = req.body.roles;
@@ -128,9 +202,30 @@ const resetPassword: EC = (req, res, next) => {
 };
 
 export default {
-  createOne,
+  createOne: [
+    withResource("roles", "SELECT * FROM role"),
+    startCreateOne,
+    createOne,
+    createRoles,
+    commitCreateOne,
+    createOneRollback,
+    createOneErrorHandler,
+    respond({
+      status: 201,
+      data: (req, res) => ({ ...req.body, id: res.locals.user.insertId }),
+    }),
+  ],
   getOne,
-  updateOne: [updateSetup, updateOne, insertRoles, deleteRoles, getOne],
+  updateOne: [
+    updateSetup,
+    updateOne,
+    insertRoles,
+    deleteRoles,
+    respond({
+      status: 201,
+      data: (req) => ({ ...req.body }),
+    }),
+  ],
   removeOne,
   getMany,
   getCourses,
