@@ -6,6 +6,7 @@ const router = Router();
 
 router.get("/", controller.getMany);
 router.put("/:id", controller.updateOne);
+router.post("/", controller.createOne);
 
 router.use(sendResults);
 

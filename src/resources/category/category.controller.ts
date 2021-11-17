@@ -1,18 +1,22 @@
-import { controllers, addResultsToResponse } from "../../utils/crud";
+import { addResultsToResponse, controllers, crud } from "../../utils/crud";
 import pool from "../../utils/db";
 import { EC } from "../../utils/types";
 
-const query = `
+const getMany = crud.readMany(`
   SELECT
     id,
     title,
     parent_id AS parentId
   FROM
     equipment_category
-`;
+`);
 
-export const getMany: EC = (_, res, next) =>
-  pool.query(query, addResultsToResponse(res, next));
+const createOne = crud.createOne(
+  "INSERT INTO equipment_category SET ?",
+  (req) => ({
+    title: req.body.title,
+  })
+);
 
 const updateOne: EC = (req, res, next) => {
   const { id } = req.params;
@@ -26,6 +30,7 @@ const updateOne: EC = (req, res, next) => {
 
 export default {
   ...controllers("equipment_category", "id"),
+  createOne,
   getMany,
   updateOne,
 };
