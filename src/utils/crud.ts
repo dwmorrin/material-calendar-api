@@ -179,7 +179,6 @@ function create1<T>(sql: string, using?: ParamBuilder<T>): EC[] {
     query({
       sql,
       using,
-      then: storeResults,
     }),
     respond({
       status: 201,
