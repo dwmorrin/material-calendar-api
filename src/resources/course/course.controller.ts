@@ -1,8 +1,8 @@
 import pool from "../../utils/db";
-import { controllers, addResultsToResponse } from "../../utils/crud";
+import { crud, controllers, addResultsToResponse } from "../../utils/crud";
 import { EC } from "../../utils/types";
 
-export const query = `
+const query = `
   SELECT
     c.id,
     c.title,
@@ -14,23 +14,18 @@ export const query = `
     INNER JOIN section s ON s.course_id = c.id
 `;
 
-export const getMany: EC = (_, res, next) =>
+const getMany: EC = (_, res, next) =>
   pool.query(query, addResultsToResponse(res, next));
-
-export const createOne: EC = (req, res, next) =>
-  pool.query(
-    "INSERT INTO course (title, catalog_id) VALUES ?",
-    [
-      {
-        title: req.body.title,
-        catalog_id: req.body.catalogId,
-      },
-    ],
-    addResultsToResponse(res, next)
-  );
 
 export default {
   ...controllers("course", "id"),
-  createOne,
+  createOne: crud.createOne("INSERT INTO course SET ?", (req) => ({
+    title: req.body.title,
+    catalog_id: req.body.catalogId,
+  })),
   getMany,
+  updateOne: crud.updateOne("UPDATE course SET ? WHERE id = ?", (req) => [
+    { title: req.body.title, catalog_id: req.body.catalogId },
+    req.params.id,
+  ]),
 };
