@@ -6,7 +6,7 @@ const router = Router();
 
 router.get("/", controller.getMany);
 router.get("/:id", controller.getOne);
-router.post("/:id", controller.createOne);
+router.post("/", controller.createOne);
 router.put("/:id", controller.updateOne);
 router.delete("/:id", controller.deleteOne);
 
