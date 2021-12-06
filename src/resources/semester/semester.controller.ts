@@ -6,13 +6,13 @@ import {
 } from "../../utils/crud";
 import { EC } from "../../utils/types";
 
-export const getCurrent: EC = (_, res, next) =>
+const getCurrent: EC = (_, res, next) =>
   pool.query(
     "SELECT * FROM active_semester_view",
     addResultsToResponse(res, next, { one: true })
   );
 
-export const getMany: EC = (_, res, next) =>
+const getMany: EC = (_, res, next) =>
   pool.query("SELECT * FROM semester_view", addResultsToResponse(res, next));
 
 const updateActive: EC = (req, res, next) => {
@@ -31,14 +31,14 @@ const updateActive: EC = (req, res, next) => {
   }
 };
 
-export const createOne: EC = (req, res, next) =>
+const createOne: EC = (req, res, next) =>
   pool.query(
     "INSERT INTO semester SET ?",
     [{ title: req.body.title, start: req.body.start, end: req.body.end }],
     addResultsToResponse(res, next)
   );
 
-export const updateOne: EC = (req, res, next): void => {
+const updateOne: EC = (req, res, next): void => {
   pool.query(
     "UPDATE semester SET ? WHERE id = ?",
     [
