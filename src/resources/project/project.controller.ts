@@ -207,7 +207,7 @@ const createLocationHours = [
 
 const withSelectedCourseSections = query({
   assert: (req) => {
-    const courseId = Number((req.body as Project).courseId);
+    const courseId = Number((req.body as Project).course.id);
     if (isNaN(courseId) || courseId < 1) throw "continue";
   },
   sql: "SELECT id, title FROM section WHERE course_id = ?",
