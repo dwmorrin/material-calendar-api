@@ -130,19 +130,25 @@ const createOrUpdateSectionProject = query({
 });
 
 const deleteSectionProject: EC = (req, res, next) => {
-  if (!Array.isArray(res.locals.sections) || !res.locals.sections.length)
-    return next();
   const method = req.method;
   const project = req.body as Project;
-  const sections = (
-    res.locals.sections as { id: number; title: string }[]
-  ).filter(({ title }) => project.course.sections.includes(title));
   const id =
     method === CrudAction.Create ? res.locals.project.insertId : project.id;
-  const values = [id, [sections.map(({ id: sectionId }) => sectionId)]];
-  const sql =
-    "DELETE FROM section_project WHERE project_id = ? AND section_id NOT IN ?";
-  pool.query(sql, values, addResultsToResponse(res, next, { key: "ignore" }));
+  if (!Array.isArray(res.locals.sections) || !res.locals.sections.length) {
+    // clear all section_project entries for this project
+    const sql = "DELETE FROM section_project WHERE project_id = ?";
+    pool.query(sql, id, addResultsToResponse(res, next, { key: "ignore" }));
+  } else {
+    const sections = (
+      res.locals.sections as { id: number; title: string }[]
+    ).filter(({ title }) => project.course.sections.includes(title));
+    const id =
+      method === CrudAction.Create ? res.locals.project.insertId : project.id;
+    const values = [id, [sections.map(({ id: sectionId }) => sectionId)]];
+    const sql =
+      "DELETE FROM section_project WHERE project_id = ? AND section_id NOT IN ?";
+    pool.query(sql, values, addResultsToResponse(res, next, { key: "ignore" }));
+  }
 };
 
 const updateAllotment = query({
