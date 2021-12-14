@@ -139,11 +139,10 @@ const deleteSectionProject: EC = (req, res, next) => {
   ).filter(({ title }) => project.course.sections.includes(title));
   const id =
     method === CrudAction.Create ? res.locals.project.insertId : project.id;
-  pool.query(
-    "DELETE FROM section_project WHERE project_id = ? AND section_id NOT IN ?",
-    [id, sections.map(({ id: sectionId }) => sectionId)],
-    addResultsToResponse(res, next, { key: "ignore" })
-  );
+  const values = [id, [sections.map(({ id: sectionId }) => sectionId)]];
+  const sql =
+    "DELETE FROM section_project WHERE project_id = ? AND section_id NOT IN ?";
+  pool.query(sql, values, addResultsToResponse(res, next, { key: "ignore" }));
 };
 
 const updateAllotment = query({
@@ -211,7 +210,7 @@ const withSelectedCourseSections = query({
     if (isNaN(courseId) || courseId < 1) throw "continue";
   },
   sql: "SELECT id, title FROM section WHERE course_id = ?",
-  using: (req) => (req.body as Project).courseId,
+  using: (req) => (req.body as Project).course.id,
   then: (results, _, res) => (res.locals.sections = results),
 });
 
