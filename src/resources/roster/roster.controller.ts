@@ -1,5 +1,5 @@
 import pool from "../../utils/db";
-import { addResultsToResponse } from "../../utils/crud";
+import { addResultsToResponse, query } from "../../utils/crud";
 import { EC } from "../../utils/types";
 import withActiveSemester from "../../utils/withActiveSemester";
 
@@ -25,23 +25,34 @@ interface RosterRecord {
   };
 }
 
-const getSectionByCourseIdAndTitle: EC = (req, res, next) => {
-  const record = req.body as RosterRecord;
-  pool.query(
-    "SELECT id FROM section WHERE course_id = ? and title = ?",
-    [record.course.id, record.course.section],
-    (err, result) => {
-      if (err) return next(err);
-      const id = result[0].id;
-      res.locals.sectionId = id;
-      next();
-    }
-  );
-};
+const getCourseId = query({
+  sql: "SELECT id FROM course WHERE title = ? AND catalog_id = ?",
+  using: (req) => [req.body.course.title, req.body.course.catalogId],
+  then: (results, req, res) => {
+    if (!results.length || !results[0].id)
+      throw new Error(
+        `No course for title "${req.body.course.title}" and catalog ID "${req.body.course.catalogId}"`
+      );
+    res.locals.courseId = results[0].id;
+  },
+});
+
+const getSectionId = query({
+  sql: "SELECT id FROM section WHERE course_id = ? and title = ?",
+  using: (req, res) => [res.locals.courseId, req.body.course.section],
+  then: (results, req, res) => {
+    if (!results.length || !results[0].id)
+      throw new Error(
+        `No section for course ID "${res.locals.courseId}" and section title "${req.body.course.section}"`
+      );
+    res.locals.sectionId = results[0].id;
+  },
+});
 
 const withActiveSemesterAndSections = [
   withActiveSemester,
-  getSectionByCourseIdAndTitle,
+  getCourseId,
+  getSectionId,
 ];
 
 // requires semester and sectionId to be in res.locals
@@ -52,7 +63,7 @@ const updateOne: EC = (req, res, next) => {
     [
       {
         user_id: record.student.id,
-        course_id: record.course.id,
+        course_id: res.locals.courseId,
         semester_id: res.locals.semester.id,
         section_id: res.locals.sectionId,
       },
