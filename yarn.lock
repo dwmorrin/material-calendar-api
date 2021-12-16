@@ -1269,13 +1269,6 @@
   resolved "https://registry.yarnpkg.com/@types/cors/-/cors-2.8.12.tgz#6b2c510a7ad7039e98e7b8d3d6598f4359e5c080"
   integrity sha512-vt+kDhq/M2ayberEtJcIN/hxXy1Pk+59g2FV/ZQceeaTyCtCucjL2Q7FXlFjtWn4n15KCr1NE2lNNFhp0lEThw==
 
-"@types/engine.io@*":
-  version "3.1.6"
-  resolved "https://registry.yarnpkg.com/@types/engine.io/-/engine.io-3.1.6.tgz#db717628f4bc0b7d1baddfc864f648b14687c70c"
-  integrity sha512-uFIEJESFKNNiuKt93ri5PnvRntAHCm/Aw9tTO2L25xXJSLzC/ARGmpDSJkuTCit7sUW5xUxr91Ta+UOiYaO3+A==
-  dependencies:
-    "@types/node" "*"
-
 "@types/eslint@^6.8.0":
   version "6.8.1"
   resolved "https://registry.yarnpkg.com/@types/eslint/-/eslint-6.8.1.tgz"
@@ -1424,21 +1417,12 @@
     "@types/mime" "^1"
     "@types/node" "*"
 
-"@types/socket.io-parser@*", "@types/socket.io-parser@^3.0.0":
+"@types/socket.io-parser@^3.0.0":
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/@types/socket.io-parser/-/socket.io-parser-3.0.0.tgz#9726d3ab9235757a0a30dd5ccf8975dce54e5e2c"
   integrity sha512-Ry/rbTE6HQNL9eu3LpL1Ocup5VexXu1bSSGlSho/IR5LuRc8YvxwSNJ3JxqTltVJEATLbZkMQETSbxfKNgp4Ew==
   dependencies:
     socket.io-parser "*"
-
-"@types/socket.io@^2.1.6":
-  version "2.1.13"
-  resolved "https://registry.yarnpkg.com/@types/socket.io/-/socket.io-2.1.13.tgz#b6d694234e99956c96ff99e197eda824b6f9dc48"
-  integrity sha512-JRgH3nCgsWel4OPANkhH8TelpXvacAJ9VeryjuqCDiaVDMpLysd6sbt0dr6Z15pqH3p2YpOT3T1C5vQ+O/7uyg==
-  dependencies:
-    "@types/engine.io" "*"
-    "@types/node" "*"
-    "@types/socket.io-parser" "*"
 
 "@types/stack-utils@^2.0.0":
   version "2.0.0"
