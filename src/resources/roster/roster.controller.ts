@@ -1,29 +1,7 @@
-import pool from "../../utils/db";
-import { addResultsToResponse, query } from "../../utils/crud";
-import { EC } from "../../utils/types";
+import { crud, query } from "../../utils/crud";
 import withActiveSemester from "../../utils/withActiveSemester";
 
-const getMany: EC = (_, res, next) =>
-  pool.query("SELECT * FROM roster_view", addResultsToResponse(res, next));
-
-interface RosterRecord {
-  id: number;
-  course: {
-    id: number;
-    title: string;
-    catalogId: string;
-    section: string;
-    instructor: string;
-  };
-  student: {
-    name: {
-      first: string;
-      last: string;
-    };
-    id: number;
-    username: string;
-  };
-}
+const getMany = crud.readMany("SELECT * FROM roster_view");
 
 const getCourseId = query({
   sql: "SELECT id FROM course WHERE title = ? AND catalog_id = ?",
@@ -55,42 +33,36 @@ const withActiveSemesterAndSections = [
   getSectionId,
 ];
 
-// requires semester and sectionId to be in res.locals
-const updateOne: EC = (req, res, next) => {
-  const record = req.body as RosterRecord;
-  pool.query(
-    "UPDATE roster SET ? WHERE id = ?",
-    [
-      {
-        user_id: record.student.id,
-        course_id: res.locals.courseId,
-        semester_id: res.locals.semester.id,
-        section_id: res.locals.sectionId,
-      },
-      record.id,
-    ],
-    addResultsToResponse(res, next, { one: true })
-  );
-};
+const updateOne = crud.updateOne(
+  "UPDATE roster SET ? WHERE id = ?",
+  (req, res) => [
+    {
+      user_id: req.body.student.id,
+      course_id: res.locals.courseId,
+      semester_id: res.locals.semester.id,
+      section_id: res.locals.sectionId,
+    },
+    req.body.id,
+  ]
+);
 
-const createOne: EC = (req, res, next) => {
-  const record = req.body as RosterRecord;
-  pool.query(
-    "INSERT INTO roster SET ?",
-    [
-      {
-        user_id: record.student.id,
-        course_id: record.course.id,
-        semester_id: res.locals.semester.id,
-        section_id: res.locals.sectionId,
-      },
-    ],
-    addResultsToResponse(res, next)
-  );
-};
+const createOne = crud.createOne("INSERT INTO roster SET ?", (req, res) => [
+  {
+    user_id: req.body.student.id,
+    course_id: res.locals.courseId,
+    semester_id: res.locals.semester.id,
+    section_id: res.locals.sectionId,
+  },
+]);
+
+const deleteOne = crud.deleteOne(
+  "DELETE FROM roster WHERE id = ?",
+  (req) => req.params.id
+);
 
 export default {
-  getMany,
   createOne: [...withActiveSemesterAndSections, createOne],
+  deleteOne,
+  getMany,
   updateOne: [...withActiveSemesterAndSections, updateOne],
 };
