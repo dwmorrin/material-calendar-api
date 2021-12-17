@@ -153,7 +153,7 @@ function deleteOne<T>(sql: string, using?: ParamBuilder<T>): EC[] {
       using,
     }),
     respond({
-      status: 204,
+      status: 200,
       data: ok,
     }),
   ];
