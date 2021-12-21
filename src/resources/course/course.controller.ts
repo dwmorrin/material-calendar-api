@@ -1,7 +1,10 @@
-import pool from "../../utils/db";
-import { crud, controllers, addResultsToResponse } from "../../utils/crud";
-import { EC } from "../../utils/types";
+import { crud, controllers } from "../../utils/crud";
 
+/**
+ * @deprecated
+ * TODO remove all references to this query
+ * this is a SECTION query, not a course query
+ */
 export const query = `
   SELECT
     c.id,
@@ -14,8 +17,14 @@ export const query = `
     INNER JOIN section s ON s.course_id = c.id
 `;
 
-const getMany: EC = (_, res, next) =>
-  pool.query(query, addResultsToResponse(res, next));
+const getMany = crud.readMany(`
+  SELECT
+    c.id,
+    c.title,
+    c.catalog_id AS catalogId
+  FROM
+    course c
+`);
 
 export default {
   ...controllers("course", "id"),
