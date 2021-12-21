@@ -89,9 +89,10 @@ const getFromResLocals = (
 type DataHandler = (req: Request, res: Response) => unknown;
 
 interface ResponseProps {
-  data: DataHandler;
-  status?: number;
   callNext?: boolean;
+  data: DataHandler;
+  kind?: "UPDATE_ALL";
+  status?: number;
 }
 
 const oneResult: DataHandler = (_, res) => res.locals.results[0];
@@ -112,11 +113,11 @@ export const dataHandlers = {
 };
 
 export const respond =
-  ({ data, status = 200, callNext }: ResponseProps): EC =>
+  ({ data, status = 200, callNext, kind }: ResponseProps): EC =>
   (req, res, next) => {
     res
       .status(status)
-      .json({ data: data(req, res), context: req.query.context });
+      .json({ data: data(req, res), context: req.query.context, kind });
     if (callNext) next();
   };
 
