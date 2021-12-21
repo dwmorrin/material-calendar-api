@@ -2,7 +2,7 @@ import pool from "../../utils/db";
 import { crud, controllers, addResultsToResponse } from "../../utils/crud";
 import { EC } from "../../utils/types";
 
-const query = `
+export const query = `
   SELECT
     c.id,
     c.title,
