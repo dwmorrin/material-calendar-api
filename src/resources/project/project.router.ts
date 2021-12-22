@@ -4,6 +4,7 @@ import { sendResults } from "../../utils/crud";
 
 const router = Router();
 
+router.get("/used-hours", controller.usedHours);
 router.post("/location-hours", controller.createLocationHours);
 
 router.get("/:id/allotments", controller.getOneLocationAllotment);

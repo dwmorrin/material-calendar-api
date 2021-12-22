@@ -220,8 +220,44 @@ const withSelectedCourseSections = query({
   then: (results, _, res) => (res.locals.sections = results),
 });
 
+/**
+ * @api GET {project}/availableHours
+ * required query params:
+ *   projectId
+ *   locationId
+ *   start
+ *   end
+ */
+const usedHours = [
+  query({
+    sql: `
+  SELECT
+    ? AS id,
+    IFNULL(
+      SUM(TIMESTAMPDIFF(MINUTE, start, end)/60),
+      0
+    ) AS hours
+  FROM event
+  JOIN reservation ON event.id = reservation.event_id
+  WHERE reservation.project_id = ?
+  AND event.location_id = ?
+  AND date(event.start) >= ?
+  AND date(event.end) <= ?
+  AND reservation.confirmed
+  AND NOT reservation.canceled`,
+    using: (req) => [
+      Number(req.query.projectId as string),
+      req.query.projectId,
+      req.query.locationId,
+      req.query.start,
+      req.query.end,
+    ],
+  }),
+  respond({ data: (_, res) => res.locals.results[0] }),
+];
 export default {
   ...controllers("project", "id"),
+  usedHours,
   createOne: [
     createOrUpdateOne,
     createOrUpdateProjectLocationHours,
