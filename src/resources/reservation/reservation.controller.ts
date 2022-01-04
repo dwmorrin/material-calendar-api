@@ -9,6 +9,7 @@ import pool, { inflate } from "../../utils/db";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
 import { Request } from "express";
+import { makeUsedHoursQuery } from "../project/project.helpers";
 
 interface Equipment {
   id: number;
@@ -176,12 +177,62 @@ const getReservationFromBody = (req: Request) => ({
   purpose: req.body.description,
 });
 
-export const createOne: EC = (req, res, next) =>
-  pool.query(
-    "INSERT INTO reservation SET ?",
-    [getReservationFromBody(req)],
-    addResultsToResponse(res, next, { key: "reservation" })
-  );
+const createOneStack = [
+  // get corresponding virtual week from event ID
+  query({
+    sql: `
+      SELECT vw.id, vw.start, vw.end
+      FROM   event e
+      JOIN   virtual_week vw USING (location_id)
+      WHERE  e.id = ?
+      AND    e.start BETWEEN vw.start AND vw.end
+    `,
+    using: (req) => req.body.eventId,
+    then: (results, _, res) => (res.locals.virtualWeek = results[0]),
+  }),
+  // get used hours across project for the virtual week
+  query({
+    assert: (_, res) => {
+      if (!res.locals.virtualWeek)
+        throw [
+          "Booking app is not setup for this event.", // friendly message
+          "(Event is not part of a virtual week.)", // hint to admin/dev
+        ].join(" ");
+    },
+    sql: makeUsedHoursQuery(),
+    using: (req, res) => [
+      req.body.projectId,
+      req.body.locationId,
+      res.locals.virtualWeek.start,
+      res.locals.virtualWeek.end,
+    ],
+    then: (results, _, res) => (res.locals.usedHours = results[0].hours),
+  }),
+  // get project virtual week hours
+  query({
+    sql: `
+    SELECT hours
+    FROM   project_virtual_week_hours
+    WHERE  project_id = ?
+    AND    virtual_week_id = ?`,
+    using: (req, res) => [req.body.projectId, res.locals.virtualWeek.id],
+    then: (results, _, res) =>
+      (res.locals.projectVirtualWeekHours = results[0].hours),
+  }),
+  // validate and create reservation
+  query({
+    assert: (_, res) => {
+      const { usedHours, projectVirtualWeekHours } = res.locals;
+      if (usedHours === undefined) throw "Cannot find used hours";
+      if (projectVirtualWeekHours === undefined) throw "Cannot find used hours";
+      if (usedHours >= projectVirtualWeekHours)
+        throw "Project does not have enough hours";
+    },
+    sql: "INSERT INTO reservation SET ?",
+    using: (req) => [getReservationFromBody(req)],
+    insertThen: (results, _, res) => (res.locals.reservation = results),
+  }),
+];
 
 export const updateOne: EC = (req, res, next) => {
   // a bit of a hack, but this makes for the same as createOne
@@ -203,7 +254,7 @@ const removeOne: EC = (req, res, next) => {
 };
 
 export default {
-  createOne: [createOne, ...editReservationStack],
+  createOne: [...createOneStack, ...editReservationStack],
   updateOne: [updateOne, ...editReservationStack],
   getOne,
   getByUser,

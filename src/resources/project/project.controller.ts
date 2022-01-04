@@ -11,6 +11,7 @@ import {
 } from "../../utils/crud";
 import { EC } from "../../utils/types";
 import { Project } from "./project.type";
+import { makeUsedHoursQuery } from "./project.helpers";
 import { isValidSQLDateInterval } from "../../utils/date";
 
 /**
@@ -230,21 +231,7 @@ const withSelectedCourseSections = query({
  */
 const usedHours = [
   query({
-    sql: `
-  SELECT
-    ? AS id,
-    IFNULL(
-      SUM(TIMESTAMPDIFF(MINUTE, start, end)/60),
-      0
-    ) AS hours
-  FROM event
-  JOIN reservation ON event.id = reservation.event_id
-  WHERE reservation.project_id = ?
-  AND event.location_id = ?
-  AND date(event.start) >= ?
-  AND date(event.end) <= ?
-  AND reservation.confirmed
-  AND NOT reservation.canceled`,
+    sql: makeUsedHoursQuery({ echoId: true }),
     using: (req) => [
       Number(req.query.projectId as string),
       req.query.projectId,
@@ -255,6 +242,7 @@ const usedHours = [
   }),
   respond({ data: (_, res) => res.locals.results[0] }),
 ];
+
 export default {
   ...controllers("project", "id"),
   usedHours,

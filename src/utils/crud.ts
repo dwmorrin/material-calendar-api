@@ -39,17 +39,32 @@ type ResultsHandler = (
   res: Response
 ) => void;
 
+type InsertHandler = (
+  results: { insertId: number },
+  req: Request,
+  res: Response
+) => void;
+
 interface QueryProps<T> {
   sql: string;
   using?: ParamBuilder<T>;
-  then?: ResultsHandler;
+  then?: ResultsHandler; // handler for SELECT queries
+  insertThen?: InsertHandler; // variation of 'then' for INSERT queries
   assert?: QueryAssertion;
 }
 
 const storeResults: ResultsHandler = (results, _, res) =>
   (res.locals.results = results);
 
-export function query<T>({ sql, using, then, assert }: QueryProps<T>): EC {
+export function query<T>({
+  sql,
+  using,
+  then,
+  insertThen,
+  assert,
+}: QueryProps<T>): EC {
+  if (then && insertThen)
+    throw new Error("cannot have both 'then' and 'insertThen' in a query");
   return (req, res, next) => {
     if (assert)
       try {
@@ -62,10 +77,15 @@ export function query<T>({ sql, using, then, assert }: QueryProps<T>): EC {
     pool.query(sql, values, (error, results) => {
       if (error) return next(error);
       if (then) {
+        // SELECT query handler
         if (!Array.isArray(results))
           return next("query results must be an array to use 'then'");
         then(results.map(inflate), req, res);
+      } else if (insertThen) {
+        // INSERT query handler
+        insertThen(results, req, res);
       } else {
+        // no handler specified
         res.locals.results = results;
       }
       next();
