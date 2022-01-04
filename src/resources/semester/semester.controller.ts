@@ -46,8 +46,8 @@ const updateAll = [
 
 export default {
   ...controllers("semester", "id"),
-  createOne: [createOne, updateActive, updateAll],
+  createOne: [createOne, updateActive, ...updateAll],
   getCurrent,
   getMany,
-  updateOne: [updateOne, updateActive, updateAll],
+  updateOne: [updateOne, updateActive, ...updateAll],
 };
