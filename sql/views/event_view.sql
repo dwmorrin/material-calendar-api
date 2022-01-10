@@ -59,7 +59,8 @@ SELECT
       )
     ),
     NULL
-  ) AS reservation
+  ) AS reservation,
+  cast_to_bool(IF (a.lock_user_id IS NULL, 0, 1)) AS locked
 FROM event a
   LEFT JOIN reservation b ON a.id = b.event_id and NOT b.canceled
   LEFT JOIN equipment_list el ON el.booking_id = b.id

@@ -55,6 +55,30 @@ const updateOne = [
   }),
 ];
 
+// TODO: validation
+const lockOne = [
+  query({
+    sql: "UPDATE event SET lock_user_id = ?, locked_time = NOW() WHERE id = ?",
+    using: (req, res) => [res.locals.user.id, Number(req.params.id)],
+  }),
+  respond({
+    status: 201,
+    data: () => ({}),
+  }),
+];
+
+// TODO: validation
+const unlockOne = [
+  query({
+    sql: "UPDATE event SET lock_user_id = NULL, locked_time = NULL WHERE id = ?",
+    using: (req) => Number(req.params.id),
+  }),
+  respond({
+    status: 201,
+    data: () => ({}),
+  }),
+];
+
 export default {
   createOne: crud.createOne("INSERT INTO event ?", ({ body }) => body),
   createMany,
@@ -65,6 +89,8 @@ export default {
   getOne: crud.readOne("SELECT * FROM event_view WHERE id = ?", (req) =>
     Number(req.params.id)
   ),
+  lockOne,
+  unlockOne,
   updateOne,
   range: crud.readMany(
     "SELECT * FROM event_view WHERE a.start BETWEEN ? AND ?",
