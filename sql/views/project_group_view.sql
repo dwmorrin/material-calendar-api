@@ -58,6 +58,7 @@ FROM
         LEFT JOIN reservation b on b.group_id = pg.id
         LEFT JOIN event a on a.id = b.event_id
       WHERE NOT pg.abandoned
+        AND b.refund_approval_id IS NULL
       GROUP BY
         pg.id
     ) r ON g.id = r.id
