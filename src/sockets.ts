@@ -15,6 +15,7 @@ io.on("connection", (socket) => {
    * https://stackoverflow.com/questions/26224377/authentication-with-node-express-socket-io
    */
   socket.on("broadcast", (...args: unknown[]) => {
+    console.log(`SOCKET event: broadcast, kind: ${args[0]}`);
     socket.broadcast.emit("broadcast", ...args);
   });
 });
