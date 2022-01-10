@@ -97,7 +97,7 @@ const getOne = crud.readOne(
 );
 
 const cancelReservation = query({
-  sql: "UPDATE reservation SET = ? WHERE id = ?",
+  sql: "UPDATE reservation SET ? WHERE id = ?",
   using: (req, res) => [
     {
       canceled: true,
@@ -126,7 +126,7 @@ const cancelResponse: EC = (_, res, next) => {
 
 const withUpdatedEventsAndReservations = [
   withResource("reservations", "SELECT * FROM reservation_view"),
-  withResource("events", "SELECT * FROM event"),
+  withResource("events", "SELECT * FROM event_view"),
 ];
 
 const getMany = crud.readMany("SELECT * FROM reservation_view");
