@@ -18,6 +18,11 @@ io.on("connection", (socket) => {
     console.log(`SOCKET event: broadcast, kind: ${args[0]}`);
     socket.broadcast.emit("broadcast", ...args);
   });
+
+  socket.on("get-client-count", () => {
+    console.log(`SOCKET event: get-client-count`);
+    socket.emit("client-count", io.engine.clientsCount);
+  });
 });
 
 export default server;
