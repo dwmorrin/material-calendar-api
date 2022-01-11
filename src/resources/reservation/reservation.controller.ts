@@ -206,7 +206,13 @@ const createOneStack = [
       res.locals.virtualWeek.start,
       res.locals.virtualWeek.end,
     ],
-    then: (results, _, res) => (res.locals.usedHours = results[0].hours),
+    then: (results, req, res) => {
+      // walk in project is not limited by hours
+      const { projectId } = req.body;
+      // TODO remove hardcoded walk-in project id
+      if (projectId === 1) return;
+      res.locals.usedHours = results[0].hours;
+    },
   }),
   // get project virtual week hours
   query({
@@ -216,13 +222,21 @@ const createOneStack = [
     WHERE  project_id = ?
     AND    virtual_week_id = ?`,
     using: (req, res) => [req.body.projectId, res.locals.virtualWeek.id],
-    then: (results, _, res) =>
-      (res.locals.projectVirtualWeekHours = results[0].hours),
+    then: (results, req, res) => {
+      // walk in project is not limited by hours
+      const { projectId } = req.body;
+      // TODO remove hardcoded walk-in project id
+      if (projectId === 1) return;
+      res.locals.projectVirtualWeekHours = results[0].hours;
+    },
   }),
   // validate and create reservation
   query({
-    assert: (_, res) => {
+    assert: (req, res) => {
+      const { projectId } = req.body;
       const { usedHours, projectVirtualWeekHours } = res.locals;
+      // TODO remove hardcoded walk-in project id
+      if (projectId === 1) return;
       if (usedHours === undefined) throw "Cannot find used hours";
       if (projectVirtualWeekHours === undefined) throw "Cannot find used hours";
       if (usedHours >= projectVirtualWeekHours)
