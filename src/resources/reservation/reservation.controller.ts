@@ -147,7 +147,7 @@ const getByUser = crud.readMany(byUserQuery, (_, res) => res.locals.user.id);
 
 const refund = [
   query({
-    sql: "UPDATE booking SET ? WHERE id = ?",
+    sql: "UPDATE reservation SET ? WHERE id = ?",
     using: (req, res) => [
       {
         refund_approval_id: req.body.approved ? res.locals.user.id : null,
