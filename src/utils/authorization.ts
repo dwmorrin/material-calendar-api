@@ -44,7 +44,7 @@ export const onNotAuthorized: EEH = (error, req, res, next) => {
   if (typeof error === "string" && error.includes(NotAuthorized)) {
     // end cookie session in case client has out-dated auth cookie
     // TODO this still requires user to try login twice to get a new cookie
-    const request = req as { session: null }; // type-cast to prevent TS error
+    const request = req as unknown as { session: null };
     request.session = null;
     res.status(403).json({
       error: { code: 403, message: NotAuthorized },
