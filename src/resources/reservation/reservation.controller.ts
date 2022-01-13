@@ -51,24 +51,6 @@ const deleteEquipment: EC = (req, res, next) => {
     );
 };
 
-const getUpdatedEvent: EC = (req, res, next) => {
-  const id = req.body.eventId;
-  pool.query(
-    "SELECT * FROM event_view WHERE id = ?",
-    id,
-    addResultsToResponse(res, next, { key: "event" })
-  );
-};
-
-const getUpdatedReservation: EC = (req, res, next) => {
-  const bookingId = res.locals.reservation.insertId;
-  pool.query(
-    "SELECT * FROM reservation_view WHERE id = ?",
-    bookingId,
-    addResultsToResponse(res, next, { key: "reservation" })
-  );
-};
-
 const editReservationResponse: EC = (req, res, next) => {
   // event reservation info has changed
   // reservation has changed
@@ -76,6 +58,8 @@ const editReservationResponse: EC = (req, res, next) => {
     data: {
       event: inflate(res.locals.event),
       reservation: inflate(res.locals.reservation),
+      group: inflate(res.locals.group),
+      project: inflate(res.locals.project),
     },
     context: req.query.context,
   });
@@ -85,8 +69,26 @@ const editReservationResponse: EC = (req, res, next) => {
 const editReservationStack = [
   reserveEquipment,
   deleteEquipment,
-  getUpdatedEvent,
-  getUpdatedReservation,
+  query({
+    sql: "SELECT * FROM event_view WHERE id = ?",
+    using: (req) => req.body.eventId,
+    then: (results, _, res) => (res.locals.event = results[0]),
+  }),
+  query({
+    sql: "SELECT * FROM reservation_view WHERE id = ?",
+    using: (req) => req.body.eventId,
+    then: (results, _, res) => (res.locals.reservation = results[0]),
+  }),
+  query({
+    sql: "SELECT * FROM project_group_view WHERE id = ?",
+    using: (req) => req.body.groupId,
+    then: (results, _, res) => (res.locals.group = results[0]),
+  }),
+  query({
+    sql: "SELECT * FROM project_view WHERE id = ?",
+    using: (req) => req.body.projectId,
+    then: (results, _, res) => (res.locals.project = results[0]),
+  }),
   editReservationResponse,
   useMailbox,
 ];
@@ -114,6 +116,7 @@ const cancelReservation = query({
   ],
 });
 
+// TODO: send updated project & group info (reserved hours may have changed)
 const cancelResponse: EC = (_, res, next) => {
   res.status(201).json({
     data: {
