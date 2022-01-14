@@ -7,6 +7,7 @@ import {
   withResource,
 } from "../../utils/crud";
 import { EC, EEH } from "../../utils/types";
+import { connect } from "http2";
 
 const getOne = crud.readOne(
   "SELECT * FROM user_view WHERE id = ?",
@@ -14,6 +15,76 @@ const getOne = crud.readOne(
 );
 
 const getMany = crud.readMany("SELECT * FROM user_view");
+
+// import
+
+// start with same as startCreateOne - just get the unsafe connection
+
+interface User {
+  first: string;
+  last: string;
+  email: string;
+  username: string;
+  restriction: string | number;
+  // ignoring password for now
+}
+
+function isUser(user: unknown): user is User {
+  return (
+    typeof user === "object" &&
+    user !== null &&
+    "first" in user &&
+    "last" in user &&
+    "email" in user &&
+    "username" in user &&
+    "restriction" in user
+  );
+}
+
+// TODO remove hardcoded role values, could include role as string and lookup
+const USER_ROLE_ID = 2;
+const createMany: EC = (req, res, next) => {
+  const connection: Connection = res.locals.connection;
+  const users = req.body;
+  if (!Array.isArray(users))
+    return next("Expected array of users - not an array");
+  if (!users.every(isUser))
+    return next("Expected array of users - data invalid");
+  const sql = "INSERT IGNORE INTO user SET ?;";
+  connection.query(
+    sql.repeat(users.length),
+    users.map((u) => ({
+      first_name: u.first,
+      last_name: u.last,
+      email: u.email,
+      restriction: u.restriction,
+      user_id: u.username,
+    })),
+    (err) => {
+      if (err) return next(err);
+      connection.query(
+        "SELECT id FROM user WHERE user_id in (?)",
+        [users.map((u) => u.username)],
+        (err, results) => {
+          if (err) return next(err);
+          connection.query(
+            "INSERT IGNORE INTO user_role SET ?;".repeat(results.length),
+            (results as { id: number }[]).map((r) => ({
+              user_id: r.id,
+              role_id: USER_ROLE_ID,
+            })),
+            (err) => {
+              if (err) return next(err);
+              next();
+            }
+          );
+        }
+      );
+    }
+  );
+};
+
+// end import
 
 const startCreateOne: EC = (_, res, next) => {
   const unsafeConnection = getUnsafeMultipleStatementConnection();
@@ -216,6 +287,17 @@ export default {
     }),
   ],
   getOne,
+  import: [
+    startCreateOne,
+    createMany,
+    commitCreateOne,
+    createOneRollback,
+    createOneErrorHandler,
+    respond({
+      status: 201,
+      data: () => ({ data: "Users imported successfully" }),
+    }),
+  ],
   updateOne: [
     updateSetup,
     updateOne,

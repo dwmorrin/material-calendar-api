@@ -21,6 +21,7 @@ router.get("/:id/projects", controller.getProjects);
 router.put("/:id/reset", controller.resetPassword);
 
 // user records
+router.post("/bulk", controller.import);
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);
 router.get("/:id", controller.getOne);
