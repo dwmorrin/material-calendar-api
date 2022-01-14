@@ -16,7 +16,8 @@ const authorization: EC = (_, res, next) => {
       u.id,
       u.user_id,
       u.restriction,
-      JSON_ARRAYAGG(r.title) AS roles
+      JSON_ARRAYAGG(r.title) AS roles,
+      JSON_ARRAYAGG(r.id) AS roleIds
     FROM user u
       INNER JOIN user_role ur ON ur.user_id = u.id
       INNER JOIN      role r  ON ur.role_id = r.id
@@ -28,11 +29,14 @@ const authorization: EC = (_, res, next) => {
       if (!user?.id) return next(NotAuthorized);
       const roles = JSON.parse(user.roles);
       if (!Array.isArray(roles)) return next(NotAuthorized);
+      const roleIds = JSON.parse(user.roleIds);
+      if (!Array.isArray(roles)) return next(NotAuthorized);
       res.locals.user = {
         id: user.id,
         userId: user.user_id,
         restriction: Number(user.restriction) || 0,
         roles,
+        roleIds,
       };
       res.locals.admin = user.roles.includes("admin");
       return next();
