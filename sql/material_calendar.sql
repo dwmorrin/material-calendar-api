@@ -139,6 +139,22 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `reservation`,
  1 AS `locked`*/;
 SET character_set_client = @saved_cs_client;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `instructor` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `course_id` int DEFAULT NULL,
+  `semester_id` int DEFAULT NULL,
+  `section_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `student_course_idx` (`user_id`,`course_id`,`semester_id`,`section_id`),
+  KEY `student_id_idx` (`user_id`),
+  KEY `course_id_idx` (`course_id`),
+  KEY `semester_id_idx` (`semester_id`),
+  KEY `section_id_idx` (`section_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `invitation_view` AS SELECT 
