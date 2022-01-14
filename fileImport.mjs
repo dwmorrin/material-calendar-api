@@ -47,7 +47,15 @@ const onHttpResponse = (res) => {
   });
   res.on("end", () => {
     console.log(`${res.statusCode} ${res.statusMessage}`);
+    const isJSON = res.headers["content-type"].startsWith("application/json");
     console.log("received: " + rawData.length + " characters");
+    if (isJSON) {
+      try {
+        console.log(JSON.parse(rawData));
+      } catch {
+        console.log(rawData);
+      }
+    }
     console.log("done");
     process.exit(0);
   });
