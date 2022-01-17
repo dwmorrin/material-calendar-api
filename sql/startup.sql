@@ -36,8 +36,7 @@ INSERT INTO course SET
 
 INSERT INTO section SET
   course_id = 1,
-  title = 'Walk-in',
-  instructor = 'N/A';
+  title = 'Walk-in';
 
 INSERT INTO project SET
   title = "Walk-in",

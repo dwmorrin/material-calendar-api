@@ -11,7 +11,7 @@ export const query = `
     c.title,
     c.catalog_id AS catalogId,
     s.title AS section,
-    s.instructor
+    s.instructor_id AS instructorId
   FROM
     course c
     INNER JOIN section s ON s.course_id = c.id

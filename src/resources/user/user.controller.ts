@@ -222,6 +222,7 @@ const removeOne: EC = (req, res, next) =>
 
 //---- get resource by user id
 
+//! TODO moving instructor as string to instructor_id (int, user.id)
 const getCourses: EC = (req, res, next) =>
   pool.query(
     `SELECT
@@ -229,7 +230,7 @@ const getCourses: EC = (req, res, next) =>
       c.title,
       c.catalog_id as catalogId,
       s.title as section,
-      s.instructor
+      s.instructor_id as instructor
     FROM
       user u
         INNER JOIN roster r ON r.user_id = u.id

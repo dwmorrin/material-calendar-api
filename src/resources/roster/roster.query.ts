@@ -13,17 +13,23 @@ export const userQuery = `
 `;
 
 // need to get course titles for each section
+// need to change instructor to be a user id
 export const sectionQuery = `
   SELECT
     s.id,
     s.title,
-    s.instructor,
+    IF (
+      s.instructor_id IS NOT NULL,
+      CONCAT(u.first_name, ' ', u.last_name),
+      'TBA'
+    ) AS instructor,
     JSON_OBJECT(
       'title', c.title,
       'id', c.id
     ) as course
   FROM section s
   JOIN course c ON s.course_id = c.id
+  JOIN user u ON s.instructor_id = u.id
 `;
 
 // recreate the input records from the database
@@ -32,7 +38,11 @@ export const rosterInputQuery = `
     c.title AS Course,
     c.catalog_id AS Catalog,
     s.title AS Section,
-    s.instructor AS Instructor,
+    IF (
+      s.instructor_id IS NOT NULL,
+      CONCAT(u2.first_name, ' ', u2.last_name),
+      'TBA'
+    ) AS Instructor,
     IF (
       u.first_name <> '',
       CONCAT(u.last_name, ", ", u.first_name),
@@ -44,6 +54,7 @@ export const rosterInputQuery = `
     JOIN course c on c.id = r.course_id
     JOIN section s on s.id = r.section_id
     JOIN user u on u.id = r.user_id
+    JOIN user u2 on u2.id = s.instructor_id
   WHERE r.semester_id = ?
 `;
 

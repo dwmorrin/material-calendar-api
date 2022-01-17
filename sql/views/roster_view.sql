@@ -5,8 +5,16 @@ SELECT
     'title', c.title,
     'catalogId', c.catalog_id,
     'section', s.title,
-    'instructor', s.instructor
-  ) as course,
+    'instructor', IF (
+      s.instructor_id IS NOT NULL,
+      (
+        SELECT CONCAT(first_name, ' ', last_name)
+        FROM user
+        WHERE id = s.instructor_id
+      ),
+      'TBA'
+    )
+  ) AS course,
   JSON_OBJECT(
     'id', u.id,
     'username', u.user_id,

@@ -426,10 +426,12 @@ CREATE TABLE `section` (
   `id` int NOT NULL AUTO_INCREMENT,
   `course_id` int DEFAULT NULL,
   `title` varchar(50) NOT NULL,
-  `instructor` varchar(255) DEFAULT NULL,
+  `instructor_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `course_id_idx` (`course_id`),
-  CONSTRAINT `section_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+  KEY `section_fk_user` (`instructor_id`),
+  CONSTRAINT `section_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT `section_fk_user` FOREIGN KEY (`instructor_id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -696,7 +698,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `roster_view` AS select `r`.`id` AS `id`,json_object('title',`c`.`title`,'catalogId',`c`.`catalog_id`,'section',`s`.`title`,'instructor',`s`.`instructor`) AS `course`,json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'middle',`u`.`middle_name`,'last',`u`.`last_name`)) AS `student` from (((`roster` `r` join `user` `u` on((`r`.`user_id` = `u`.`id`))) join `section` `s` on((`r`.`section_id` = `s`.`id`))) join `course` `c` on((`s`.`course_id` = `c`.`id`))) */;
+/*!50001 VIEW `roster_view` AS select `r`.`id` AS `id`,json_object('title',`c`.`title`,'catalogId',`c`.`catalog_id`,'section',`s`.`title`,'instructor',if((`s`.`instructor_id` is not null),(select concat(`user`.`first_name`,' ',`user`.`last_name`) from `user` where (`user`.`id` = `s`.`instructor_id`)),'TBA')) AS `course`,json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'middle',`u`.`middle_name`,'last',`u`.`last_name`)) AS `student` from (((`roster` `r` join `user` `u` on((`r`.`user_id` = `u`.`id`))) join `section` `s` on((`r`.`section_id` = `s`.`id`))) join `course` `c` on((`s`.`course_id` = `c`.`id`))) order by `c`.`catalog_id`,`s`.`title`,`u`.`last_name`,`u`.`first_name` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -709,7 +711,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `section_view` AS select `section`.`id` AS `id`,`section`.`course_id` AS `courseId`,`section`.`title` AS `title`,`section`.`instructor` AS `instructor` from `section` */;
+/*!50001 VIEW `section_view` AS select `s`.`id` AS `id`,`s`.`course_id` AS `courseId`,`s`.`title` AS `title`,if((`s`.`instructor_id` is not null),concat(`u`.`first_name`,' ',`u`.`last_name`),'TBA') AS `instructor` from (`section` `s` left join `user` `u` on((`s`.`instructor_id` = `u`.`id`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;

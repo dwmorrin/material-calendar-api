@@ -72,7 +72,7 @@ export const processSection = (
     ) || {
       id: undefined,
       title: Section,
-      instructor: Instructor,
+      instructor: Instructor, //! will fail: needs to be a user ID
       course: {
         id: course?.id,
         title: Course,
