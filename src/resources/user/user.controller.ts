@@ -239,30 +239,48 @@ const removeOne: EC = (req, res, next) =>
 
 //---- get resource by user id
 
+const getCoursesForInstructorsQuery = `
+  SELECT
+    c.id,
+    c.title,
+    c.catalog_id as catalogId,
+    s.title as section,
+    s.instructor_id as instructor
+  FROM
+    user u
+      INNER JOIN section s ON s.instructor_id = u.id
+      INNER JOIN course c ON s.course_id = c.id
+  WHERE
+    u.id = ?
+  `;
+
+const getCoursesForStudentsQuery = `
+  SELECT
+    c.id,
+    c.title,
+    c.catalog_id as catalogId,
+    s.title as section,
+    s.instructor_id as instructor
+  FROM
+    user u
+      INNER JOIN roster r ON r.user_id = u.id
+      INNER JOIN course c ON r.course_id = c.id
+      INNER JOIN section s ON r.section_id = s.id
+  WHERE
+    u.id = ?
+  `;
+
 //! TODO moving instructor as string to instructor_id (int, user.id)
 const getCourses: EC = (req, res, next) =>
   pool.query(
-    `SELECT
-      c.id,
-      c.title,
-      c.catalog_id as catalogId,
-      s.title as section,
-      s.instructor_id as instructor
-    FROM
-      user u
-        INNER JOIN roster r ON r.user_id = u.id
-        INNER JOIN course c ON r.course_id = c.id
-        INNER JOIN section s ON r.section_id = s.id
-    WHERE
-      u.id = ?
-    `,
+    res.locals.user.roles.includes("instructor")
+      ? getCoursesForInstructorsQuery
+      : getCoursesForStudentsQuery,
     [req.params.id],
     addResultsToResponse(res, next)
   );
 
-const getProjects: EC = (req, res, next) =>
-  pool.query(
-    `(
+const getProjectsForStudentsQuery = `(
       SELECT p.*
       FROM project_view p
         INNER JOIN section_project sp ON sp.project_id = p.id
@@ -272,7 +290,17 @@ const getProjects: EC = (req, res, next) =>
       GROUP BY p.id
     )
     UNION (SELECT * FROM project_view WHERE title = "Walk-in" )
-  `,
+  `;
+
+// TODO remove hardcoded IDs for walk-in and class meeting projects
+const getProjectsForInstructorsQuery =
+  "SELECT * FROM project_view WHERE id in (1, 2)";
+
+const getProjects: EC = (req, res, next) =>
+  pool.query(
+    res.locals.user.roles.includes("instructor")
+      ? getProjectsForInstructorsQuery
+      : getProjectsForStudentsQuery,
     [req.params.id],
     addResultsToResponse(res, next)
   );
