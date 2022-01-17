@@ -210,6 +210,8 @@ const createOneStack = [
       res.locals.virtualWeek.end,
     ],
     then: (results, req, res) => {
+      // admin can override this check
+      if (res.locals.admin) return;
       // walk in project is not limited by hours
       const { projectId } = req.body;
       // TODO remove hardcoded walk-in project id
@@ -226,6 +228,8 @@ const createOneStack = [
     AND    virtual_week_id = ?`,
     using: (req, res) => [req.body.projectId, res.locals.virtualWeek.id],
     then: (results, req, res) => {
+      // admin can override this check
+      if (res.locals.admin) return;
       // walk in project is not limited by hours
       const { projectId } = req.body;
       // TODO remove hardcoded walk-in project id
@@ -238,6 +242,8 @@ const createOneStack = [
     assert: (req, res) => {
       const { projectId } = req.body;
       const { usedHours, projectVirtualWeekHours } = res.locals;
+      // admin can override this check
+      if (res.locals.admin) return;
       // TODO remove hardcoded walk-in project id
       if (projectId === 1) return;
       if (usedHours === undefined) throw "Cannot find used hours";
