@@ -4,6 +4,7 @@ import { sendResults } from "../../utils/crud";
 
 const router = Router();
 
+router.post("/bulk", controller.importCourses);
 router.delete("/:id", controller.removeOne);
 router.get("/", controller.getMany);
 router.get("/:id", controller.getOne);
