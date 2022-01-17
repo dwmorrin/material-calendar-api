@@ -14,6 +14,7 @@ router.get("/user", controller.getGroupsByUser);
  * An inviter can also rescind the invitation and abandon the group.
  * (Abandon === soft delete)
  */
+router.post("/invitation", controller.createOneWithInvitation);
 router.put("/:id/invitation", controller.updateInvite);
 router.delete("/:groupId/invitation", controller.cancelInvite);
 router.delete("/:groupId/user/:userId/", controller.leaveGroup);

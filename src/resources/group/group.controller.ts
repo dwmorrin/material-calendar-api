@@ -11,6 +11,41 @@ import { projectMembersQuery } from "../project/project.controller";
  * Writing: use the `project_group` table.
  */
 
+// this is when an admin creates a group manually
+const createOne: EC = (req, res, next) => {
+  pool.query(
+    "INSERT INTO project_group SET ?",
+    {
+      title: req.body.title,
+      project_id: req.body.projectId,
+      creator_id: res.locals.user.id,
+      admin_created_id: res.locals.user.id,
+      admin_approved_id: res.locals.user.id,
+      pending: req.body.pending,
+    },
+    (err, results) => {
+      if (err) return next(err);
+      pool.query(
+        `
+        REPLACE INTO project_group_user (
+          user_id, project_group_id, invitation_accepted
+        ) VALUES ?`,
+        [
+          (req.body.members as { id: number }[]).map(({ id }) => [
+            id,
+            results.insertId,
+            true,
+          ]),
+        ],
+        (err) => {
+          if (err) return next(err);
+          res.status(200).json({ data: { ...req.body, id: results.insertId } });
+        }
+      );
+    }
+  );
+};
+
 const getGroups = crud.readMany("SELECT * FROM project_group_view");
 
 const getOneGroup = crud.readOne(
@@ -232,7 +267,8 @@ const respondWithGroupsAndProjectMembersAndMail = [
 ];
 
 export default {
-  createOne: [
+  createOne,
+  createOneWithInvitation: [
     withGroupSize,
     createPendingGroup,
     createProjectGroupUsers,
