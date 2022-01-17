@@ -19,7 +19,7 @@ INSERT INTO user SET
   last_name = '{{ADMIN_LAST_NAME}}',
   email = '{{EMAIL_FROM}}';
 
-INSERT INTO role (title) VALUES ('admin'), ('user');
+INSERT INTO role (title) VALUES ('admin'), ('user'), ('instructor');
 
 INSERT INTO user_role (user_id, role_id) VALUES (1, 1);
 
