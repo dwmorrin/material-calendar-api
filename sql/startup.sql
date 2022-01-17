@@ -52,12 +52,12 @@ INSERT INTO project SET
 /* Required project, enables instructor controlled class reservations */
 INSERT INTO project SET
   id = 2,
-  title = "Class Meetings",
-  group_hours = 999999,
+  title = "Class Meetings {{SEMESTER_TITLE}}",
+  group_hours = 0,
   open = 1,
-  book_start = '2000-01-01',
-  start = '2000-01-01',
-  end = '9999-12-31',
+  book_start = '{{SEMESTER_START}}',
+  start = '{{SEMESTER_START}}',
+  end = '{{SEMESTER_END}}',
   group_size = 1;
 
 INSERT INTO section_project SET
