@@ -1,5 +1,5 @@
-import pool from "../../utils/db";
-import { addResultsToResponse } from "../../utils/crud";
+import pool, { getUnsafeMultipleStatementConnection } from "../../utils/db";
+import { addResultsToResponse, respond, withResource } from "../../utils/crud";
 import { EC } from "../../utils/types";
 
 const getOne: EC = (req, res, next) =>
@@ -45,6 +45,111 @@ const deleteOne: EC = (req, res, next) => {
   );
 };
 
+interface Course {
+  id: number;
+  title: string;
+  catalog_id: string;
+}
+
+interface Section {
+  id?: number;
+  course_id: number;
+  title: string;
+  instructor_id: number;
+}
+
+interface User {
+  id: number;
+  user_id: string;
+}
+
+interface ImportRecord {
+  username: string; // convert to user_id then to id
+  course: string; // catalog_id
+  section: string; // title
+}
+
+const createMany: EC = (req, res, next) => {
+  const newSections: ImportRecord[] = req.body;
+  if (!Array.isArray(newSections)) return next(new Error("Invalid body"));
+  const courses: Course[] = res.locals.courses;
+  if (!Array.isArray(courses)) return next(new Error("No existing courses"));
+  const users: User[] = res.locals.users;
+  if (!Array.isArray(users)) return next(new Error("No existing users"));
+  const sections: Section[] = res.locals.sections;
+
+  const inserts: Section[] = [];
+  const updates: number[] = [];
+  const seen: Set<string> = new Set();
+  try {
+    newSections.forEach((newSection) => {
+      const key = newSection.course + newSection.section + newSection.username;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const course = courses.find((c) => c.catalog_id === newSection.course);
+      if (!course) throw new Error("Course not found");
+      const user = users.find((u) => u.user_id === newSection.username);
+      if (!user) throw new Error("User not found");
+      const existing = sections.find(
+        (s) =>
+          s.course_id === course.id &&
+          String(s.title) === String(newSection.section)
+      );
+      if (existing?.id) {
+        if (existing.instructor_id !== user.id) {
+          updates.push(user.id);
+          updates.push(existing.id);
+        } // else no update necessary
+      } else
+        inserts.push({
+          course_id: course.id,
+          instructor_id: user.id,
+          title: newSection.section,
+        });
+    });
+  } catch (err) {
+    return next(err);
+  }
+
+  const connection = getUnsafeMultipleStatementConnection();
+  connection.beginTransaction((err) => {
+    if (err) return next(err);
+    connection.query(
+      inserts.length
+        ? "INSERT INTO section SET ?;".repeat(inserts.length)
+        : "SELECT 1",
+      inserts,
+      (err) => {
+        if (err) return next(err);
+        connection.query(
+          updates.length
+            ? "UPDATE section SET instructor_id = ? WHERE id = ?"
+            : "SELECT 1",
+          updates,
+          (err) => {
+            if (err) return next(err);
+            connection.commit((err) => {
+              if (err) return next(err);
+              next();
+            });
+          }
+        );
+      }
+    );
+  });
+};
+
+const importSections = [
+  withResource("courses", "SELECT * FROM course"),
+  withResource("users", "SELECT * FROM user"),
+  withResource("sections", "SELECT * FROM section"),
+  createMany,
+  respond({
+    status: 201,
+    data: () => "ok",
+  }),
+];
+
 //! temporary while refactoring. have client send instructor ID, not name
 const createOne: EC = (req, res, next) => {
   pool.query(
@@ -63,4 +168,11 @@ const createOne: EC = (req, res, next) => {
   );
 };
 
-export default { createOne, getOne, getMany, deleteOne, updateOne };
+export default {
+  createOne,
+  getOne,
+  importSections,
+  getMany,
+  deleteOne,
+  updateOne,
+};
