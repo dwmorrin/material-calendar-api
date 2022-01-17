@@ -164,11 +164,6 @@ const createOneErrorHandler: EEH = (error, _, res, next) => {
   });
 };
 
-const updateSetup: EC = (req, res, next) => {
-  res.locals.roles = req.body.roles;
-  next();
-};
-
 const updateOne: EC = (req, res, next) =>
   pool.query(
     "UPDATE user SET ? WHERE id = ?",
@@ -187,30 +182,52 @@ const updateOne: EC = (req, res, next) =>
     addResultsToResponse(res, next, { one: true })
   );
 
-// TODO: Roles currently hardcoded for admin = 1, user = 2
-// update this once roles can be user defined
+// @throws
+const getRoleIds: (
+  roles: string[],
+  records: { id: number; title: string }[]
+) => number[] = (roles, records) => {
+  return roles.map((role) => {
+    const roleRecord = records.find(({ title }) => title === role);
+    if (!roleRecord) throw new Error(`Role ${role} does not exist`);
+    return roleRecord.id;
+  });
+};
+
 const insertRoles: EC = (req, res, next) => {
-  const roles = res.locals.roles as ("admin" | "user")[];
-  const id = Number(req.params.id);
-  if (Array.isArray(roles) && roles.length) {
-    pool.query(
-      "REPLACE INTO user_role (user_id, role_id) VALUES ?",
-      [roles.map((role) => [id, role === "admin" ? 1 : 2])],
-      addResultsToResponse(res, next, { key: "ignore" })
-    );
-  } else next();
+  const roles = req.body.roles as string[];
+  const roleRecords = res.locals.roles as { id: number; title: string }[];
+  try {
+    const roleIds = getRoleIds(roles, roleRecords);
+    const id = Number(req.params.id);
+    if (Array.isArray(roleIds) && roleIds.length) {
+      pool.query(
+        "REPLACE INTO user_role (user_id, role_id) VALUES ?",
+        [roleIds.map((roleId) => [id, roleId])],
+        addResultsToResponse(res, next, { key: "ignore" })
+      );
+    } else next();
+  } catch (error) {
+    next(error);
+  }
 };
 
 const deleteRoles: EC = (req, res, next) => {
-  const roles = res.locals.roles as ("admin" | "user")[];
-  const id = Number(req.params.id);
-  if (Array.isArray(roles) && roles.length) {
-    pool.query(
-      "DELETE FROM user_role WHERE user_id = ? AND role_id NOT IN (?)",
-      [id, roles.map((role) => (role === "admin" ? 1 : 2))],
-      addResultsToResponse(res, next, { key: "ignore" })
-    );
-  } else next();
+  const roles = req.body.roles as string[];
+  const roleRecords = res.locals.roles as { id: number; title: string }[];
+  try {
+    const roleIds = getRoleIds(roles, roleRecords);
+    const id = Number(req.params.id);
+    if (Array.isArray(roles) && roles.length) {
+      pool.query(
+        "DELETE FROM user_role WHERE user_id = ? AND role_id NOT IN (?)",
+        [id, roleIds],
+        addResultsToResponse(res, next, { key: "ignore" })
+      );
+    } else next();
+  } catch (error) {
+    next(error);
+  }
 };
 
 const removeOne: EC = (req, res, next) =>
@@ -300,7 +317,7 @@ export default {
     }),
   ],
   updateOne: [
-    updateSetup,
+    withResource("roles", "SELECT * FROM role"),
     updateOne,
     insertRoles,
     deleteRoles,
