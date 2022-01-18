@@ -352,15 +352,15 @@ const createManyClassMeetings: EC = (req, res, next) => {
   try {
     input.forEach(
       ({ locationId, start, course: catalogId, section: sectionTitle }) => {
+        const makeErrorMessage = (what: string) =>
+          `${what} not found for course ${catalogId}.${sectionTitle} in location ${locationId}`;
         const location = locations.find((l) => l.title === locationId);
-        if (!location) throw "Cannot find location";
+        if (!location) throw makeErrorMessage("Location");
         const event = events.find(
           (e) => e.location_id === location.id && e.start === start
         );
-        if (!event) throw "Cannot find event";
-        const course = courses.find(
-          (c) => c.catalog_id === "REMU-UT " + catalogId.trim()
-        );
+        if (!event) throw makeErrorMessage("Event");
+        const course = courses.find((c) => c.catalog_id === catalogId);
         // wip: allowing this error to be ignored, but it should be fixed
         if (!course) {
           const msg = `Cannot find course ${catalogId}.${sectionTitle}`;
@@ -373,11 +373,11 @@ const createManyClassMeetings: EC = (req, res, next) => {
             s.course_id === course.id &&
             String(s.title).trim() === String(sectionTitle).trim()
         );
-        if (!section) throw `Cannot find section ${catalogId}.${sectionTitle}`;
+        if (!section) throw makeErrorMessage("Section");
         const user = users.find((u) => u.id === section.instructor_id);
-        if (!user) throw "Cannot find user";
+        if (!user) throw makeErrorMessage("User");
         const group = groups.find((g) => g.user_id === user.id);
-        if (!group) throw "Cannot find group";
+        if (!group) throw makeErrorMessage("Group");
 
         reservations.push({
           event_id: event.id,
