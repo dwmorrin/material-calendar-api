@@ -27,7 +27,6 @@ interface EventInputRecord {
   start: string;
   end: string;
   reservable: number;
-  // missing restriction
 }
 
 interface EventRecord {
