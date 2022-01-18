@@ -339,9 +339,10 @@ export default {
     commitCreateOne,
     createOneRollback,
     createOneErrorHandler,
+    withResource("users", "SELECT * FROM user_view"),
     respond({
       status: 201,
-      data: () => ({ data: "Users imported successfully" }),
+      data: (_, res) => res.locals.users,
     }),
   ],
   updateOne: [
