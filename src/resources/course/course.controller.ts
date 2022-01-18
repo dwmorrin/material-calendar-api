@@ -25,14 +25,17 @@ export const query = `
     INNER JOIN section s ON s.course_id = c.id
 `;
 
-const getMany = crud.readMany(`
+// TODO move to an actual view (sql/views/course_view.sql)
+const courseViewSQL = `
   SELECT
     c.id,
     c.title,
     c.catalog_id AS catalogId
   FROM
     course c
-`);
+`;
+
+const getMany = crud.readMany(courseViewSQL);
 
 interface Course {
   id?: number;
@@ -102,7 +105,8 @@ const createMany: EC = (req, res, next) => {
 const importCourses = [
   withResource("courses", "SELECT * FROM course"),
   createMany,
-  respond({ status: 201, data: () => "ok" }),
+  withResource("courses", courseViewSQL),
+  respond({ status: 201, data: (_, res) => res.locals.courses }),
 ];
 
 export default {
