@@ -61,8 +61,8 @@ const deleteOne = crud.deleteOne(
 );
 
 export default {
-  createOne: [...withActiveSemesterAndSections, createOne],
+  createOne: [...withActiveSemesterAndSections, ...createOne],
   deleteOne,
   getMany,
-  updateOne: [...withActiveSemesterAndSections, updateOne],
+  updateOne: [...withActiveSemesterAndSections, ...updateOne],
 };
