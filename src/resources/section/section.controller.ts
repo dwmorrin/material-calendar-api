@@ -144,9 +144,10 @@ const importSections = [
   withResource("users", "SELECT * FROM user"),
   withResource("sections", "SELECT * FROM section"),
   createMany,
+  withResource("sections", "SELECT * FROM section_view"),
   respond({
     status: 201,
-    data: () => "ok",
+    data: (_, res) => res.locals.sections,
   }),
 ];
 
