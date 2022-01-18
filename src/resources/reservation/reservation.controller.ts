@@ -5,7 +5,10 @@ import {
   respond,
   withResource,
 } from "../../utils/crud";
-import pool, { inflate } from "../../utils/db";
+import pool, {
+  getUnsafeMultipleStatementConnection,
+  inflate,
+} from "../../utils/db";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
 import { Request } from "express";
@@ -276,12 +279,156 @@ const removeOne: EC = (req, res, next) => {
   );
 };
 
+// class meetings: using same spreadsheet as event import, but with course & section info,
+//                 reserve each event for the corresponding instructor
+
+interface ClassMeetingInput {
+  title: string; // event title, always "Class Meeting"
+  locationId: string; // misnomer, should be locationTitle - see event import
+  start: string; // event start time
+  end: string; // event end time
+  reservable: boolean; // event is reservable - not needed here
+  course: string; // course.catalog_id
+  section: string; // section.title
+}
+
+interface User {
+  id: number;
+  last_name: string; // for making group name, which will be reservation/event title
+}
+
+interface Course {
+  id: number;
+  catalog_id: string;
+  title: string;
+}
+
+interface Section {
+  id: number;
+  title: string;
+  instructor_id: number;
+  course_id: number;
+}
+
+interface ProjectGroupUser {
+  id: number;
+  user_id: number;
+}
+
+interface Event {
+  id: number;
+  location_id: number;
+  start: string;
+  end: string;
+}
+
+interface Location {
+  id: number;
+  title: string;
+}
+
+const createManyClassMeetings: EC = (req, res, next) => {
+  const input: ClassMeetingInput[] = req.body;
+  if (!Array.isArray(input)) return next(new Error("Input must be an array"));
+  const users: User[] = res.locals.users;
+  if (!Array.isArray(users)) return next(new Error("Users must be an array"));
+  const courses: Course[] = res.locals.courses;
+  if (!Array.isArray(courses))
+    return next(new Error("Courses must be an array"));
+  const sections: Section[] = res.locals.sections;
+  if (!Array.isArray(sections))
+    return next(new Error("Sections must be an array"));
+  const groups: ProjectGroupUser[] = res.locals.groups;
+  if (!Array.isArray(groups)) return next(new Error("Groups must be an array"));
+  const events: Event[] = res.locals.events;
+  if (!Array.isArray(events)) return next(new Error("Events must be an array"));
+  const locations: Location[] = res.locals.locations;
+  if (!Array.isArray(locations))
+    return next(new Error("Locations must be an array"));
+
+  const reservations: { event_id: number; group_id: number; project_id: 2 }[] =
+    [];
+  const warnings: string[] = [];
+  try {
+    input.forEach(
+      ({ locationId, start, course: catalogId, section: sectionTitle }) => {
+        const location = locations.find((l) => l.title === locationId);
+        if (!location) throw "Cannot find location";
+        const event = events.find(
+          (e) => e.location_id === location.id && e.start === start
+        );
+        if (!event) throw "Cannot find event";
+        const course = courses.find(
+          (c) => c.catalog_id === "REMU-UT " + catalogId.trim()
+        );
+        // wip: allowing this error to be ignored, but it should be fixed
+        if (!course) {
+          const msg = `Cannot find course ${catalogId}.${sectionTitle}`;
+          console.log(msg);
+          warnings.push(msg);
+          return;
+        }
+        const section = sections.find(
+          (s) =>
+            s.course_id === course.id &&
+            String(s.title).trim() === String(sectionTitle).trim()
+        );
+        if (!section) throw `Cannot find section ${catalogId}.${sectionTitle}`;
+        const user = users.find((u) => u.id === section.instructor_id);
+        if (!user) throw "Cannot find user";
+        const group = groups.find((g) => g.user_id === user.id);
+        if (!group) throw "Cannot find group";
+
+        reservations.push({
+          event_id: event.id,
+          group_id: group.id,
+          project_id: 2, // TODO remove hardcoded project id
+        });
+      }
+    );
+  } catch (e) {
+    return next(e);
+  }
+  const connection = getUnsafeMultipleStatementConnection();
+  connection.query(
+    reservations.length
+      ? "INSERT INTO reservation SET ?;".repeat(reservations.length)
+      : "SELECT 1",
+    reservations,
+    (err) => {
+      if (err) return next(err);
+      res.locals.warnings = warnings;
+      next();
+    }
+  );
+};
+
+const importClassMeetingReservations = [
+  withResource("events", "SELECT * FROM event"),
+  withResource("users", "SELECT * FROM user"),
+  withResource("sections", "SELECT * FROM section"),
+  withResource("courses", "SELECT * FROM course"),
+  withResource(
+    "groups",
+    `
+  SELECT pg.id, pgu.user_id
+  FROM project_group pg
+  JOIN project_group_user pgu ON pgu.project_group_id = pg.id
+  WHERE pg.project_id = 2
+  `
+  ), // TODO remove hardcoded class meeting project id
+  withResource("locations", "SELECT * FROM location"),
+  createManyClassMeetings,
+  respond({ status: 201, data: (_, res) => res.locals.warnings }),
+];
+
 export default {
   createOne: [...createOneStack, ...editReservationStack],
   updateOne: [updateOne, ...editReservationStack],
   getOne,
   getByUser,
   getMany,
+  importClassMeetings: importClassMeetingReservations,
   refund,
   cancelReservation: [
     cancelReservation,
