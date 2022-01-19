@@ -361,17 +361,9 @@ const createManyClassMeetings: EC = (req, res, next) => {
         );
         if (!event) throw makeErrorMessage("Event");
         const course = courses.find((c) => c.catalog_id === catalogId);
-        // wip: allowing this error to be ignored, but it should be fixed
-        if (!course) {
-          const msg = `Cannot find course ${catalogId}.${sectionTitle}`;
-          console.log(msg);
-          warnings.push(msg);
-          return;
-        }
+        if (!course) throw makeErrorMessage("Course");
         const section = sections.find(
-          (s) =>
-            s.course_id === course.id &&
-            String(s.title).trim() === String(sectionTitle).trim()
+          (s) => s.course_id === course.id && s.title === sectionTitle
         );
         if (!section) throw makeErrorMessage("Section");
         const user = users.find((u) => u.id === section.instructor_id);
