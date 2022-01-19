@@ -5,30 +5,20 @@ This is the backend to a calendar app for scheduling events in locations.
 
 ## Setup
 
-`yarn` to install dependencies.
+### External dependencies
 
-Create a .env file with credentials for MySQL and the app's initial admin user:
+Install the following dependencies manually:
 
-```
-ADMIN_FIRST_NAME=Ad
-ADMIN_LAST_NAME=Min
-ADMIN_PASSWORD=password
-AUTH_ID=admin
-EMAIL_FROM="Booking App <admin@booking.app>"
-EMAIL_PORT=25
-MYSQL_BACKUP_DIR=backups
-MYSQL_DATABASE=calendar
-MYSQL_HOST=127.0.0.1
-MYSQL_PASSWORD=password
-MYSQL_SHA2_PASSPHRASE=passphrase
-MYSQL_USER=root
-NODE_ENV=development
-PORT=3001
-SEMESTER_END=2000-06-15
-SEMESTER_START=2000-01-05
-SEMESTER_TITLE="Spring 2000"
-SESSION_SECRET=SecretForSessionCookies
-```
+- [`node`](https://nodejs.org/en/)
+- [`mysql`](https://www.mysql.com/)
+
+### Project dependencies
+
+`yarn` to install the local dependencies.
+
+### Environment variables
+
+Run the `generate-env.mjs` script to generate the environment variables.
 
 ## Database initialization
 
