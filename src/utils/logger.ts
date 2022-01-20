@@ -14,6 +14,8 @@ import { EC } from "./types";
 
 import { request } from "http";
 
+import { URL } from "url";
+
 // basic http request example
 export const fetchTest: (url: string) => EC = (url) => (_, res) => {
   const { port, hostname } = new URL(url);
@@ -35,7 +37,7 @@ export const fetchTest: (url: string) => EC = (url) => (_, res) => {
     .end();
 };
 
-type LoggerCB = (...args: Parameters<EC>) => string;
+type LoggerCB = (...args: Parameters<EC>) => unknown;
 
 const stringifyBody: LoggerCB = (req) => JSON.stringify(req.body);
 
@@ -47,7 +49,7 @@ const logger: (cb: LoggerCB) => EC = (cb) => (req, res, next) => {
   next();
 };
 
-const responder: (cb: LoggerCB) => EC = (cb) => (req, res, next) => {
+export const responder: (cb: LoggerCB) => EC = (cb) => (req, res, next) => {
   res.status(200).json({ data: cb(req, res, next) });
 };
 
