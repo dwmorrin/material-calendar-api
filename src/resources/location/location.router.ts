@@ -5,6 +5,7 @@ import { numericId, sendResults } from "../../utils/crud";
 
 const router = Router();
 
+router.get("/:id/hours", controller.getHours);
 router.post(`/${numericId}/hours/bulk`, controller.bulkLocationHours);
 
 router.delete(`/${numericId}`, controller.removeOne);

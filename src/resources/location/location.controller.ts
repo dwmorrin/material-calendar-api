@@ -119,6 +119,28 @@ const updateOne = [
   }),
 ];
 
+// sum up all the event hours in a location
+// /api/locations/:id/hours?start=2020-01-01&end=2020-01-31
+const getHours = [
+  query({
+    sql: `
+    SELECT
+      DATE(start) as date,
+      CAST(SUM(TIME_TO_SEC(TIMEDIFF(end, start))) / 3600 AS DECIMAL(4, 2)) as hours
+    FROM event
+    WHERE location_id = ?
+    AND DATE(start) BETWEEN ? AND ?
+    GROUP BY DATE(start)
+    `,
+    using: (req) => [Number(req.params.id), req.query.start, req.query.end],
+    then: (results, _, res) => (res.locals.hours = results),
+  }),
+  respond({
+    status: 200,
+    data: (_, res) => res.locals.hours,
+  }),
+];
+
 export default {
   ...controllers("location", "id"),
   createOne,
@@ -138,6 +160,7 @@ export default {
     }),
     onHoursError,
   ],
+  getHours,
   getMany,
   getOne,
   updateOne,
