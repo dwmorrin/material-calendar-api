@@ -1,4 +1,7 @@
-import pool from "../../utils/db";
+import pool, {
+  inflate,
+  getUnsafeMultipleStatementConnection,
+} from "../../utils/db";
 import {
   addResultsToResponse,
   controllers,
@@ -218,7 +221,14 @@ const withSelectedCourseSections = query({
   },
   sql: "SELECT id, title FROM section WHERE course_id = ?",
   using: (req) => (req.body as Project).course.id,
-  then: (results, _, res) => (res.locals.sections = results),
+  then: (results, _, res) => {
+    // title is string in db, but mysqljs can return number, e.g. title = '1'
+    // could be a mysqljs config option to force string - did not investigate
+    // fixing here for now
+    res.locals.sections = (
+      results as { id: number; title: number | string }[]
+    ).map(({ id, title }) => ({ id, title: String(title) }));
+  },
 });
 
 /**
@@ -243,6 +253,142 @@ const usedHours = [
   respond({ data: (_, res) => res.locals.results[0] }),
 ];
 
+/**
+ * minimum required query params:
+ * - title
+ * - book_start
+ * - start
+ * - end
+ */
+interface ProjectRaw {
+  id: number;
+  title: string;
+  group_hours: number;
+  open: boolean;
+  book_start: string;
+  start: string;
+  end: string;
+  brief: string;
+  description: string;
+  group_size: number;
+}
+
+interface ProjectBulkRow {
+  title: string;
+  reservationStart: string;
+  start: string;
+  end: string;
+  groupSize: number | string;
+  groupHours: number | string;
+}
+interface ProjectBulkUpdate extends ProjectBulkRow {
+  id: number;
+}
+
+function isProjectBulkRow(datum: unknown): datum is ProjectBulkRow {
+  if (!datum) return false;
+  if (typeof datum !== "object") return false;
+  if (!("title" in datum)) return false;
+  if (!("reservationStart" in datum)) return false;
+  if (!("start" in datum)) return false;
+  if (!("end" in datum)) return false;
+  if (!("groupSize" in datum)) return false;
+  if (!("groupHours" in datum)) return false;
+  return true;
+}
+
+const startImport: EC = (req, res, next) => {
+  const projectsRaw: ProjectRaw[] = res.locals.projectsRaw;
+  if (!Array.isArray(projectsRaw))
+    return next("existing projects not found, aborting import");
+  const projects: ProjectBulkRow[] = req.body;
+  if (!Array.isArray(projects) || !projects.length)
+    return next("no projects to import");
+  if (!projects.every(isProjectBulkRow)) return next("invalid project data");
+  const sameProjects: (pbr: ProjectBulkRow) => ProjectRaw | undefined = ({
+    title,
+    start,
+    end,
+  }) =>
+    projectsRaw.find(
+      (p) => p.title === title && p.start === start && p.end === end
+    );
+  const updates: ProjectBulkUpdate[] = projects.reduce((acc, pbr) => {
+    const p = sameProjects(pbr);
+    if (!p) return acc;
+    acc.push({ ...pbr, id: p.id });
+    return acc;
+  }, [] as ProjectBulkUpdate[]);
+  const inserts: ProjectBulkRow[] = projects.filter(
+    (pbr) => !sameProjects(pbr)
+  );
+  const connection = getUnsafeMultipleStatementConnection();
+  connection.beginTransaction((err) => {
+    if (err) return next(err);
+    connection.query(
+      inserts.length
+        ? "INSERT INTO project SET ?;".repeat(inserts.length)
+        : "SELECT 1",
+      inserts.map(
+        ({ title, reservationStart, start, end, groupHours, groupSize }) => ({
+          title,
+          book_start: reservationStart,
+          start,
+          end,
+          group_hours: groupHours,
+          group_size: groupSize,
+        })
+      ),
+      (err) => {
+        if (err) return next(err);
+        connection.query(
+          updates.length
+            ? "UPDATE project SET ? WHERE id = ?;".repeat(updates.length)
+            : "SELECT 1",
+          updates
+            .map(
+              ({
+                title,
+                start,
+                end,
+                id,
+                reservationStart,
+                groupSize,
+                groupHours,
+              }) => [
+                {
+                  title,
+                  start,
+                  end,
+                  book_start: reservationStart,
+                  group_size: groupSize,
+                  group_hours: groupHours,
+                },
+                id,
+              ]
+            )
+            .flat(),
+          (err) => {
+            if (err) return next(err);
+            connection.commit((err) => {
+              if (err) return next(err);
+              connection.query("SELECT * FROM project_view", (err, results) => {
+                if (err) return next(err);
+                return res.status(201).json({ data: results.map(inflate) });
+              });
+            });
+          }
+        );
+      }
+    );
+  });
+};
+
+const importProjects = [
+  withResource("projectsRaw", "SELECT * FROM project"), // not the view
+  startImport,
+];
+
 export default {
   ...controllers("project", "id"),
   usedHours,
@@ -257,6 +403,7 @@ export default {
     }),
   ],
   createLocationHours,
+  importProjects,
   getMany,
   getOne,
   getOneLocationAllotment,
