@@ -2,6 +2,7 @@ CREATE VIEW roster_view AS
 SELECT
   r.id,
   JSON_OBJECT(
+    'id', c.id,
     'title', c.title,
     'catalogId', c.catalog_id,
     'section', s.title,
