@@ -7,7 +7,6 @@ import {
   withResource,
 } from "../../utils/crud";
 import { EC, EEH } from "../../utils/types";
-import { connect } from "http2";
 
 const getOne = crud.readOne(
   "SELECT * FROM user_view WHERE id = ?",
@@ -26,7 +25,11 @@ interface User {
   email: string;
   username: string;
   restriction: string | number;
-  // ignoring password for now
+  phone: string;
+}
+
+interface UserUpdate extends User {
+  id: number;
 }
 
 function isUser(user: unknown): user is User {
@@ -37,45 +40,134 @@ function isUser(user: unknown): user is User {
     "last" in user &&
     "email" in user &&
     "username" in user &&
-    "restriction" in user
+    "restriction" in user &&
+    "phone" in user
+  );
+}
+
+interface UserRecord {
+  id: number;
+  user_id: string; // username
+  restriction: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+}
+
+// check an input vs db to see if an update is needed
+function compareUserRecord(u: User, ur: UserRecord): boolean {
+  return (
+    u.first === ur.first_name &&
+    u.last === ur.last_name &&
+    u.email === ur.email &&
+    u.username === ur.user_id &&
+    u.restriction === ur.restriction
   );
 }
 
 // TODO remove hardcoded role values, could include role as string and lookup
 const USER_ROLE_ID = 2;
+
 const createMany: EC = (req, res, next) => {
+  const existingUsers: UserRecord[] = res.locals.users;
+  if (!Array.isArray(existingUsers))
+    return next("Cannot import users without existing users - internal error");
   const connection: Connection = res.locals.connection;
-  const users = req.body;
+  const users: User[] = req.body;
   if (!Array.isArray(users))
     return next("Expected array of users - not an array");
-  if (!users.every(isUser))
+  if (!users.every(isUser)) {
     return next("Expected array of users - data invalid");
+  }
+  // import assumed to have duplicate users for each section they are enrolled in
+  // first we will reduce the array to unique users, and take the highest restriction level
+  const seen = new Set<string>();
+  const uniqueUsers = users.reduce((acc, user) => {
+    if (seen.has(user.username)) {
+      const existing = acc.find((u) => u.username === user.username);
+      if (!existing) throw "Internal error"; // this should never happen
+      existing.restriction = Math.max(
+        Number(existing.restriction),
+        Number(user.restriction)
+      );
+      return acc;
+    }
+    seen.add(user.username);
+    acc.push(user);
+    return acc;
+  }, [] as User[]);
+  const [inserts, updates] = uniqueUsers.reduce(
+    ([inserts, updates], user) => {
+      const existing = existingUsers.find((u) => u.user_id === user.username);
+      if (!existing) {
+        inserts.push(user);
+        return [inserts, updates];
+      }
+      if (compareUserRecord(user, existing)) return [inserts, updates]; // nothing to do here
+      updates.push({ ...user, id: existing.id });
+      return [inserts, updates];
+    },
+    [[], []] as [User[], UserUpdate[]]
+  );
   const sql = "INSERT IGNORE INTO user SET ?;";
   connection.query(
-    sql.repeat(users.length),
-    users.map((u) => ({
+    inserts.length ? sql.repeat(inserts.length) : "SELECT 1",
+    inserts.map((u) => ({
       first_name: u.first,
       last_name: u.last,
       email: u.email,
       restriction: u.restriction,
       user_id: u.username,
+      phone: u.phone,
     })),
     (err) => {
       if (err) return next(err);
       connection.query(
         "SELECT id FROM user WHERE user_id in (?)",
-        [users.map((u) => u.username)],
+        [inserts.map((u) => u.username)],
         (err, results) => {
           if (err) return next(err);
           connection.query(
-            "INSERT IGNORE INTO user_role SET ?;".repeat(results.length),
+            "INSERT IGNORE INTO user_role SET ?;".repeat(inserts.length),
             (results as { id: number }[]).map((r) => ({
               user_id: r.id,
               role_id: USER_ROLE_ID,
             })),
             (err) => {
               if (err) return next(err);
-              next();
+              connection.query(
+                updates.length
+                  ? "UPDATE user SET ? WHERE id = ?;".repeat(updates.length)
+                  : "SELECT 1",
+                updates
+                  .map(
+                    ({
+                      id,
+                      first,
+                      last,
+                      email,
+                      username,
+                      restriction,
+                      phone,
+                    }) => [
+                      {
+                        first_name: first,
+                        last_name: last,
+                        email,
+                        user_id: username,
+                        restriction,
+                        phone,
+                      },
+                      id,
+                    ]
+                  )
+                  .flat(),
+                (err) => {
+                  if (err) return next(err);
+                  next();
+                }
+              );
             }
           );
         }
@@ -334,6 +426,7 @@ export default {
   ],
   getOne,
   import: [
+    withResource("users", "SELECT * FROM user"), // not the view; raw users
     startCreateOne,
     createMany,
     commitCreateOne,
