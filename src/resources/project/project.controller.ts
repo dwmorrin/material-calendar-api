@@ -285,15 +285,15 @@ interface ProjectBulkUpdate extends ProjectBulkRow {
   id: number;
 }
 
-function isProjectBulkRow(datum: unknown): datum is ProjectBulkRow {
-  if (!datum) return false;
-  if (typeof datum !== "object") return false;
-  if (!("title" in datum)) return false;
-  if (!("reservationStart" in datum)) return false;
-  if (!("start" in datum)) return false;
-  if (!("end" in datum)) return false;
-  if (!("groupSize" in datum)) return false;
-  if (!("groupHours" in datum)) return false;
+function isProjectBulkRow(x: ProjectBulkRow): x is ProjectBulkRow {
+  if (!x) return false;
+  if (typeof x !== "object") return false;
+  if (!("title" in x)) return false;
+  if (!("reservationStart" in x)) return false;
+  if (!("start" in x)) return false;
+  if (!("end" in x)) return false;
+  if (!("groupSize" in x)) return false;
+  if (!("groupHours" in x)) return false;
   return true;
 }
 

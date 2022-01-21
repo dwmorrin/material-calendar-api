@@ -68,7 +68,7 @@ interface RosterInput {
   section: string; // db: section.title
 }
 
-function isRosterInput(x: unknown): x is RosterInput {
+function isRosterInput(x: RosterInput): x is RosterInput {
   return (
     !!x &&
     typeof x === "object" &&
