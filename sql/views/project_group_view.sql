@@ -33,7 +33,7 @@ FROM
         )
       ) AS members,
       IF (
-        pg.exception_size AND NOT pg.admin_approved_id,
+        pg.exception_size AND (pg.admin_approved_id is null and pg.admin_rejected_id is null),
         cast_to_bool(1),
         cast_to_bool(0)
       ) AS exceptionalSize
