@@ -5,6 +5,7 @@ import importStack from "./roster.import";
 
 const router = Router();
 
+router.post("/new-roster-import", controller.importRoster);
 router.post("/bulk", importStack);
 router.put(`/${numericId}`, controller.updateOne);
 router.delete(`/${numericId}`, controller.deleteOne);

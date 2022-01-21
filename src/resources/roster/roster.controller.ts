@@ -1,4 +1,6 @@
-import { crud, query } from "../../utils/crud";
+import { EC } from "../../utils/types";
+import { getUnsafeMultipleStatementConnection } from "../../utils/db";
+import { crud, query, respond, withResource } from "../../utils/crud";
 import withActiveSemester from "../../utils/withActiveSemester";
 
 const getMany = crud.readMany("SELECT * FROM roster_view");
@@ -60,9 +62,134 @@ const deleteOne = crud.deleteOne(
   (req) => req.params.id
 );
 
+interface RosterInput {
+  username: string; // db: user.user_id
+  course: string; // db: course.catalog_id
+  section: string; // db: section.title
+}
+
+function isRosterInput(x: unknown): x is RosterInput {
+  return (
+    !!x &&
+    typeof x === "object" &&
+    "username" in x &&
+    "course" in x &&
+    "section" in x
+  );
+}
+
+// db course
+interface Course {
+  id: number;
+  title: string;
+  catalog_id: string;
+}
+
+// db section
+interface Section {
+  id: number;
+  course_id: number;
+  title: string;
+}
+
+interface RosterInsert {
+  user_id: number;
+  course_id: number;
+  semester_id: number;
+  section_id: number;
+}
+
+interface User {
+  id: number;
+  user_id: string;
+}
+
+const createMany: EC = (req, res, next) => {
+  const inputs: RosterInput[] = req.body;
+  if (!Array.isArray(inputs))
+    return next("Expected an array of inputs - not an array");
+  if (!inputs.every(isRosterInput))
+    return next("Expected an array of inputs - invalid data");
+  const semester: { id: number; start: string; end: string } =
+    res.locals.semester;
+  if (!semester) return next("No active semester - internal error");
+  const courses: Course[] = res.locals.courses;
+  if (!Array.isArray(courses)) return next("No courses - internal error");
+  const sections: Section[] = res.locals.sections;
+  if (!Array.isArray(sections)) return next("No sections - internal error");
+  const users: User[] = res.locals.users;
+  if (!Array.isArray(users)) return next("No users - internal error");
+
+  let inserts: RosterInsert[] = [];
+  try {
+    inserts = inputs.map(
+      ({ username, course: catalogId, section: sectionTitle }) => {
+        const user = users.find((u) => u.user_id === username);
+        if (!user) throw `No existing user with username "${username}"`;
+        const course = courses.find((c) => c.catalog_id === catalogId);
+        if (!course) throw `No existing course with catalog ID "${course}"`;
+        const section = sections.find(
+          (s) => s.course_id === course.id && String(s.title) === sectionTitle
+        );
+        if (!section) {
+          console.log({
+            what: "failed",
+            sectionTitle,
+            courseId: course.id,
+            username,
+          });
+          throw `No existing section with for "${catalogId}.${sectionTitle}"`;
+        }
+        return {
+          user_id: user.id,
+          course_id: course.id,
+          semester_id: semester.id,
+          section_id: section.id,
+        };
+      }
+    );
+  } catch (e) {
+    return next(e);
+  }
+
+  if (!inserts.length) return next("No inserts - internal error");
+
+  const connection = getUnsafeMultipleStatementConnection();
+  connection.beginTransaction((err) => {
+    if (err) return next(err);
+    connection.query(
+      "INSERT INTO roster SET ?;".repeat(inserts.length),
+      inserts,
+      (err) => {
+        if (err) return next(err);
+        connection.commit((err) => {
+          if (err) return next(err);
+          next();
+        });
+      }
+    );
+  });
+};
+
+const importRoster = [
+  withActiveSemester,
+  withResource("courses", "SELECT * FROM course"),
+  withResource("sections", "SELECT * FROM section"),
+  withResource("users", "SELECT * FROM user"),
+  withResource("rosterRecords", "SELECT * FROM roster"),
+  createMany,
+  withResource("rosterRecords", "SELECT * FROM roster_view"),
+  // might be more to update... tbd
+  respond({
+    status: 201,
+    data: (_, res) => res.locals.rosterRecords,
+  }),
+];
+
 export default {
   createOne: [...withActiveSemesterAndSections, ...createOne],
   deleteOne,
   getMany,
+  importRoster,
   updateOne: [...withActiveSemesterAndSections, ...updateOne],
 };
