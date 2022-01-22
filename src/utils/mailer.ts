@@ -17,8 +17,9 @@ const mailer = nodemailer.createTransport({
 
 const sendMail = (mail: Mail[]) => {
   const envelope = mail.pop();
+  const from = process.env.EMAIL_FROM || "Calendar Admin <admin@calendar.app>";
   if (envelope)
-    mailer.sendMail(envelope, (err) => {
+    mailer.sendMail({ ...envelope, from }, (err) => {
       if (err) return console.error(err);
       sendMail(mail);
     });
