@@ -4,6 +4,7 @@ import { sendResults } from "../../utils/crud";
 
 const router = Router();
 
+router.post("/forward", controller.forwardOne);
 router.post("/import-class-meetings", controller.importClassMeetings);
 router.put("/admin/exceptions/refund/:id", controller.refund);
 router.put("/cancel/:id", controller.cancelReservation);

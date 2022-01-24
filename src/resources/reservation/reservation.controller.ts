@@ -1,3 +1,5 @@
+import { request } from "https";
+import { URL } from "url";
 import {
   addResultsToResponse,
   crud,
@@ -414,8 +416,68 @@ const importClassMeetingReservations = [
   respond({ status: 201, data: (_, res) => res.locals.warnings }),
 ];
 
+interface Reservation {
+  id: number;
+  eventId: number;
+  projectId: number;
+  groupId: number;
+  description: string;
+  guests: string;
+  liveRoom: boolean;
+  phone: string;
+  notes: string;
+  equipment: { id: number; quantity: number }[];
+}
+
+const forwardOne: EC = (req, res) => {
+  const url = process.env.RESERVATION_FORWARD_URL;
+  if (!url) return res.status(500).send("reservation forward URL not set");
+  let forwardEnv;
+  try {
+    forwardEnv = JSON.parse(process.env.RESERVATION_FORWARD_JSON || "{}");
+  } catch (e) {
+    return res.status(500).send("reservation forward JSON not valid");
+  }
+  const reservation: Reservation = req.body;
+  // TODO: expand Reservation to start, end, location, etc.
+  const body = JSON.stringify({ ...forwardEnv, params: { ...reservation } });
+
+  // some memory to store the response
+  let data = "";
+  // common handlers to update/send the response or error
+  const onData = (chunk: { toString: () => string }) =>
+    (data += chunk.toString());
+  const onError = (error: Error) => {
+    if (!res.writableEnded) res.status(500).json({ error });
+  };
+  const onSuccess = () => {
+    if (!res.writableEnded) res.status(200).json({ data });
+  };
+
+  // make the request
+  const fwd = request(url, { method: "POST" }, (fwdRes) => {
+    if (fwdRes.statusCode === 302) {
+      // follow temporary redirects
+      const { location } = fwdRes.headers;
+      if (!location) return onError(new Error("Redirect without location"));
+      const url = new URL(location);
+      request(url, (redirectRes) => {
+        redirectRes
+          .on("error", onError)
+          .on("data", onData)
+          .on("end", onSuccess);
+      }).end();
+    } else {
+      fwdRes.on("error", onError).on("data", onData).on("end", onSuccess);
+    }
+  });
+  fwd.write(body);
+  fwd.end();
+};
+
 export default {
   createOne: [...createOneStack, ...editReservationStack],
+  forwardOne,
   updateOne: [updateOne, ...editReservationStack],
   getOne,
   getByUser,

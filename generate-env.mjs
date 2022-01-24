@@ -35,6 +35,8 @@ const defaultEnv = {
   SEMESTER_START: sqlDate(),
   SEMESTER_TITLE: `Semester ${new Date().getFullYear()}`,
   SESSION_SECRET: "session-secret",
+  RESERVATION_FORWARD_URL: "",
+  RESERVATION_FORWARD_JSON: "{}",
 };
 
 const rl = readline.createInterface({ input, output });
