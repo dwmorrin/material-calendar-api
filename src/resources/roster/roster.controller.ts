@@ -131,15 +131,8 @@ const createMany: EC = (req, res, next) => {
         const section = sections.find(
           (s) => s.course_id === course.id && String(s.title) === sectionTitle
         );
-        if (!section) {
-          console.log({
-            what: "failed",
-            sectionTitle,
-            courseId: course.id,
-            username,
-          });
+        if (!section)
           throw `No existing section with for "${catalogId}.${sectionTitle}"`;
-        }
         return {
           user_id: user.id,
           course_id: course.id,
