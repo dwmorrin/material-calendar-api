@@ -80,7 +80,7 @@ const editReservationStack = [
     then: (results, _, res) => (res.locals.event = results[0]),
   }),
   query({
-    sql: "SELECT * FROM reservation_view WHERE id = ?",
+    sql: "SELECT * FROM reservation_view WHERE eventId = ?",
     using: (req) => req.body.eventId,
     then: (results, _, res) => (res.locals.reservation = results[0]),
   }),
