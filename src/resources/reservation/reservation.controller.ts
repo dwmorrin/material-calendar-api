@@ -132,11 +132,6 @@ const cancelResponse: EC = (_, res, next) => {
   next();
 };
 
-const withUpdatedEventsAndReservations = [
-  withResource("reservations", "SELECT * FROM reservation_view"),
-  withResource("events", "SELECT * FROM event_view"),
-];
-
 const getMany = crud.readMany("SELECT * FROM reservation_view");
 
 const byUserQuery = `SELECT
@@ -149,6 +144,15 @@ FROM
 WHERE u.id = ?`;
 
 const getByUser = crud.readMany(byUserQuery, (_, res) => res.locals.user.id);
+
+const withUpdatedEventsAndReservations = [
+  query({
+    sql: byUserQuery,
+    using: (_, res) => res.locals.user.id,
+    then: (results, _, res) => (res.locals.reservations = results),
+  }),
+  withResource("events", "SELECT * FROM event_view"),
+];
 
 const refund = [
   query({
