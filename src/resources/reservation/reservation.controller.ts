@@ -505,6 +505,28 @@ const makeReservationForm: EC = (req, res, next) => {
   next();
 };
 
+const forwardRemoveOne: EC = (req, res, next) => {
+  const { reservation } = req.body;
+  if (!reservation)
+    return res.status(400).json({ error: { message: "No reservation" } });
+  const { id } = reservation as { id: number };
+  if (!id || typeof id !== "number" || id < 1)
+    return res
+      .status(400)
+      .json({ error: { message: "No reservation ID sent" } });
+  const form: Form = {
+    reservationId: id,
+    start: "",
+    end: "",
+    locationTitle: "",
+    groupTitle: "DELETE",
+    users: [],
+    items: [],
+  };
+  res.locals.form = form;
+  next();
+};
+
 const forwardOne: EC = (req, res) => {
   const url = process.env.RESERVATION_FORWARD_URL;
   if (!url) return res.status(500).send("reservation forward URL not set");
@@ -607,6 +629,7 @@ const forwardStack = [
 export default {
   createOne: [...createOneStack, ...editReservationStack],
   forwardOne: [...forwardStack],
+  forwardRemoveOne: [forwardRemoveOne, forwardOne],
   updateOne: [updateOne, ...editReservationStack],
   getOne,
   getByUser,
