@@ -15,13 +15,29 @@ io.on("connection", (socket) => {
    * https://stackoverflow.com/questions/26224377/authentication-with-node-express-socket-io
    */
   socket.on("broadcast", (...args: unknown[]) => {
-    console.log(`SOCKET event: broadcast, kind: ${args[0]}`);
-    socket.broadcast.emit("broadcast", ...args);
+    try {
+      console.log(`SOCKET event: broadcast, kind: ${args[0]}`);
+      socket.broadcast.emit("broadcast", ...args);
+    } catch (error) {
+      console.error("SOCKET error on broadcast", error);
+    }
   });
 
   socket.on("get-client-count", () => {
-    console.log(`SOCKET event: get-client-count`);
-    socket.emit("client-count", io.engine.clientsCount);
+    try {
+      console.log(`SOCKET event: get-client-count`);
+      socket.emit("client-count", io.engine.clientsCount);
+    } catch (error) {
+      console.error("SOCKET error on get-client-count", error);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    try {
+      console.log(`SOCKET event: disconnect`);
+    } catch (error) {
+      console.error("SOCKET error on disconnect", error);
+    }
   });
 });
 
