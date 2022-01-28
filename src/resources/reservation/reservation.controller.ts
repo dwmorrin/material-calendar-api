@@ -80,7 +80,7 @@ const editReservationStack = [
     then: (results, _, res) => (res.locals.event = results[0]),
   }),
   query({
-    sql: "SELECT * FROM reservation_view WHERE eventId = ?",
+    sql: "SELECT * FROM reservation_view WHERE eventId = ? AND cancelation IS NULL",
     using: (req) => req.body.eventId,
     then: (results, _, res) => (res.locals.reservation = results[0]),
   }),
