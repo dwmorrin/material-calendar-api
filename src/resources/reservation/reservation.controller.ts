@@ -429,6 +429,82 @@ interface Reservation {
   equipment: { id: number; quantity: number }[];
 }
 
+interface FormUser {
+  username: string;
+  name: string;
+  contact: string;
+}
+
+interface FormItem {
+  sku: string;
+  quantity: number;
+}
+
+interface ItemInfo {
+  id: number;
+  sku: string;
+}
+
+interface Form {
+  reservationId: number;
+  start: string;
+  end: string;
+  locationTitle: string;
+  groupTitle: string;
+  users: FormUser[];
+  items: FormItem[];
+}
+
+interface ProjectGroup {
+  id: number;
+  title: string;
+  members: {
+    username: string;
+    name: { first: string; last: string };
+    email: string;
+  }[];
+}
+
+const makeReservationForm: EC = (req, res, next) => {
+  const event: Event = res.locals.event;
+  const location: { title: string } = res.locals.location;
+  const group: ProjectGroup = res.locals.group;
+  const itemSkus: ItemInfo[] | undefined = res.locals.items;
+  const reservation: Reservation = req.body.reservation;
+
+  let items: FormItem[];
+  try {
+    if (!Array.isArray(itemSkus)) throw "No skus";
+    items = itemSkus.map(({ id, sku }) => {
+      const item = reservation.equipment.find((i) => i.id === id);
+      if (!item) throw "No item";
+      return {
+        id,
+        sku,
+        quantity: item.quantity,
+      };
+    });
+  } catch (e) {
+    items = [];
+  }
+
+  const form: Form = {
+    reservationId: reservation.id,
+    start: event.start,
+    end: event.end,
+    locationTitle: location.title,
+    groupTitle: group.title,
+    users: group.members.map(({ username, name, email }) => ({
+      username,
+      name: `${name.first} ${name.last}`,
+      contact: email,
+    })),
+    items,
+  };
+  res.locals.form = form;
+  next();
+};
+
 const forwardOne: EC = (req, res) => {
   const url = process.env.RESERVATION_FORWARD_URL;
   if (!url) return res.status(500).send("reservation forward URL not set");
@@ -438,9 +514,14 @@ const forwardOne: EC = (req, res) => {
   } catch (e) {
     return res.status(500).send("reservation forward JSON not valid");
   }
-  const reservation: Reservation = req.body;
-  // TODO: expand Reservation to start, end, location, etc.
-  const body = JSON.stringify({ ...forwardEnv, params: { ...reservation } });
+  const { method }: { method: string } = req.body;
+  const form: Form = res.locals.form;
+  const formLogFormatted = `${form.reservationId}: ${form.groupTitle}, ${form.start}`;
+  const body = JSON.stringify({
+    ...forwardEnv,
+    method,
+    params: form,
+  });
 
   // some memory to store the response
   let data = "";
@@ -448,9 +529,11 @@ const forwardOne: EC = (req, res) => {
   const onData = (chunk: { toString: () => string }) =>
     (data += chunk.toString());
   const onError = (error: Error) => {
+    console.log("FORWARD error:", formLogFormatted, error);
     if (!res.writableEnded) res.status(500).json({ error });
   };
   const onSuccess = () => {
+    console.log("FORWARD OK:", formLogFormatted);
     if (!res.writableEnded) res.status(200).json({ data });
   };
 
@@ -461,23 +544,69 @@ const forwardOne: EC = (req, res) => {
       const { location } = fwdRes.headers;
       if (!location) return onError(new Error("Redirect without location"));
       const url = new URL(location);
-      request(url, (redirectRes) => {
+      const redirect = request(url, (redirectRes) => {
         redirectRes
           .on("error", onError)
           .on("data", onData)
           .on("end", onSuccess);
-      }).end();
+      });
+      redirect.on("error", onError);
+      redirect.end();
     } else {
       fwdRes.on("error", onError).on("data", onData).on("end", onSuccess);
     }
   });
+  fwd.on("error", onError);
   fwd.write(body);
   fwd.end();
 };
 
+// const event: Event = res.locals.event;
+// const location: { title: string } = res.locals.location;
+// const group: ProjectGroup = res.locals.group;
+// const items: ItemInfo[] = res.locals.items;
+// const reservation: Reservation = req.body.reservation;
+const forwardStack = [
+  query({
+    sql: "SELECT start, end, location_id AS locationId FROM event WHERE id = ?",
+    using: (req) => req.body.reservation.eventId,
+    then: (results, _, res) => (res.locals.event = results[0]),
+  }),
+  query({
+    sql: "SELECT * FROM project_group_view WHERE id = ?",
+    using: (req) => req.body.reservation.groupId,
+    then: (results, _, res) => (res.locals.group = results[0]),
+  }),
+  query({
+    sql: "SELECT title FROM location WHERE id = ?",
+    using: (_, res) => res.locals.event.locationId,
+    then: (results, _, res) => (res.locals.location = results[0]),
+  }),
+  query({
+    assert: (req) => {
+      const { reservation } = req.body;
+      if (!reservation) throw "continue";
+      const { equipment } = reservation;
+      if (!Array.isArray(equipment) || !equipment.length) throw "continue";
+    },
+    sql: "SELECT id, sku FROM equipment_view WHERE id IN (?)",
+    using: (req) => {
+      // repeat of assert above, repeating for type safety
+      const { reservation } = req.body;
+      if (!reservation) throw "no reservation";
+      const { equipment } = reservation;
+      if (!Array.isArray(equipment)) throw "no equipment";
+      return [equipment.map((e) => e.id)];
+    },
+    then: (results, _, res) => (res.locals.items = results),
+  }),
+  makeReservationForm,
+  forwardOne,
+];
+
 export default {
   createOne: [...createOneStack, ...editReservationStack],
-  forwardOne,
+  forwardOne: [...forwardStack],
   updateOne: [updateOne, ...editReservationStack],
   getOne,
   getByUser,
