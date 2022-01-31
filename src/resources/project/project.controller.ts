@@ -82,37 +82,79 @@ const createOrUpdateOne: EC = (req, res, next) => {
   );
 };
 
+interface LocationHours {
+  locationId: number;
+  hours: number;
+}
+
+interface ProjectLocationHoursRecord {
+  location_id: number;
+  hours: number;
+  project_id: number;
+}
+
 const createOrUpdateProjectLocationHours: EC = (req, res, next) => {
-  const {
-    body: { id, locationHours },
-    method,
-  } = req;
+  const method: string = req.method;
+  const id: number =
+    method === CrudAction.Create ? res.locals.project.insertId : req.body.id;
+  if (typeof id !== "number" || id < 1) return next("Invalid project id");
+  const locationHours: LocationHours[] = req.body.locationHours;
   if (!locationHours || !locationHours.length) return next();
-  pool.query(
-    "REPLACE INTO project_location_hours (project_id, location_id, hours) VALUES ?",
-    [
-      locationHours.map(({ locationId, hours }: Record<string, unknown>) => [
-        method === CrudAction.Create ? res.locals.project.insertId : id,
-        locationId,
-        hours,
-      ]),
-    ],
-    addResultsToResponse(res, next)
-  );
+  const existing:
+    | { project_id: number; location_id: number; hours: number }[]
+    | undefined = res.locals.projectLocationHours;
+  const connection = getUnsafeMultipleStatementConnection();
+  let sql = "";
+  let values: (
+    | { location_id: number; project_id: number; hours: number }
+    | number
+  )[] = [];
+  const insertMap = (lh: LocationHours): ProjectLocationHoursRecord => ({
+    location_id: lh.locationId,
+    project_id: id,
+    hours: lh.hours,
+  });
+  if (!existing || !existing.length) {
+    sql = "INSERT INTO project_location_hours SET ?;".repeat(
+      locationHours.length
+    );
+    values = locationHours.map(insertMap);
+  } else {
+    const inserts: LocationHours[] = [];
+    const updates: LocationHours[] = [];
+    for (const { locationId, hours } of locationHours) {
+      if (existing.find((lh) => lh.location_id === locationId)) {
+        updates.push({ locationId, hours });
+      } else {
+        inserts.push({ locationId, hours });
+      }
+    }
+    sql = "INSERT INTO project_location_hours SET ?;".repeat(inserts.length);
+    sql +=
+      "UPDATE project_location_hours SET hours = ? WHERE project_id = ? AND location_id = ?;".repeat(
+        updates.length
+      );
+    values = [
+      ...inserts.map(insertMap),
+      ...updates.map(({ hours, locationId }) => [hours, id, locationId]).flat(),
+    ];
+  }
+  connection.query(sql, values, addResultsToResponse(res, next));
 };
 
 const deleteProjectLocationHours: EC = (req, res, next) => {
-  const {
-    body: { id, locationHours },
-  } = req;
-  const query = !(Array.isArray(locationHours) && locationHours.length)
-    ? `DELETE FROM project_location_hours WHERE project_id = ${pool.escape(id)}`
-    : `DELETE FROM project_location_hours WHERE location_id NOT IN (${pool.escape(
-        (locationHours as { locationId: number }[]).map(
-          ({ locationId }) => locationId
-        )
-      )})`;
-  pool.query(query, addResultsToResponse(res, next, { key: "ignore" }));
+  const id: number = req.body.id;
+  const locationHours: LocationHours[] = req.body.locationHours;
+  let sql = `DELETE FROM project_location_hours WHERE project_id = ${pool.escape(
+    id
+  )}`;
+  if (Array.isArray(locationHours) && locationHours.length)
+    sql += ` AND location_id NOT IN (${pool.escape(
+      (locationHours as { locationId: number }[]).map(
+        ({ locationId }) => locationId
+      )
+    )})`;
+  pool.query(sql, addResultsToResponse(res, next, { key: "ignore" }));
 };
 
 const createOrUpdateSectionProject = query({
@@ -417,6 +459,11 @@ export default {
   updateOne: [
     createOrUpdateOne,
     withSelectedCourseSections,
+    query({
+      sql: "SELECT * FROM project_location_hours WHERE project_id = ?",
+      using: (req) => Number(req.body.id),
+      then: (results, _, res) => (res.locals.projectLocationHours = results),
+    }),
     createOrUpdateProjectLocationHours,
     createOrUpdateSectionProject,
     deleteProjectLocationHours,
