@@ -2,6 +2,11 @@
 import nodemailer from "nodemailer";
 import { EC } from "./types";
 
+// feel free to replace this with a better logging function
+// just adding a timestamp
+const logError = (err: Error | string): void =>
+  console.error(new Date().toLocaleString(), err);
+
 interface Mail {
   to: string;
   subject: string;
@@ -20,7 +25,7 @@ const sendMail = (mail: Mail[]) => {
   const from = process.env.EMAIL_FROM || "Calendar Admin <admin@calendar.app>";
   if (envelope)
     mailer.sendMail({ ...envelope, from }, (err) => {
-      if (err) return console.error(err);
+      if (err) return logError(err);
       sendMail(mail);
     });
 };
@@ -30,7 +35,7 @@ const sendMail = (mail: Mail[]) => {
 export const useMailbox: EC = (req) => {
   const mail: Mail | Mail[] = req.body.mail;
   if (!Array.isArray(mail) && !mail)
-    return console.error("useMailbox called without mail in request body");
+    return logError("useMailbox called without mail in request body");
   // filters out empty "to" strings
   sendMail((Array.isArray(mail) ? mail : [mail]).filter(({ to }) => to));
 };
