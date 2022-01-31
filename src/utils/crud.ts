@@ -74,6 +74,7 @@ export function query<T>({
         return next(error);
       }
     const values: T | T[] = using ? using(req, res) : [];
+    if (process.env.NODE_ENV === "development") console.table({ sql, values });
     pool.query(sql, values, (error, results) => {
       if (error) return next(error);
       if (then) {
