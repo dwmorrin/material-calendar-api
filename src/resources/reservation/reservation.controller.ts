@@ -268,7 +268,7 @@ const createOneStack = [
 
 export const updateOne: EC = (req, res, next) => {
   // a bit of a hack, but this makes for the same as createOne
-  res.locals.reservation.insertId = req.params.id;
+  res.locals.reservation = { insertId: req.params.id };
   pool.query(
     "UPDATE reservation SET ? WHERE id = ?",
     [getReservationFromBody(req), Number(req.params.id)],
