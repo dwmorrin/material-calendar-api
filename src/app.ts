@@ -74,6 +74,7 @@ app.use(
       // eslint-disable-next-line no-console
       console.error(
         [
+          new Date().toLocaleString(),
           "--- UNHANDLED EXCEPTION ---",
           "** Error message: **",
           error.message,
@@ -97,6 +98,7 @@ app.use(
       // eslint-disable-next-line no-console
       console.error(
         [
+          new Date().toLocaleString(),
           "--- UNHANDLED EXCEPTION ---",
           "** Error message: **",
           JSON.stringify(error),

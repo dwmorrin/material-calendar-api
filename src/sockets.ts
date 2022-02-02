@@ -6,6 +6,9 @@ const server = http.createServer(app);
 
 const io = new Server(server);
 
+const formattedError = (event: string, error: unknown): void =>
+  console.error(new Date().toLocaleString(), "SOCKET error on", event, error);
+
 io.on("connection", (socket) => {
   /**
    * Broadcast to all users
@@ -19,7 +22,7 @@ io.on("connection", (socket) => {
       console.log(`SOCKET event: broadcast, kind: ${args[0]}`);
       socket.broadcast.emit("broadcast", ...args);
     } catch (error) {
-      console.error("SOCKET error on broadcast", error);
+      formattedError("broadcast", error);
     }
   });
 
@@ -28,7 +31,7 @@ io.on("connection", (socket) => {
       console.log(`SOCKET event: get-client-count`);
       socket.emit("client-count", io.engine.clientsCount);
     } catch (error) {
-      console.error("SOCKET error on get-client-count", error);
+      formattedError("get-client-count", error);
     }
   });
 
@@ -36,7 +39,7 @@ io.on("connection", (socket) => {
     try {
       console.log(`SOCKET event: disconnect`);
     } catch (error) {
-      console.error("SOCKET error on disconnect", error);
+      formattedError("disconnect", error);
     }
   });
 });
