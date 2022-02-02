@@ -197,7 +197,7 @@ const createOneStack = [
       FROM   event e
       JOIN   virtual_week vw USING (location_id)
       WHERE  e.id = ?
-      AND    e.start BETWEEN vw.start AND vw.end
+      AND    DATE(e.start) BETWEEN vw.start AND vw.end
     `,
     using: (req) => req.body.eventId,
     then: (results, _, res) => (res.locals.virtualWeek = results[0]),
