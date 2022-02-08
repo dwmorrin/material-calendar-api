@@ -50,11 +50,20 @@ const config: PoolConfig & ConnectionConfig = {
   },
 };
 
-export const getUnsafeMultipleStatementConnection = (): Connection =>
-  mysql.createConnection({
+export const getUnsafeMultipleStatementConnection = (): Connection => {
+  const connection = mysql.createConnection({
     ...config,
     multipleStatements: true,
   });
+  connection.on("error", (error) => {
+    console.error(
+      new Date().toLocaleString(),
+      "[unhandled error in multi statement connection]",
+      error
+    );
+  });
+  return connection;
+};
 
 const commitTransaction: EC = (_, res, next) => {
   const connection: Connection = res.locals.connection;
@@ -108,5 +117,12 @@ export const endTransaction = [
 ];
 
 const pool = mysql.createPool(config);
+pool.on("error", (error) => {
+  console.error(
+    new Date().toLocaleString(),
+    "[unhandled mysqljs error on pool connection]",
+    error
+  );
+});
 
 export default pool;
