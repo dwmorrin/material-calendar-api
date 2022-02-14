@@ -229,6 +229,23 @@ CREATE TABLE `project_group` (
   CONSTRAINT `rm_group_project_id_project_id` FOREIGN KEY (`project_id`) REFERENCES `project` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `project_group_hours_report_view` AS SELECT 
+ 1 AS `group_title`,
+ 1 AS `group_pending`,
+ 1 AS `students`,
+ 1 AS `hours`*/;
+SET character_set_client = @saved_cs_client;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `project_group_report_view` AS SELECT 
+ 1 AS `project_id`,
+ 1 AS `group_id`,
+ 1 AS `group_title`,
+ 1 AS `group_pending`,
+ 1 AS `students`*/;
+SET character_set_client = @saved_cs_client;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `project_group_user` (
@@ -605,6 +622,32 @@ DELIMITER ;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
 /*!50001 VIEW `location_view` AS select `s`.`id` AS `id`,`s`.`title` AS `title`,`s`.`location` AS `groupId`,if((`sh`.`date` is null),'[]',json_arrayagg(json_object('date',`sh`.`date`,'hours',`sh`.`hours`))) AS `hours`,`s`.`restriction` AS `restriction`,`s`.`allows_walk_ins` AS `allowsWalkIns`,json_object('monday',`s`.`default_hours_monday`,'tuesday',`s`.`default_hours_tuesday`,'wednesday',`s`.`default_hours_wednesday`,'thursday',`s`.`default_hours_thursday`,'friday',`s`.`default_hours_friday`,'saturday',`s`.`default_hours_saturday`,'sunday',`s`.`default_hours_sunday`) AS `defaultHours` from (`location` `s` left join `location_hours` `sh` on((`s`.`id` = `sh`.`location_id`))) group by `s`.`id` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP VIEW IF EXISTS `project_group_hours_report_view`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
+/*!50001 VIEW `project_group_hours_report_view` AS select `g`.`group_title` AS `group_title`,`g`.`group_pending` AS `group_pending`,`g`.`students` AS `students`,ifnull(cast((sum(time_to_sec(timediff(`e`.`end`,`e`.`start`))) / 3600) as decimal(8,2)),0) AS `hours` from ((`project_group_report_view` `g` left join `reservation` `r` on((`g`.`group_id` = `r`.`group_id`))) left join `event` `e` on((`e`.`id` = `r`.`event_id`))) group by `g`.`group_id` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP VIEW IF EXISTS `project_group_report_view`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
+/*!50001 VIEW `project_group_report_view` AS select `g`.`project_id` AS `project_id`,`g`.`id` AS `group_id`,`g`.`title` AS `group_title`,`g`.`pending` AS `group_pending`,group_concat(concat_ws(' ',`stu`.`first_name`,`stu`.`last_name`,`stu`.`user_id`) separator ', ') AS `students` from ((`project_group` `g` join `project_group_user` `pgu` on((`pgu`.`project_group_id` = `g`.`id`))) join `user` `stu` on((`stu`.`id` = `pgu`.`user_id`))) group by `g`.`id` order by `g`.`project_id`,`g`.`title` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
