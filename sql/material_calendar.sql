@@ -232,6 +232,7 @@ CREATE TABLE `project_group` (
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `project_group_hours_report_view` AS SELECT 
+ 1 AS `project_id`,
  1 AS `group_title`,
  1 AS `group_pending`,
  1 AS `students`,
@@ -634,7 +635,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `project_group_hours_report_view` AS select `g`.`group_title` AS `group_title`,`g`.`group_pending` AS `group_pending`,`g`.`students` AS `students`,ifnull(cast((sum(time_to_sec(timediff(`e`.`end`,`e`.`start`))) / 3600) as decimal(8,2)),0) AS `hours` from ((`project_group_report_view` `g` left join `reservation` `r` on((`g`.`group_id` = `r`.`group_id`))) left join `event` `e` on((`e`.`id` = `r`.`event_id`))) group by `g`.`group_id` */;
+/*!50001 VIEW `project_group_hours_report_view` AS select `g`.`project_id` AS `project_id`,`g`.`group_title` AS `group_title`,`g`.`group_pending` AS `group_pending`,`g`.`students` AS `students`,ifnull(cast((sum(time_to_sec(timediff(`e`.`end`,`e`.`start`))) / 3600) as decimal(8,2)),0) AS `hours` from ((`project_group_report_view` `g` left join `reservation` `r` on((`g`.`group_id` = `r`.`group_id`))) left join `event` `e` on((`e`.`id` = `r`.`event_id`))) group by `g`.`group_id` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;

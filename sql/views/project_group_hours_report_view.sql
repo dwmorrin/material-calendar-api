@@ -1,5 +1,6 @@
 CREATE VIEW project_group_hours_report_view AS
 SELECT
+  g.project_id,
   g.group_title,
   g.group_pending,
   g.students,
