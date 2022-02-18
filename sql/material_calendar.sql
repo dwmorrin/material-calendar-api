@@ -376,6 +376,17 @@ CREATE TABLE `reservation` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `reservation_info_view` AS SELECT 
+ 1 AS `Id`,
+ 1 AS `Location`,
+ 1 AS `Start`,
+ 1 AS `End`,
+ 1 AS `Event Description`,
+ 1 AS `Group`,
+ 1 AS `Status`*/;
+SET character_set_client = @saved_cs_client;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `reservation_view` AS SELECT 
  1 AS `id`,
  1 AS `description`,
@@ -701,6 +712,19 @@ DELIMITER ;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
 /*!50001 VIEW `project_view` AS select `p`.`id` AS `id`,`p`.`title` AS `title`,ifnull((select json_object('id',ifnull(`c`.`id`,0),'title',ifnull(`c`.`title`,''),'sections',if((`s`.`title` is null),'[]',json_arrayagg(`s`.`title`))) from ((`section_project` `sp` join `section` `s` on((`s`.`id` = `sp`.`section_id`))) join `course` `c`) where ((`sp`.`project_id` = `p`.`id`) and (`s`.`course_id` = `c`.`id`)) limit 1),json_object('id',-(1),'title','')) AS `course`,`p`.`start` AS `start`,`p`.`end` AS `end`,`p`.`book_start` AS `reservationStart`,ifnull((select json_arrayagg(json_object('locationId',`vw`.`location_id`,'virtualWeekId',`vw`.`id`,'start',if((`vw`.`start` >= `p`.`start`),`vw`.`start`,`p`.`start`),'end',if((`vw`.`end` <= `p`.`end`),`vw`.`end`,`p`.`end`),'hours',ifnull(`ph`.`hours`,0))) from ((`project_location_hours` `psh` join `virtual_week` `vw` on((`psh`.`location_id` = `vw`.`location_id`))) left join `project_virtual_week_hours` `ph` on(((`ph`.`project_id` = `psh`.`project_id`) and (`ph`.`virtual_week_id` = `vw`.`id`)))) where ((`psh`.`project_id` = `p`.`id`) and (`vw`.`end` >= `p`.`start`) and (`vw`.`start` <= `p`.`end`))),'[]') AS `allotments`,ifnull((select sum(`ph`.`hours`) from `project_virtual_week_hours` `ph` where (`ph`.`project_id` = `p`.`id`)),0) AS `totalAllottedHours`,ifnull((select json_arrayagg(json_object('locationId',`ps`.`location_id`,'hours',`ps`.`hours`)) from `project_location_hours` `ps` where (`ps`.`project_id` = `p`.`id`)),'[]') AS `locationHours`,`p`.`open` AS `open`,`p`.`group_size` AS `groupSize`,`p`.`group_hours` AS `groupAllottedHours` from `project` `p` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!50001 DROP VIEW IF EXISTS `reservation_info_view`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 */
+/*!50001 VIEW `reservation_info_view` AS select `r`.`id` AS `Id`,`l`.`title` AS `Location`,date_format(`e`.`start`,'%Y-%m-%d %r') AS `Start`,date_format(`e`.`end`,'%Y-%m-%d %r') AS `End`,`e`.`description` AS `Event Description`,`g`.`title` AS `Group`,if(`r`.`canceled`,'Canceled','Active') AS `Status` from (((`reservation` `r` join `event` `e` on((`r`.`event_id` = `e`.`id`))) join `location` `l` on((`e`.`location_id` = `l`.`id`))) join `project_group` `g` on((`r`.`group_id` = `g`.`id`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
