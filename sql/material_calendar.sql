@@ -378,11 +378,13 @@ SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `reservation_info_view` AS SELECT 
  1 AS `Id`,
+ 1 AS `Project Id`,
  1 AS `Location`,
  1 AS `Start`,
  1 AS `End`,
  1 AS `Event Description`,
  1 AS `Group`,
+ 1 AS `Contact`,
  1 AS `Status`*/;
 SET character_set_client = @saved_cs_client;
 SET @saved_cs_client     = @@character_set_client;
@@ -724,7 +726,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `reservation_info_view` AS select `r`.`id` AS `Id`,`l`.`title` AS `Location`,date_format(`e`.`start`,'%Y-%m-%d %r') AS `Start`,date_format(`e`.`end`,'%Y-%m-%d %r') AS `End`,`e`.`description` AS `Event Description`,`g`.`title` AS `Group`,if(`r`.`canceled`,'Canceled','Active') AS `Status` from (((`reservation` `r` join `event` `e` on((`r`.`event_id` = `e`.`id`))) join `location` `l` on((`e`.`location_id` = `l`.`id`))) join `project_group` `g` on((`r`.`group_id` = `g`.`id`))) */;
+/*!50001 VIEW `reservation_info_view` AS select `r`.`id` AS `Id`,`g`.`project_id` AS `Project Id`,`l`.`title` AS `Location`,date_format(`e`.`start`,'%Y-%m-%d %r') AS `Start`,date_format(`e`.`end`,'%Y-%m-%d %r') AS `End`,`e`.`description` AS `Event Description`,`g`.`title` AS `Group`,group_concat(distinct `u`.`email` separator ', ') AS `Contact`,if(`r`.`canceled`,'Canceled','Active') AS `Status` from (((((`reservation` `r` join `event` `e` on((`r`.`event_id` = `e`.`id`))) join `location` `l` on((`e`.`location_id` = `l`.`id`))) join `project_group` `g` on((`r`.`group_id` = `g`.`id`))) join `project_group_user` `gu` on((`r`.`group_id` = `gu`.`project_group_id`))) join `user` `u` on((`gu`.`user_id` = `u`.`id`))) group by `r`.`id` order by `e`.`start` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
