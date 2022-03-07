@@ -34,7 +34,8 @@ SELECT
       "groupId", s.location,
       "title", s.title,
       "restriction", s.restriction,
-      "allowsWalkIns", s.allows_walk_ins
+      "allowsWalkIns", s.allows_walk_ins,
+      "allowsEquipment", s.allows_equipment
     )
     FROM location s
     WHERE a.location_id = s.id

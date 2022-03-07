@@ -158,6 +158,7 @@ CREATE TABLE `location` (
   `location` varchar(255) DEFAULT '',
   `restriction` int NOT NULL DEFAULT '0',
   `allows_walk_ins` tinyint(1) NOT NULL DEFAULT '0',
+  `allows_equipment` tinyint(1) NOT NULL DEFAULT '0',
   `default_hours_monday` int NOT NULL DEFAULT '0',
   `default_hours_tuesday` int NOT NULL DEFAULT '0',
   `default_hours_wednesday` int NOT NULL DEFAULT '0',
@@ -187,6 +188,7 @@ SET @saved_cs_client     = @@character_set_client;
  1 AS `hours`,
  1 AS `restriction`,
  1 AS `allowsWalkIns`,
+ 1 AS `allowsEquipment`,
  1 AS `defaultHours`*/;
 SET character_set_client = @saved_cs_client;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -635,7 +637,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `location_view` AS select `s`.`id` AS `id`,`s`.`title` AS `title`,`s`.`location` AS `groupId`,if((`sh`.`date` is null),'[]',json_arrayagg(json_object('date',`sh`.`date`,'hours',`sh`.`hours`))) AS `hours`,`s`.`restriction` AS `restriction`,`s`.`allows_walk_ins` AS `allowsWalkIns`,json_object('monday',`s`.`default_hours_monday`,'tuesday',`s`.`default_hours_tuesday`,'wednesday',`s`.`default_hours_wednesday`,'thursday',`s`.`default_hours_thursday`,'friday',`s`.`default_hours_friday`,'saturday',`s`.`default_hours_saturday`,'sunday',`s`.`default_hours_sunday`) AS `defaultHours` from (`location` `s` left join `location_hours` `sh` on((`s`.`id` = `sh`.`location_id`))) group by `s`.`id` */;
+/*!50001 VIEW `location_view` AS select `l`.`id` AS `id`,`l`.`title` AS `title`,`l`.`location` AS `groupId`,if((`sh`.`date` is null),'[]',json_arrayagg(json_object('date',`sh`.`date`,'hours',`sh`.`hours`))) AS `hours`,`l`.`restriction` AS `restriction`,`l`.`allows_walk_ins` AS `allowsWalkIns`,`l`.`allows_equipment` AS `allowsEquipment`,json_object('monday',`l`.`default_hours_monday`,'tuesday',`l`.`default_hours_tuesday`,'wednesday',`l`.`default_hours_wednesday`,'thursday',`l`.`default_hours_thursday`,'friday',`l`.`default_hours_friday`,'saturday',`l`.`default_hours_saturday`,'sunday',`l`.`default_hours_sunday`) AS `defaultHours` from (`location` `l` left join `location_hours` `sh` on((`l`.`id` = `sh`.`location_id`))) group by `l`.`id` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
