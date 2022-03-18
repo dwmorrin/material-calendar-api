@@ -1,4 +1,5 @@
-import * as readline from "node:readline/promises";
+import { promisify } from "util";
+import * as readline from "readline";
 import { stdin as input, stdout as output } from "process";
 import { writeFileSync } from "fs";
 
@@ -40,15 +41,16 @@ const defaultEnv = {
 };
 
 const rl = readline.createInterface({ input, output });
+const question = promisify(rl.question).bind(rl);
 
 const result = {};
 for (const key in defaultEnv) {
   const defaultValue = defaultEnv[key];
-  const answer = await rl.question(`${key} [${defaultValue}]: `);
+  const answer = await question(`${key} [${defaultValue}]: `);
   result[key] = answer || defaultValue;
 }
 
-const answer = await rl.question(
+const answer = await question(
   `${JSON.stringify(
     result,
     null,
