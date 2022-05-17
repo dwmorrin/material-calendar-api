@@ -7,7 +7,7 @@ const router = Router();
 
 router.post("/bulk", controller.createMany);
 router.post("/import", ...eventImport);
-router.post("/range", controller.range);
+router.get("/range", controller.range);
 router.post("/:id/lock", controller.lockOne);
 router.post("/:id/unlock", controller.unlockOne);
 router.delete("/:id", controller.deleteOne);

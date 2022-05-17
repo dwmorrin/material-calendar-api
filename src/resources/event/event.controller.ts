@@ -112,7 +112,7 @@ export default {
   unlockOne,
   updateOne,
   range: crud.readMany(
-    "SELECT * FROM event_view WHERE a.start BETWEEN ? AND ?",
-    ({ body }) => [body.start, body.end]
+    "SELECT * FROM event_view WHERE start BETWEEN DATE(?) AND DATE(?)",
+    ({ query: { start, end } }) => [start, end]
   ),
 };
