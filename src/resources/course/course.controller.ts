@@ -1,12 +1,6 @@
 import { getUnsafeMultipleStatementConnection } from "../../utils/db";
 import { EC } from "../../utils/types";
-import {
-  crud,
-  controllers,
-  query as q,
-  withResource,
-  respond,
-} from "../../utils/crud";
+import { crud, controllers, withResource, respond } from "../../utils/crud";
 
 /**
  * @deprecated
