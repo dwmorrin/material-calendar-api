@@ -1,6 +1,29 @@
 import { crud, query, respond } from "../../utils/crud";
 import { EC } from "../../utils/types";
 
+// getMany: crud.readMany("SELECT * FROM event_view"),
+const getMany = [
+  query({
+    sql: [
+      "SELECT start, end FROM semester",
+      "WHERE id = (SELECT semester_id FROM active_semester)",
+    ].join(" "),
+    then: (results, _, res) => (res.locals.semester = results[0]),
+  }),
+  query({
+    sql: ["SELECT * FROM event_view", "WHERE start BETWEEN ? AND ?"].join(" "),
+    using: (_, res) => [
+      res.locals.semester.start,
+      res.locals.semester.end + " 23:59:59",
+    ],
+    then: (results, _, res) => (res.locals.events = results),
+  }),
+  respond({
+    status: 200,
+    data: (_, res) => res.locals.events,
+  }),
+];
+
 const createMany = [
   query({
     assert: (req) => {
@@ -104,7 +127,7 @@ export default {
   deleteOne: crud.deleteOne("DELETE FROM event WHERE id = ?", (req) =>
     Number(req.params.id)
   ),
-  getMany: crud.readMany("SELECT * FROM event_view"),
+  getMany,
   getOne: crud.readOne("SELECT * FROM event_view WHERE id = ?", (req) =>
     Number(req.params.id)
   ),
