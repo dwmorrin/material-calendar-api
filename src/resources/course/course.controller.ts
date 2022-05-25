@@ -78,7 +78,7 @@ const createMany: EC = (req, res, next) => {
         connection.query(
           updates.length
             ? "UPDATE course SET title = ? WHERE catalog_id = ?;".repeat(
-                updates.length
+                updates.length / 2
               )
             : "SELECT 1",
           updates,
