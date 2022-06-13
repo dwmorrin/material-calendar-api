@@ -246,11 +246,20 @@ const createOneStack = [
       res.locals.projectVirtualWeekHours = results[0].hours;
     },
   }),
+  // get project group
+  query({
+    sql: "SELECT * FROM project_group WHERE id = ?",
+    using: (req) => req.body.groupId,
+    then: (results, _, res) => {
+      if (!results.length) throw "Invalid group ID";
+      res.locals.projectGroup = results[0];
+    },
+  }),
   // validate and create reservation
   query({
     assert: (req, res) => {
       const { projectId } = req.body;
-      const { usedHours, projectVirtualWeekHours } = res.locals;
+      const { usedHours, projectVirtualWeekHours, projectGroup } = res.locals;
       // admin can override this check
       if (res.locals.admin) return;
       // TODO remove hardcoded walk-in project id
@@ -259,6 +268,8 @@ const createOneStack = [
       if (projectVirtualWeekHours === undefined) throw "Cannot find used hours";
       if (usedHours >= projectVirtualWeekHours)
         throw "Project does not have enough hours";
+      if (projectGroup.pending) throw "Group is pending";
+      if (projectGroup.abandoned) throw "Group has been abandoned";
     },
     sql: "INSERT INTO reservation SET ?",
     using: (req) => [getReservationFromBody(req)],
