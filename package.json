@@ -5,6 +5,7 @@
   "private": true,
   "main": "app.js",
   "scripts": {
+    "start": "npm run watch",
     "test": "jest",
     "watch": "concurrently -k -p \"[{name}]\" -n \"TypeScript,Node\" -c \"cyan.bold,green.bold\" \"tsc -w\" \"nodemon --delay 2 dist/server.js\"",
     "watch-debug": "concurrently -k -p \"[{name}]\" -n \"TypeScript,Node\" -c \"cyan.bold,green.bold\" \"tsc -w\" \"DEBUG=express:* nodemon dist/server.js\""
