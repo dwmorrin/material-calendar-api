@@ -65,6 +65,7 @@ const editReservationResponse: EC = (req, res, next) => {
       reservation: inflate(res.locals.reservation),
       group: inflate(res.locals.group),
       project: inflate(res.locals.project),
+      isAdmin: req.body.isAdmin,
     },
     context: req.query.context,
   });
@@ -277,7 +278,7 @@ const createOneStack = [
   }),
 ];
 
-export const updateOne: EC = (req, res, next) => {
+const updateOne: EC = (req, res, next) => {
   // a bit of a hack, but this makes for the same as createOne
   res.locals.reservation = { insertId: req.params.id };
   pool.query(
