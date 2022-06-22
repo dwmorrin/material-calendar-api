@@ -7,6 +7,7 @@ import {
   withResource,
 } from "../../utils/crud";
 import { EC, EEH } from "../../utils/types";
+import withActiveSemester from "../../utils/withActiveSemester";
 
 const getOne = crud.readOne(
   "SELECT * FROM user_view WHERE id = ?",
@@ -359,18 +360,25 @@ const getCoursesForStudentsQuery = `
       INNER JOIN course c ON r.course_id = c.id
       INNER JOIN section s ON r.section_id = s.id
   WHERE
-    u.id = ?
+    r.semester_id = ?
+    AND u.id = ?
   `;
 
 //! TODO moving instructor as string to instructor_id (int, user.id)
-const getCourses: EC = (req, res, next) =>
-  pool.query(
-    res.locals.user.roles.includes("instructor")
-      ? getCoursesForInstructorsQuery
-      : getCoursesForStudentsQuery,
-    [req.params.id],
-    addResultsToResponse(res, next)
-  );
+const getCourses: EC = (req, res, next) => {
+  if (res.locals.user.roles.includes("instructor"))
+    pool.query(
+      getCoursesForInstructorsQuery,
+      [req.params.id],
+      addResultsToResponse(res, next)
+    );
+  else
+    pool.query(
+      getCoursesForStudentsQuery,
+      [res.locals.semester.id, req.params.id],
+      addResultsToResponse(res, next)
+    );
+};
 
 const getProjectsForStudentsQuery = `(
       SELECT p.*
@@ -378,7 +386,9 @@ const getProjectsForStudentsQuery = `(
         INNER JOIN section_project sp ON sp.project_id = p.id
         INNER JOIN roster r ON r.section_id = sp.section_id
         INNER JOIN user u ON u.id = r.user_id 
-      WHERE u.id = ?
+      WHERE
+        r.semester_id = ?
+        AND u.id = ?
       GROUP BY p.id
     )
     UNION (SELECT * FROM project_view WHERE title = "Walk-in" )
@@ -388,14 +398,20 @@ const getProjectsForStudentsQuery = `(
 const getProjectsForInstructorsQuery =
   "SELECT * FROM project_view WHERE id in (1, 2)";
 
-const getProjects: EC = (req, res, next) =>
-  pool.query(
-    res.locals.user.roles.includes("instructor")
-      ? getProjectsForInstructorsQuery
-      : getProjectsForStudentsQuery,
-    [req.params.id],
-    addResultsToResponse(res, next)
-  );
+const getProjects: EC = (req, res, next) => {
+  if (res.locals.user.roles.includes("instructor"))
+    pool.query(
+      getProjectsForInstructorsQuery,
+      [req.params.id],
+      addResultsToResponse(res, next)
+    );
+  else
+    pool.query(
+      getProjectsForStudentsQuery,
+      [res.locals.semester.id, req.params.id],
+      addResultsToResponse(res, next)
+    );
+};
 
 const resetPassword: EC = (req, res, next) => {
   const { password } = req.body;
@@ -450,7 +466,7 @@ export default {
   ],
   removeOne,
   getMany,
-  getCourses,
-  getProjects,
+  getCourses: [withActiveSemester, getCourses],
+  getProjects: [withActiveSemester, getProjects],
   resetPassword,
 };
