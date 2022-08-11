@@ -41,7 +41,9 @@ FROM
       project_group_user pgu
       INNER JOIN user u ON pgu.user_id = u.id
       INNER JOIN project_group pg ON pg.id = pgu.project_group_id
+      INNER JOIN project p ON p.id = pg.project_id
     WHERE NOT pg.abandoned
+      AND p.id IN (SELECT id FROM active_project_view)
     GROUP BY
       pg.id
   ) g
@@ -55,9 +57,11 @@ FROM
         ) AS reservedHours
       FROM
         project_group pg
+        INNER JOIN project p ON p.id = pg.project_id
         LEFT JOIN reservation b on b.group_id = pg.id
         LEFT JOIN event a on a.id = b.event_id
       WHERE NOT pg.abandoned
+        AND p.id IN (SELECT id FROM active_project_view)
         AND b.refund_approval_id IS NULL
       GROUP BY
         pg.id
