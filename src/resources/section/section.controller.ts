@@ -1,5 +1,11 @@
 import pool, { getUnsafeMultipleStatementConnection } from "../../utils/db";
-import { addResultsToResponse, respond, withResource } from "../../utils/crud";
+import {
+  addResultsToResponse,
+  query,
+  respond,
+  withResource,
+} from "../../utils/crud";
+import withActiveSemester from "../../utils/withActiveSemester";
 import { EC } from "../../utils/types";
 
 const getOne: EC = (req, res, next) =>
@@ -56,6 +62,7 @@ interface Section {
   course_id: number;
   title: string;
   instructor_id: number;
+  semester_id: number;
 }
 
 interface User {
@@ -70,12 +77,17 @@ interface ImportRecord {
 }
 
 const createMany: EC = (req, res, next) => {
+  if (!res.locals.semester) return next(new Error("no semester"));
+  const semesterId = res.locals.semester.id;
+  if (isNaN(semesterId) || semesterId < 1)
+    return next(new Error("invalid semester ID"));
   const newSections: ImportRecord[] = req.body;
   if (!Array.isArray(newSections)) return next(new Error("Invalid body"));
   const courses: Course[] = res.locals.courses;
   if (!Array.isArray(courses)) return next(new Error("No existing courses"));
   const users: User[] = res.locals.users;
   if (!Array.isArray(users)) return next(new Error("No existing users"));
+  // sections assumes to already been filtered for current semester
   const sections: Section[] = res.locals.sections;
 
   const inserts: Section[] = [];
@@ -89,7 +101,7 @@ const createMany: EC = (req, res, next) => {
       const course = courses.find((c) => c.catalog_id === newSection.course);
       if (!course) throw new Error("Course not found");
       const user = users.find((u) => u.user_id === newSection.username);
-      if (!user) throw new Error("User not found");
+      if (!user) throw new Error("User not found " + newSection.username);
       const existing = sections.find(
         (s) =>
           s.course_id === course.id &&
@@ -105,6 +117,7 @@ const createMany: EC = (req, res, next) => {
           course_id: course.id,
           instructor_id: user.id,
           title: newSection.section,
+          semester_id: semesterId,
         });
     });
   } catch (err) {
@@ -140,9 +153,14 @@ const createMany: EC = (req, res, next) => {
 };
 
 const importSections = [
+  withActiveSemester,
   withResource("courses", "SELECT * FROM course"),
   withResource("users", "SELECT * FROM user"),
-  withResource("sections", "SELECT * FROM section"),
+  query({
+    sql: "SELECT * FROM section WHERE semester_id = ?",
+    using: (_, res) => res.locals.semester.id,
+    then: (results, _, res) => (res.locals.sections = results),
+  }),
   createMany,
   withResource("sections", "SELECT * FROM section_view"),
   respond({

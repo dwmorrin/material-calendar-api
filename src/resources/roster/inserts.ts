@@ -187,7 +187,6 @@ type RosterRecordRecord = {
   user_id: number;
   course_id: number;
   section_id: number;
-  semester_id: number;
 };
 
 export const insertRosterRecords: EC = (_, res, next) => {
@@ -209,7 +208,6 @@ export const insertRosterRecords: EC = (_, res, next) => {
         user_id: user.id,
         course_id: course.id,
         section_id: section.id,
-        semester_id: res.locals.semester.id,
       };
     }
   );

@@ -429,17 +429,14 @@ CREATE TABLE `roster` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
   `course_id` int DEFAULT NULL,
-  `semester_id` int DEFAULT NULL,
   `section_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `student_course_idx` (`user_id`,`course_id`,`semester_id`,`section_id`),
+  UNIQUE KEY `student_course_idx` (`user_id`,`course_id`,`section_id`),
   KEY `student_id_idx` (`user_id`),
   KEY `course_id_idx` (`course_id`),
-  KEY `semester_id_idx` (`semester_id`),
   KEY `section_id_idx` (`section_id`),
   CONSTRAINT `roster_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `roster_section_id_section_id` FOREIGN KEY (`section_id`) REFERENCES `section` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
-  CONSTRAINT `roster_semester_id_semester_id` FOREIGN KEY (`semester_id`) REFERENCES `semester` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `roster_student_id_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -454,6 +451,7 @@ SET character_set_client = @saved_cs_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `section` (
   `id` int NOT NULL AUTO_INCREMENT,
+  `semester_id` int DEFAULT NULL,
   `course_id` int DEFAULT NULL,
   `title` varchar(50) NOT NULL,
   `instructor_id` int DEFAULT NULL,

@@ -41,7 +41,6 @@ const updateOne = crud.updateOne(
     {
       user_id: req.body.student.id,
       course_id: res.locals.courseId,
-      semester_id: res.locals.semester.id,
       section_id: res.locals.sectionId,
     },
     req.body.id,
@@ -52,7 +51,6 @@ const createOne = crud.createOne("INSERT INTO roster SET ?", (req, res) => [
   {
     user_id: req.body.student.id,
     course_id: res.locals.courseId,
-    semester_id: res.locals.semester.id,
     section_id: res.locals.sectionId,
   },
 ]);
@@ -95,7 +93,6 @@ interface Section {
 interface RosterInsert {
   user_id: number;
   course_id: number;
-  semester_id: number;
   section_id: number;
 }
 
@@ -136,7 +133,6 @@ const createMany: EC = (req, res, next) => {
         return {
           user_id: user.id,
           course_id: course.id,
-          semester_id: semester.id,
           section_id: section.id,
         };
       }

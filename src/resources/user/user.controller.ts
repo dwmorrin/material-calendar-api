@@ -357,10 +357,10 @@ const getCoursesForStudentsQuery = `
   FROM
     user u
       INNER JOIN roster r ON r.user_id = u.id
-      INNER JOIN course c ON r.course_id = c.id
       INNER JOIN section s ON r.section_id = s.id
+      INNER JOIN course c ON s.course_id = c.id
   WHERE
-    r.semester_id = ?
+    s.semester_id = ?
     AND u.id = ?
   `;
 
@@ -384,10 +384,11 @@ const getProjectsForStudentsQuery = `(
       SELECT p.*
       FROM project_view p
         INNER JOIN section_project sp ON sp.project_id = p.id
-        INNER JOIN roster r ON r.section_id = sp.section_id
+        INNER JOIN section s ON s.id = sp.section_id
+        INNER JOIN roster r ON s.id = r.section_id
         INNER JOIN user u ON u.id = r.user_id 
       WHERE
-        r.semester_id = ?
+        s.semester_id = ?
         AND u.id = ?
       GROUP BY p.id
     )

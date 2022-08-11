@@ -51,11 +51,11 @@ export const rosterInputQuery = `
     u.user_id AS NetID,
     u.restriction AS Restriction
   FROM roster r
-    JOIN course c on c.id = r.course_id
     JOIN section s on s.id = r.section_id
+    JOIN course c on c.id = s.course_id
     JOIN user u on u.id = r.user_id
     JOIN user u2 on u2.id = s.instructor_id
-  WHERE r.semester_id = ?
+  WHERE s.semester_id = ?
 `;
 
 // need to match projects to sections

@@ -35,6 +35,7 @@ INSERT INTO course SET
   catalog_id = 'N/A';
 
 INSERT INTO section SET
+  semester_id = 1,
   course_id = 1,
   title = 'Walk-in';
 
@@ -67,8 +68,7 @@ INSERT INTO section_project SET
 INSERT INTO roster SET
   user_id = 1,
   course_id = 1,
-  section_id = 1,
-  semester_id = 1;
+  section_id = 1;
 
 INSERT INTO project_group SET
   title = '{{ADMIN_FIRST_NAME}} {{ADMIN_LAST_NAME}} Walk-in',
