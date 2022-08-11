@@ -15,6 +15,7 @@ import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
 import { Request } from "express";
 import { makeUsedHoursQuery } from "../project/project.helpers";
+import { isToday } from "date-fns";
 
 interface Equipment {
   id: number;
@@ -256,6 +257,15 @@ const createOneStack = [
       res.locals.projectGroup = results[0];
     },
   }),
+  // get event info
+  query({
+    sql: "SELECT * FROM event WHERE id = ?",
+    using: (req) => req.body.eventId,
+    then: (results, _, res) => {
+      if (!results.length) throw "Invalid event ID";
+      res.locals.event = results[0];
+    },
+  }),
   // validate and create reservation
   query({
     assert: (req, res) => {
@@ -264,7 +274,18 @@ const createOneStack = [
       // admin can override this check
       if (res.locals.admin) return;
       // TODO remove hardcoded walk-in project id
-      if (projectId === 1) return;
+      if (projectId === 1) {
+        // assumes server time and bookable location time are the same.
+        // checks if it is the same day.
+        const { start } = res.locals.event;
+        if (isToday(start)) return;
+        else
+          throw [
+            "Cannot create same-day booking.",
+            `Event start: ${start},`,
+            `currently: ${new Date().toLocaleString()}.`,
+          ].join(" ");
+      }
       if (usedHours === undefined) throw "Cannot find used hours";
       if (projectVirtualWeekHours === undefined) throw "Cannot find used hours";
       if (usedHours >= projectVirtualWeekHours)
