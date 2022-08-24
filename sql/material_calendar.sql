@@ -428,14 +428,11 @@ CREATE TABLE `role` (
 CREATE TABLE `roster` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
-  `course_id` int DEFAULT NULL,
   `section_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `student_course_idx` (`user_id`,`course_id`,`section_id`),
+  UNIQUE KEY `student_course_idx` (`user_id`,`section_id`),
   KEY `student_id_idx` (`user_id`),
-  KEY `course_id_idx` (`course_id`),
   KEY `section_id_idx` (`section_id`),
-  CONSTRAINT `roster_course_id_course_id` FOREIGN KEY (`course_id`) REFERENCES `course` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `roster_section_id_section_id` FOREIGN KEY (`section_id`) REFERENCES `section` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `roster_student_id_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
@@ -477,6 +474,7 @@ SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
 /*!50001 CREATE VIEW `section_view` AS SELECT 
  1 AS `id`,
+ 1 AS `semester_id`,
  1 AS `courseId`,
  1 AS `title`,
  1 AS `instructor`*/;
@@ -514,6 +512,7 @@ CREATE TABLE `user` (
   `phone` varchar(50) NOT NULL DEFAULT '',
   `created` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `last_login` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `active` tinyint(1) DEFAULT '1',
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
@@ -791,7 +790,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `section_view` AS select `s`.`id` AS `id`,`s`.`course_id` AS `courseId`,`s`.`title` AS `title`,if((`s`.`instructor_id` is not null),concat(`u`.`first_name`,' ',`u`.`last_name`),'TBA') AS `instructor` from (`section` `s` left join `user` `u` on((`s`.`instructor_id` = `u`.`id`))) */;
+/*!50001 VIEW `section_view` AS select `s`.`id` AS `id`,`s`.`semester_id` AS `semester_id`,`s`.`course_id` AS `courseId`,`s`.`title` AS `title`,if((`s`.`instructor_id` is not null),concat(`u`.`first_name`,' ',`u`.`last_name`),'TBA') AS `instructor` from (`section` `s` left join `user` `u` on((`s`.`instructor_id` = `u`.`id`))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
