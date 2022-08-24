@@ -31,6 +31,7 @@ interface User {
 
 interface UserUpdate extends User {
   id: number;
+  active: boolean;
 }
 
 function isUser(user: unknown): user is User {
@@ -54,6 +55,7 @@ interface UserRecord {
   last_name: string;
   email: string;
   phone: string;
+  active: boolean;
 }
 
 // check an input vs db to see if an update is needed
@@ -63,7 +65,8 @@ function compareUserRecord(u: User, ur: UserRecord): boolean {
     u.last === ur.last_name &&
     u.email === ur.email &&
     u.username === ur.user_id &&
-    u.restriction === ur.restriction
+    u.restriction === ur.restriction &&
+    ur.active
   );
 }
 
@@ -106,7 +109,7 @@ const createMany: EC = (req, res, next) => {
         return [inserts, updates];
       }
       if (compareUserRecord(user, existing)) return [inserts, updates]; // nothing to do here
-      updates.push({ ...user, id: existing.id });
+      updates.push({ ...user, id: existing.id, active: true });
       return [inserts, updates];
     },
     [[], []] as [User[], UserUpdate[]]
@@ -125,12 +128,16 @@ const createMany: EC = (req, res, next) => {
     (err) => {
       if (err) return next(err);
       connection.query(
-        "SELECT id FROM user WHERE user_id in (?)",
+        inserts.length
+          ? "SELECT id FROM user WHERE user_id in (?)"
+          : "SELECT 1",
         [inserts.map((u) => u.username)],
         (err, results) => {
           if (err) return next(err);
           connection.query(
-            "INSERT IGNORE INTO user_role SET ?;".repeat(inserts.length),
+            inserts.length
+              ? "INSERT IGNORE INTO user_role SET ?;".repeat(inserts.length)
+              : "SELECT 1",
             (results as { id: number }[]).map((r) => ({
               user_id: r.id,
               role_id: USER_ROLE_ID,
@@ -151,6 +158,7 @@ const createMany: EC = (req, res, next) => {
                       username,
                       restriction,
                       phone,
+                      active,
                     }) => [
                       {
                         first_name: first,
@@ -159,6 +167,7 @@ const createMany: EC = (req, res, next) => {
                         user_id: username,
                         restriction,
                         phone,
+                        active,
                       },
                       id,
                     ]
