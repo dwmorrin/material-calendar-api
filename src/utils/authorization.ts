@@ -21,7 +21,7 @@ const authorization: EC = (_, res, next) => {
     FROM user u
       INNER JOIN user_role ur ON ur.user_id = u.id
       INNER JOIN      role r  ON ur.role_id = r.id
-    WHERE u.user_id = ?`,
+    WHERE u.active AND u.user_id = ?`,
     [res.locals.authId],
     (error, results) => {
       if (error) return next(error); // unexpected error
