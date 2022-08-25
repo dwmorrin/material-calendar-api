@@ -1,4 +1,5 @@
-import { EC } from "../../utils/types";
+import { Connection } from "mysql";
+import { EC, EEH } from "../../utils/types";
 import { getUnsafeMultipleStatementConnection } from "../../utils/db";
 import { crud, query, respond, withResource } from "../../utils/crud";
 import withActiveSemester from "../../utils/withActiveSemester";
@@ -88,11 +89,11 @@ interface Section {
   id: number;
   course_id: number;
   title: string;
+  semester_id: number;
 }
 
 interface RosterInsert {
   user_id: number;
-  course_id: number;
   section_id: number;
 }
 
@@ -124,15 +125,17 @@ const createMany: EC = (req, res, next) => {
         const user = users.find((u) => u.user_id === username);
         if (!user) throw `No existing user with username "${username}"`;
         const course = courses.find((c) => c.catalog_id === catalogId);
-        if (!course) throw `No existing course with catalog ID "${course}"`;
+        if (!course) throw `No existing course with catalog ID "${catalogId}"`;
         const section = sections.find(
-          (s) => s.course_id === course.id && String(s.title) === sectionTitle
+          (s) =>
+            s.semester_id === semester.id &&
+            s.course_id === course.id &&
+            String(s.title) === sectionTitle
         );
         if (!section)
           throw `No existing section with for "${catalogId}.${sectionTitle}"`;
         return {
           user_id: user.id,
-          course_id: course.id,
           section_id: section.id,
         };
       }
@@ -144,6 +147,7 @@ const createMany: EC = (req, res, next) => {
   if (!inserts.length) return next("No inserts - internal error");
 
   const connection = getUnsafeMultipleStatementConnection();
+  res.locals.connection = connection;
   connection.beginTransaction((err) => {
     if (err) return next(err);
     connection.query(
@@ -160,6 +164,13 @@ const createMany: EC = (req, res, next) => {
   });
 };
 
+const rollback: (label: string) => EEH = (label) => (error, _, res, next) => {
+  const connection: Connection = res.locals.connection;
+  if (!connection) return next(error);
+  console.log("calling rollback: " + label);
+  connection.rollback(() => next(error));
+};
+
 const importRoster = [
   withActiveSemester,
   withResource("courses", "SELECT * FROM course"),
@@ -167,6 +178,7 @@ const importRoster = [
   withResource("users", "SELECT * FROM user"),
   withResource("rosterRecords", "SELECT * FROM roster"),
   createMany,
+  rollback("Error creating roster records."),
   withResource("rosterRecords", "SELECT * FROM roster_view"),
   // might be more to update... tbd
   respond({

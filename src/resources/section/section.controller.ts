@@ -99,7 +99,7 @@ const createMany: EC = (req, res, next) => {
       if (seen.has(key)) return;
       seen.add(key);
       const course = courses.find((c) => c.catalog_id === newSection.course);
-      if (!course) throw new Error("Course not found");
+      if (!course) throw new Error("Course not found (" + key + ")");
       const user = users.find((u) => u.user_id === newSection.username);
       if (!user) throw new Error("User not found " + newSection.username);
       const existing = sections.find(
