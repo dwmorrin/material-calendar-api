@@ -16,6 +16,7 @@ import { EC } from "../../utils/types";
 import { Project } from "./project.type";
 import { makeUsedHoursQuery } from "./project.helpers";
 import { isValidSQLDateInterval } from "../../utils/date";
+import withActiveSemester from "../../utils/withActiveSemester";
 
 /**
  * Reading: use `project_view` view.
@@ -257,12 +258,18 @@ const createLocationHours = [
 ];
 
 const withSelectedCourseSections = query({
-  assert: (req) => {
+  assert: (req, res) => {
     const courseId = Number((req.body as Project).course.id);
     if (isNaN(courseId) || courseId < 1) throw "continue";
+    const { id } = res.locals.semester;
+    if (isNaN(id) || id < 1)
+      throw "Internal error: no active semester ID found";
   },
-  sql: "SELECT id, title FROM section WHERE course_id = ?",
-  using: (req) => (req.body as Project).course.id,
+  sql: "SELECT id, title FROM section WHERE semester_id = ? AND course_id = ?",
+  using: (req, res) => [
+    res.locals.semester.id,
+    (req.body as Project).course.id,
+  ],
   then: (results, _, res) => {
     // title is string in db, but mysqljs can return number, e.g. title = '1'
     // could be a mysqljs config option to force string - did not investigate
@@ -435,6 +442,7 @@ export default {
   ...controllers("project", "id"),
   usedHours,
   createOne: [
+    withActiveSemester,
     createOrUpdateOne,
     createOrUpdateProjectLocationHours,
     withSelectedCourseSections,
@@ -457,6 +465,7 @@ export default {
     respondWith("projects", "weeks"),
   ],
   updateOne: [
+    withActiveSemester,
     createOrUpdateOne,
     withSelectedCourseSections,
     query({

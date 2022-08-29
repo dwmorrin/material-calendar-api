@@ -1,7 +1,7 @@
 CREATE VIEW section_view AS
 SELECT
   s.id,
-  s.semester_id,
+  s.semester_id AS semesterId,
   s.course_id AS courseId,
   s.title,
   IF (
