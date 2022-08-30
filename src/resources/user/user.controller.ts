@@ -405,14 +405,16 @@ const getProjectsForStudentsQuery = `(
   `;
 
 // TODO remove hardcoded IDs for walk-in and class meeting projects
-const getProjectsForInstructorsQuery =
-  "SELECT * FROM project_view WHERE id in (1, 2)";
+const getProjectsForInstructorsQuery = `SELECT * FROM project_view
+  WHERE id = 1 OR (
+    title like 'Class Meetings %' AND start = ?
+  )`;
 
 const getProjects: EC = (req, res, next) => {
   if (res.locals.user.roles.includes("instructor"))
     pool.query(
       getProjectsForInstructorsQuery,
-      [req.params.id],
+      [res.locals.semester.start],
       addResultsToResponse(res, next)
     );
   else
