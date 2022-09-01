@@ -275,16 +275,17 @@ const createOneStack = [
       if (res.locals.admin) return;
       // TODO remove hardcoded walk-in project id
       if (projectId === 1) {
-        // assumes server time and bookable location time are the same.
-        // checks if it is the same day.
-        const { start } = res.locals.event;
-        if (isToday(start)) return;
-        else
-          throw [
-            "Cannot create same-day booking.",
-            `Event start: ${start},`,
-            `currently: ${new Date().toLocaleString()}.`,
-          ].join(" ");
+        return;
+        // // assumes server time and bookable location time are the same.
+        // // checks if it is the same day.
+        // const { start } = res.locals.event;
+        // if (isToday(start)) return;
+        // else
+        //   throw [
+        //     "Cannot create same-day booking.",
+        //     `Event start: ${start},`,
+        //     `currently: ${new Date().toLocaleString()}.`,
+        //   ].join(" ");
       }
       if (usedHours === undefined) throw "Cannot find used hours";
       if (projectVirtualWeekHours === undefined) throw "Cannot find used hours";
