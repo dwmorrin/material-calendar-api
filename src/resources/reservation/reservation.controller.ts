@@ -598,24 +598,28 @@ const forwardOne: EC = (req, res) => {
   };
 
   // make the request
-  const fwd = request(url, { method: "POST" }, (fwdRes) => {
-    if (fwdRes.statusCode === 302) {
-      // follow temporary redirects
-      const { location } = fwdRes.headers;
-      if (!location) return onError(new Error("Redirect without location"));
-      const url = new URL(location);
-      const redirect = request(url, (redirectRes) => {
-        redirectRes
-          .on("error", onError)
-          .on("data", onData)
-          .on("end", onSuccess);
-      });
-      redirect.on("error", onError);
-      redirect.end();
-    } else {
-      fwdRes.on("error", onError).on("data", onData).on("end", onSuccess);
+  const fwd = request(
+    url,
+    { method: process.env.NODE_ENV === "production" ? "POST" : "inspect" },
+    (fwdRes) => {
+      if (fwdRes.statusCode === 302) {
+        // follow temporary redirects
+        const { location } = fwdRes.headers;
+        if (!location) return onError(new Error("Redirect without location"));
+        const url = new URL(location);
+        const redirect = request(url, (redirectRes) => {
+          redirectRes
+            .on("error", onError)
+            .on("data", onData)
+            .on("end", onSuccess);
+        });
+        redirect.on("error", onError);
+        redirect.end();
+      } else {
+        fwdRes.on("error", onError).on("data", onData).on("end", onSuccess);
+      }
     }
-  });
+  );
   fwd.on("error", onError);
   fwd.write(body);
   fwd.end();
