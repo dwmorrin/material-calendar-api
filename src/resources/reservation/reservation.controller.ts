@@ -15,7 +15,7 @@ import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
 import { Request } from "express";
 import { makeUsedHoursQuery } from "../project/project.helpers";
-import { isToday } from "date-fns";
+import { isTodaySQLDatetime } from "../../utils/date";
 
 interface Equipment {
   id: number;
@@ -259,11 +259,26 @@ const createOneStack = [
   }),
   // get event info
   query({
-    sql: "SELECT * FROM event WHERE id = ?",
+    sql: [
+      "SELECT e.*, l.location FROM event e",
+      "JOIN location l ON l.id = e.location_id WHERE e.id = ?",
+    ].join(" "),
     using: (req) => req.body.eventId,
     then: (results, _, res) => {
       if (!results.length) throw "Invalid event ID";
       res.locals.event = results[0];
+    },
+  }),
+  // get same day counts
+  query({
+    sql: [
+      "SELECT count FROM reservation_same_day_count",
+      "WHERE user_id = ? AND location = ?",
+    ].join(" "),
+    using: (_, res) => [res.locals.user.id, res.locals.event.location],
+    then: (results, _, res) => {
+      if (!results.length) res.locals.sameDayCount = 0;
+      else res.locals.sameDayCount = results[0].count;
     },
   }),
   // validate and create reservation
@@ -275,17 +290,18 @@ const createOneStack = [
       if (res.locals.admin) return;
       // TODO remove hardcoded walk-in project id
       if (projectId === 1) {
-        return;
-        // // assumes server time and bookable location time are the same.
-        // // checks if it is the same day.
-        // const { start } = res.locals.event;
-        // if (isToday(start)) return;
-        // else
-        //   throw [
-        //     "Cannot create same-day booking.",
-        //     `Event start: ${start},`,
-        //     `currently: ${new Date().toLocaleString()}.`,
-        //   ].join(" ");
+        // assumes server time and bookable location time are the same.
+        // checks if it is the same day.
+        const { start } = res.locals.event;
+        const sameDayCount = Number(res.locals.sameDayCount) || 0;
+        if (isTodaySQLDatetime(start) && sameDayCount < 2) return;
+        else
+          throw [
+            "Cannot create same-day booking.",
+            `Event start: ${start},`,
+            `currently: ${new Date().toLocaleString()}.`,
+            `Already booked ${sameDayCount} in that location group.`,
+          ].join(" ");
       }
       if (usedHours === undefined) throw "Cannot find used hours";
       if (projectVirtualWeekHours === undefined) throw "Cannot find used hours";

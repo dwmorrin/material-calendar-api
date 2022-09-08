@@ -1,4 +1,4 @@
-import { compareAsc, parse } from "date-fns";
+import { compareAsc, isToday, parse } from "date-fns";
 
 interface DateInterval {
   start: Date;
@@ -19,6 +19,9 @@ const parseSQLDate = (dateStr: string): Date =>
 
 const parseSQLDatetime = (dateStr: string): Date =>
   parse(dateStr, sqlFormat.datetime, new Date());
+
+export const isTodaySQLDatetime = (dateStr: string): boolean =>
+  isToday(parseSQLDatetime(dateStr));
 
 export const isValidSQLDateInterval = ({
   start,
