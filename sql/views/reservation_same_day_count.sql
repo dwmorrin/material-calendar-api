@@ -17,7 +17,7 @@ JOIN
   user u ON u.id = pgu.user_id
 WHERE pg.project_id = 1
 AND DATE(e.start) = DATE(NOW())
-AND (TO_SECONDS(NOW()) - TO_SECONDS(start)) < 7200
+AND (TO_SECONDS(NOW()) - TO_SECONDS(r.created)) < 7200
 AND NOT r.canceled
 GROUP BY r.group_id, l.location;
   
