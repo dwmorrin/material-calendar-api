@@ -15,7 +15,7 @@ import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
 import { Request } from "express";
 import { makeUsedHoursQuery } from "../project/project.helpers";
-import { isTodaySQLDatetime } from "../../utils/date";
+import { isTodaySQLDatetime, isWalkInPeriod } from "../../utils/date";
 
 interface Equipment {
   id: number;
@@ -294,12 +294,14 @@ const createOneStack = [
         // checks if it is the same day.
         const { start } = res.locals.event;
         const sameDayCount = Number(res.locals.sameDayCount) || 0;
-        if (isTodaySQLDatetime(start) && sameDayCount < 2) return;
+        const inPeriod = isWalkInPeriod();
+        if (inPeriod && isTodaySQLDatetime(start) && sameDayCount < 2) return;
         else
           throw [
             "Cannot create same-day booking.",
             `Event start: ${start},`,
             `currently: ${new Date().toLocaleString()}.`,
+            `In the walk in period? (8am-8pm) ${inPeriod ? "YES" : "NO"}`,
             `Already booked ${sameDayCount} in that location group.`,
           ].join(" ");
       }
