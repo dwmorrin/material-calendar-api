@@ -192,6 +192,18 @@ const getReservationFromBody = (req: Request) => ({
 });
 
 const createOneStack = [
+  // get event info
+  query({
+    sql: [
+      "SELECT e.*, l.location FROM event e",
+      "JOIN location l ON l.id = e.location_id WHERE e.id = ?",
+    ].join(" "),
+    using: (req) => req.body.eventId,
+    then: (results, _, res) => {
+      if (!results.length) throw "Invalid event ID";
+      res.locals.event = results[0];
+    },
+  }),
   // get corresponding virtual week from event ID
   query({
     sql: `
@@ -216,7 +228,7 @@ const createOneStack = [
     sql: makeUsedHoursQuery(),
     using: (req, res) => [
       req.body.projectId,
-      req.body.locationId,
+      res.locals.event.location_id,
       res.locals.virtualWeek.start,
       res.locals.virtualWeek.end,
     ],
@@ -255,18 +267,6 @@ const createOneStack = [
     then: (results, _, res) => {
       if (!results.length) throw "Invalid group ID";
       res.locals.projectGroup = results[0];
-    },
-  }),
-  // get event info
-  query({
-    sql: [
-      "SELECT e.*, l.location FROM event e",
-      "JOIN location l ON l.id = e.location_id WHERE e.id = ?",
-    ].join(" "),
-    using: (req) => req.body.eventId,
-    then: (results, _, res) => {
-      if (!results.length) throw "Invalid event ID";
-      res.locals.event = results[0];
     },
   }),
   // get same day counts
