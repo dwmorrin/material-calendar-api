@@ -307,8 +307,15 @@ const createOneStack = [
       }
       if (usedHours === undefined) throw "Cannot find used hours";
       if (projectVirtualWeekHours === undefined) throw "Cannot find used hours";
+      //! deactivating this check
       if (usedHours >= projectVirtualWeekHours)
-        throw "Project does not have enough hours";
+        console.error({
+          projectId,
+          usedHours,
+          projectVirtualWeekHours,
+          projectGroup,
+          message: "Project does not have enough hours",
+        });
       if (projectGroup.pending) throw "Group is pending";
       if (projectGroup.abandoned) throw "Group has been abandoned";
     },
