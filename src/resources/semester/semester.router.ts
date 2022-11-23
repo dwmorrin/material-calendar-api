@@ -4,6 +4,7 @@ import { numericId, sendResults } from "../../utils/crud";
 
 const router = Router();
 
+router.get("/active", controller.getActive);
 router.get("/current", controller.getCurrent);
 router.get("/", controller.getMany);
 router.get(`/${numericId}`, controller.getOne);

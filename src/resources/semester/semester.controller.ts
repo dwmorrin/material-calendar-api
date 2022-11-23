@@ -6,6 +6,7 @@ import {
   respond,
 } from "../../utils/crud";
 
+const getActive = crud.readMany("SELECT * FROM active_semester_view");
 const getCurrent = crud.readOne("SELECT * FROM active_semester_view");
 const getMany = crud.readMany("SELECT * FROM semester_view");
 
@@ -47,6 +48,7 @@ const updateAll = [
 export default {
   ...controllers("semester", "id"),
   createOne: [createOne, updateActive, ...updateAll],
+  getActive,
   getCurrent,
   getMany,
   updateOne: [updateOne, updateActive, ...updateAll],
