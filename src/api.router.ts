@@ -2,6 +2,7 @@ import { Router } from "express";
 import backupRouter from "./utils/backup";
 import categoryRouter from "./resources/category/category.router";
 import courseRouter from "./resources/course/course.router";
+import { debugRouter } from "./utils/debug";
 import equipmentRouter from "./resources/equipment/equipment.router";
 import eventRouter from "./resources/event/event.router";
 import groupRouter from "./resources/group/group.router";
@@ -14,8 +15,11 @@ import semesterRouter from "./resources/semester/semester.router";
 import tagRouter from "./resources/tag/tag.router";
 import userRouter from "./resources/user/user.router";
 import virtualWeekRouter from "./resources/virtualWeek/virtualWeek.router";
+import { env } from "process";
 
 const router = Router();
+
+if (env.NODE_ENV === "development") router.use("/debug", debugRouter);
 
 router.use("/backups", backupRouter);
 router.use("/categories", categoryRouter);
