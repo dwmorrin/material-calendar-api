@@ -53,6 +53,8 @@ SELECT
       "guests", b.guests,
       "contact", b.contact_phone,
       "created", DATE_FORMAT(b.created, "%Y-%m-%d %T"),
+      "checkIn", IF (b.checkin, DATE_FORMAT(b.checkin, "%Y-%m-%d %T"), NULL),
+      "checkOut", IF (b.checkout, DATE_FORMAT(b.checkout, "%Y-%m-%d %T"), NULL),
       "equipment", IF (
         el.gear IS NOT NULL,
         JSON_OBJECTAGG(IFNULL(el.name, "unknown"), el.gear),

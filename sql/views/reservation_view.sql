@@ -36,7 +36,9 @@ SELECT
       )
     ),
     NULL
-  ) AS cancelation
+  ) AS cancelation,
+  b.checkin AS checkIn,
+  b.checkout AS checkOut
 FROM
   reservation b
     LEFT JOIN event a ON a.id = b.event_id
