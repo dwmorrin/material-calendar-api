@@ -5,6 +5,7 @@ import eventImport from "./event.import";
 
 const router = Router();
 
+router.post("/getIds", controller.getManyById);
 router.post("/bulk", controller.createMany);
 router.post("/import", ...eventImport);
 router.get("/range", controller.range);

@@ -24,29 +24,58 @@ const getMany = [
   }),
 ];
 
+interface Event {
+  start: string;
+  end: string;
+  locationId: number;
+  reservable: boolean;
+  title: string;
+}
+
+interface BulkEventBody {
+  events: Event[];
+  range: { start: string; end: string };
+}
+
+//! assumes locationId, reservable, and title are the same for all
 const createMany = [
   query({
     assert: (req) => {
-      if (!(Array.isArray(req.body) && req.body.length))
+      const { events, range } = req.body as BulkEventBody;
+      if (!(Array.isArray(events) && events.length))
         throw "create many without array of events";
+      if (![range.start, range.end].every((s) => s && typeof s === "string"))
+        throw "no date range provided";
     },
     sql: "REPLACE INTO event (start, end, location_id, bookable, description) VALUES ?",
-    using: (req) => [
-      req.body.map(
-        ({
-          start = "",
-          end = "",
-          locationId = 0,
-          reservable = false,
-          title = "",
-        }) => [start, end, locationId, reservable, title]
-      ),
-    ],
+    using: (req) => {
+      const { events } = req.body as BulkEventBody;
+      return [
+        events.map(
+          ({
+            start = "",
+            end = "",
+            locationId = 0,
+            reservable = false,
+            title = "",
+          }) => [start, end, locationId, reservable, title]
+        ),
+      ];
+    },
   }),
-  // TODO don't send ALL events; just enough to update view; i.e. get a range from client
   query({
-    sql: "SELECT * FROM event_view",
+    sql: `
+    SELECT * FROM event_view
+    WHERE location->>'$.id' = ?
+    AND start BETWEEN ? AND ADDDATE(?, 1)
+    AND reservable = ?
+    AND title = ?`,
     then: (results, _, res) => (res.locals.events = results),
+    using: (req) => {
+      const { events, range } = req.body as BulkEventBody;
+      const { locationId, reservable, title } = events[0];
+      return [locationId, range.start, range.end, +reservable, title];
+    },
   }),
   respond({
     status: 201,
@@ -128,6 +157,16 @@ export default {
     Number(req.params.id)
   ),
   getMany,
+  getManyById: [
+    query({
+      sql: "SELECT * FROM event_view WHERE id IN (?)",
+      using: (req) => [req.body.ids],
+    }),
+    respond({
+      status: 200,
+      data: (_, res) => ({ events: res.locals.results }),
+    }),
+  ],
   getOne: crud.readOne("SELECT * FROM event_view WHERE id = ?", (req) =>
     Number(req.params.id)
   ),
