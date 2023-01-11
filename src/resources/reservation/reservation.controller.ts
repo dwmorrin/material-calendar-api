@@ -202,6 +202,13 @@ const createOneStack = [
     then: (results, _, res) => {
       if (!results.length) throw "Invalid event ID";
       res.locals.event = results[0];
+      const lockId: number | null = Number(res.locals.event.lock_user_id);
+      if (isNaN(lockId)) throw "500";
+      if (
+        !res.locals.user.admin &&
+        res.locals.event.lock_user_id !== res.locals.user.id
+      )
+        throw "Current user does not have the event lock and cannot make a reservation.";
     },
   }),
   // get corresponding virtual week from event ID
