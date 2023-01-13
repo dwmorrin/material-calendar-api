@@ -13,7 +13,7 @@ import pool, {
 } from "../../utils/db";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
-import { Request } from "express";
+import { Request, Response } from "express";
 import { makeUsedHoursQuery } from "../project/project.helpers";
 import { isTodaySQLDatetime, isWalkInPeriod } from "../../utils/date";
 
@@ -105,22 +105,26 @@ const getOne = crud.readOne(
   (req) => Number(req.params.id)
 );
 
+const getCancellation = (req: Request, res: Response) => ({
+  canceled: true,
+  canceled_time: new Date(),
+  canceled_user_id: res.locals.user.id,
+  refund_request: req.body.refundApproved || req.body.refundRequest,
+  refund_request_comment: req.body.refundApproved
+    ? "Refund Granted Automatically"
+    : req.body.refundComment,
+  refund_approval_id: req.body.refundApproved ? res.locals.user.id : null,
+  refund_response_time: req.body.refundApproved ? new Date() : null,
+});
+
 const cancelReservation = query({
   sql: "UPDATE reservation SET ? WHERE id = ?",
-  using: (req, res) => [
-    {
-      canceled: true,
-      canceled_time: new Date(),
-      canceled_user_id: res.locals.user.id,
-      refund_request: req.body.refundApproved || req.body.refundRequest,
-      refund_request_comment: req.body.refundApproved
-        ? "Refund Granted Automatically"
-        : req.body.refundComment,
-      refund_approval_id: req.body.refundApproved ? res.locals.user.id : null,
-      refund_response_time: req.body.refundApproved ? new Date() : null,
-    },
-    req.params.id,
-  ],
+  using: (req, res) => [getCancellation(req, res), req.params.id],
+});
+
+const cancelManyReservations = query({
+  sql: "UPDATE reservation SET ? WHERE id in (?)",
+  using: (req, res) => [getCancellation(req, res), req.body.reservationIds],
 });
 
 // TODO: send updated project & group info (reserved hours may have changed)
@@ -154,6 +158,19 @@ const withUpdatedEventsAndReservations = [
     then: (results, _, res) => (res.locals.reservations = results),
   }),
   withResource("events", "SELECT * FROM event_view"),
+];
+
+const withBetterUpdatedEventsAndReservations = [
+  query({
+    sql: byUserQuery,
+    using: (_, res) => res.locals.user.id,
+    then: (results, _, res) => (res.locals.reservations = results),
+  }),
+  query({
+    sql: "SELECT * FROM event_view WHERE id IN (?)",
+    using: (req) => [req.body.eventIds],
+    then: (results, _, res) => (res.locals.events = results),
+  }),
 ];
 
 const refund = [
@@ -710,6 +727,12 @@ export default {
   getMany,
   importClassMeetings: importClassMeetingReservations,
   refund,
+  cancelManyReservations: [
+    cancelManyReservations,
+    ...withBetterUpdatedEventsAndReservations,
+    cancelResponse,
+    useMailbox,
+  ],
   cancelReservation: [
     cancelReservation,
     ...withUpdatedEventsAndReservations,
