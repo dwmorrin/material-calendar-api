@@ -213,7 +213,7 @@ const createOneStack = [
       const lockId: number | null = Number(res.locals.event.lock_user_id);
       if (isNaN(lockId)) throw "500";
       if (
-        !res.locals.user.admin &&
+        !res.locals.admin &&
         res.locals.event.lock_user_id !== res.locals.user.id
       )
         throw "Current user does not have the event lock and cannot make a reservation.";
