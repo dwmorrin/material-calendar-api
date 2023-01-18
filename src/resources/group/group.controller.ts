@@ -1,5 +1,8 @@
 import { Connection } from "mysql";
-import pool, { startTransaction, endTransaction } from "../../utils/db";
+import pool, {
+  startMultiStatementTransaction,
+  endMultiStatementTransaction,
+} from "../../utils/db";
 import { addResultsToResponse, crud, query, respond } from "../../utils/crud";
 import { EC } from "../../utils/types";
 import { useMailbox } from "../../utils/mailer";
@@ -276,9 +279,9 @@ export default {
     ...respondWithGroupsAndProjectMembersAndMail,
   ],
   cancelInvite: [
-    ...startTransaction,
+    ...startMultiStatementTransaction,
     cancelInvite,
-    ...endTransaction,
+    ...endMultiStatementTransaction,
     ...respondWithGroupsAndProjectMembersAndMail,
   ],
   exceptionalSize: [
@@ -303,9 +306,9 @@ export default {
   leaveGroup: [abandonGroup, ...respondWithGroupsAndProjectMembersAndMail],
   updateInvite: [
     withGroup,
-    ...startTransaction,
+    ...startMultiStatementTransaction,
     updateInvite,
-    ...endTransaction,
+    ...endMultiStatementTransaction,
     ...respondWithGroupsAndProjectMembersAndMail,
   ],
   updateOneGroup,

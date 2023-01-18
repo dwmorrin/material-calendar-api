@@ -1,6 +1,10 @@
 /* eslint-disable no-console */
 import { Connection } from "mysql";
-import { endTransaction, inflate, startTransaction } from "../../utils/db";
+import {
+  endMultiStatementTransaction,
+  inflate,
+  startMultiStatementTransaction,
+} from "../../utils/db";
 import { withResource } from "../../utils/crud";
 import { EC, EEH } from "../../utils/types";
 import controllers from "./event.controller";
@@ -160,10 +164,10 @@ export default [
   withResource("events", eventQuery),
   withResource("locations", "SELECT id, title FROM location"),
   process,
-  ...startTransaction,
+  ...startMultiStatementTransaction,
   insert,
   update,
-  ...endTransaction,
+  ...endMultiStatementTransaction,
   controllers.getMany,
   response,
   onError,

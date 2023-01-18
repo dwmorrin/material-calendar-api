@@ -1,5 +1,11 @@
 /* eslint-disable no-console */
-import mysql, { Connection, ConnectionConfig, PoolConfig } from "mysql";
+import mysql, {
+  Connection,
+  PoolConnection,
+  ConnectionConfig,
+  MysqlError,
+  PoolConfig,
+} from "mysql";
 import { map, tryCatch } from "ramda";
 import { EC, EEH } from "./types";
 
@@ -65,7 +71,7 @@ export const getUnsafeMultipleStatementConnection = (): Connection => {
   return connection;
 };
 
-const commitTransaction: EC = (_, res, next) => {
+const commitMultiStatementTransaction: EC = (_, res, next) => {
   const connection: Connection = res.locals.connection;
   connection.commit((err) => {
     if (err) return next(err);
@@ -77,8 +83,18 @@ const commitTransaction: EC = (_, res, next) => {
   });
 };
 
+const commit: EC = (_, res, next) => {
+  const connection: PoolConnection = res.locals.connection;
+  connection.commit((err) => {
+    connection.release();
+    delete res.locals.connection;
+    if (err) return next(err);
+    next();
+  });
+};
+
 const rollbackGuard: EEH = (error, _, res, next) => {
-  const connection: Connection = res.locals.connection;
+  const connection: Connection | PoolConnection = res.locals.connection;
   if (!connection) return next(error);
   console.log("error during transaction; calling rollback");
   connection.rollback(() => next(error));
@@ -96,7 +112,7 @@ const unsafeConnectionErrorHandler: EEH = (error, _, res, next) => {
   });
 };
 
-const _startTransaction: EC = (_, res, next) => {
+const _startMultiStatementTransaction: EC = (_, res, next) => {
   const unsafeConnection = getUnsafeMultipleStatementConnection();
   res.locals.connection = unsafeConnection;
   unsafeConnection.beginTransaction((err) => {
@@ -107,11 +123,11 @@ const _startTransaction: EC = (_, res, next) => {
 
 // wrapped in an array for consistency with endTransaction
 // usage: router.method(path, [...startTransaction, doStuff, ...endTransaction])
-export const startTransaction = [_startTransaction];
+export const startMultiStatementTransaction = [_startMultiStatementTransaction];
 
 // requires res.locals.connection is a Connection
-export const endTransaction = [
-  commitTransaction,
+export const endMultiStatementTransaction = [
+  commitMultiStatementTransaction,
   rollbackGuard,
   unsafeConnectionErrorHandler,
 ];
@@ -124,5 +140,33 @@ pool.on("error", (error) => {
     error
   );
 });
+
+const putConnectionOnRes: EC = (_, res, next) => {
+  pool.getConnection((err, connection) => {
+    if (err) return res.json({ error: "no connection available" });
+    res.locals.connection = connection;
+    next();
+  });
+};
+
+const beginTransaction: EC = (_, res, next) => {
+  const db = res.locals.connection;
+  db.beginTransaction((err: MysqlError) => {
+    if (err) return next(err);
+    next();
+  });
+};
+
+export const useTransaction = (
+  guardedFns: EC[],
+  responseFns: EC[]
+): (EC | EEH)[] => [
+  putConnectionOnRes,
+  beginTransaction,
+  ...guardedFns,
+  commit,
+  ...responseFns,
+  rollbackGuard,
+];
 
 export default pool;

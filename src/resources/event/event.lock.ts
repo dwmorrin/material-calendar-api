@@ -1,75 +1,107 @@
-import { Connection, MysqlError } from "mysql";
-import { Request, Response } from "express";
+import { PoolConnection } from "mysql";
 import { EC } from "../../utils/types";
-import pool from "../../utils/db";
+import { useTransaction } from "../../utils/db";
 
-type SqlFn = (
-  req: Request,
-  res: Response,
-  conn: Connection
-) => (err: MysqlError | null, results?: unknown[]) => void;
-
-export const lockHandler: EC = (req, res, next) => {
+// check that a positive number was submitted
+const lockAssert: EC = (req, res, next) => {
   const eventId = Number(req.params.id);
   if (isNaN(eventId) || eventId < 1) return next("invalid event ID");
   res.locals.eventId = eventId;
-  pool.getConnection((err, conn) => {
-    if (err) return res.json({ error: "no database connection available" });
-    conn.beginTransaction(getLock(req, res, conn));
-  });
+  next();
 };
 
-const onRollback: SqlFn = (_, res) => (err) => {
-  if (err) return res.json({ error: "database error: could not rollback" });
-  return res.json({ error: "Something went wrong. Try again." });
-};
-
-const getLock: SqlFn = (req, res, conn) => (err) => {
-  if (err) return res.json({ error: "could not get lock" });
-  conn.query(
+const getLock: EC = (_, res, next) => {
+  const connection: PoolConnection = res.locals.connection;
+  connection.query(
     "SELECT lock_user_id FROM event WHERE id = ?",
     res.locals.eventId,
-    tryLock(req, res, conn)
+    (err, results) => {
+      if (err || !(Array.isArray(results) && results.length))
+        return next("Could not get lock");
+      res.locals.lockUserId = results[0].lock_user_id;
+      next();
+    }
   );
 };
 
-const tryLock: SqlFn = (req, res, conn) => (err, results) => {
-  if (err || !(Array.isArray(results) && results.length))
-    return conn.rollback(onRollback(req, res, conn));
-  const lockUserId: number | null = results[0].lock_user_id;
+enum LockStatus {
+  LockLock,
+  LockUnlocked,
+  UnlockUnlocked,
+  UnlockLockedNoKey,
+  UnlockLockedWithKey,
+}
+
+const tryLock: EC = (req, res, next) => {
+  const lockUserId: number | null = res.locals.lockUserId;
   if (/\/lock$/.test(req.path)) {
     // req.path === "/:id/lock"
     if (lockUserId) {
-      conn.commit();
-      return res.json({ data: {} });
-    }
-    conn.query(
-      "UPDATE event SET lock_user_id = ?, locked_time = NOW() WHERE id = ?",
-      [res.locals.user.id, res.locals.eventId],
-      () => {
-        conn.commit();
-        if (err) return res.status(500).json({ error: err });
-        return res.status(200).json({ data: {} });
-      }
-    );
+      res.locals.lockStatus = LockStatus.LockLock;
+    } else res.locals.lockStatus = LockStatus.LockUnlocked;
   } else {
     // req.path === "/:id/unlock"
     if (!lockUserId) {
-      conn.commit();
-      return res.status(400).json({ error: "event is not locked" });
-    }
-    if (lockUserId !== res.locals.user.id) {
-      conn.commit();
-      return res.status(400).json({ error: "not owner of event lock" });
-    }
-    conn.query(
-      "UPDATE event SET lock_user_id = NULL, locked_time = NULL WHERE id = ?",
-      [res.locals.eventId],
-      () => {
-        conn.commit();
-        if (err) return res.status(500).json({ error: err });
-        return res.status(200).json({ data: {} });
-      }
-    );
+      res.locals.lockStatus = LockStatus.UnlockUnlocked;
+    } else if (lockUserId !== res.locals.user.id) {
+      res.locals.lockStatus = LockStatus.UnlockLockedNoKey;
+    } else res.locals.lockStatus = LockStatus.UnlockLockedWithKey;
+  }
+  next();
+};
+
+// pre-transaction commit
+const examineLockStatus: EC = (_, res, next) => {
+  const connection: PoolConnection = res.locals.connection;
+  const status: LockStatus = res.locals.lockStatus;
+  switch (status) {
+    case LockStatus.LockLock:
+    case LockStatus.UnlockUnlocked:
+    case LockStatus.UnlockLockedNoKey:
+      // no database action required for this cases
+      next();
+      break;
+    case LockStatus.LockUnlocked:
+      connection.query(
+        "UPDATE event SET lock_user_id = ?, locked_time = NOW() WHERE id = ?",
+        [res.locals.user.id, res.locals.eventId],
+        (err) => {
+          if (err) return next(err);
+          next();
+        }
+      );
+      break;
+    case LockStatus.UnlockLockedWithKey:
+      connection.query(
+        "UPDATE event SET lock_user_id = NULL, locked_time = NULL WHERE id = ?",
+        [res.locals.eventId],
+        (err) => {
+          if (err) return next(err);
+          next();
+        }
+      );
+      break;
+    default:
+      next("Unknown event lock state");
   }
 };
+
+// post transaction
+const respond: EC = (req, res, next) => {
+  const status: LockStatus = res.locals.lockStatus;
+  switch (status) {
+    case LockStatus.LockLock:
+    case LockStatus.UnlockUnlocked:
+    case LockStatus.UnlockLockedNoKey:
+    case LockStatus.LockUnlocked:
+    case LockStatus.UnlockLockedWithKey:
+      return res.status(200).json({ data: {} });
+    default:
+      next("Unknown event lock state");
+  }
+};
+
+export const lockHandler = [
+  lockAssert,
+  ...useTransaction([getLock, tryLock, examineLockStatus], [respond]),
+];
