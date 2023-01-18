@@ -157,15 +157,6 @@ const withUpdatedEventsAndReservations = [
     using: (_, res) => res.locals.user.id,
     then: (results, _, res) => (res.locals.reservations = results),
   }),
-  withResource("events", "SELECT * FROM event_view"),
-];
-
-const withBetterUpdatedEventsAndReservations = [
-  query({
-    sql: byUserQuery,
-    using: (_, res) => res.locals.user.id,
-    then: (results, _, res) => (res.locals.reservations = results),
-  }),
   query({
     sql: "SELECT * FROM event_view WHERE id IN (?)",
     using: (req) => [req.body.eventIds],
@@ -729,7 +720,7 @@ export default {
   refund,
   cancelManyReservations: [
     cancelManyReservations,
-    ...withBetterUpdatedEventsAndReservations,
+    ...withUpdatedEventsAndReservations,
     cancelResponse,
     useMailbox,
   ],
