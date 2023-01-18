@@ -77,17 +77,21 @@ export function query<T>({
     if (process.env.NODE_ENV === "development") console.table({ sql, values });
     pool.query(sql, values, (error, results) => {
       if (error) return next(error);
-      if (then) {
-        // SELECT query handler
-        if (!Array.isArray(results))
-          return next("query results must be an array to use 'then'");
-        then(results.map(inflate), req, res);
-      } else if (insertThen) {
-        // INSERT query handler
-        insertThen(results, req, res);
-      } else {
-        // no handler specified
-        res.locals.results = results;
+      try {
+        if (then) {
+          // SELECT query handler
+          if (!Array.isArray(results))
+            return next("query results must be an array to use 'then'");
+          then(results.map(inflate), req, res);
+        } else if (insertThen) {
+          // INSERT query handler
+          insertThen(results, req, res);
+        } else {
+          // no handler specified
+          res.locals.results = results;
+        }
+      } catch (error) {
+        return next(error);
       }
       next();
     });
