@@ -1,6 +1,6 @@
 import { PoolConnection } from "mysql";
 import { EC } from "../../utils/types";
-import { useTransaction } from "../../utils/db";
+import { inflate, useTransaction } from "../../utils/db";
 
 // check that a positive number was submitted
 const lockAssert: EC = (req, res, next) => {
@@ -86,8 +86,21 @@ const examineLockStatus: EC = (_, res, next) => {
   }
 };
 
+const getEvent: EC = (_, res, next) => {
+  const connection: PoolConnection = res.locals.connection;
+  connection.query(
+    "SELECT * FROM event_view WHERE id = ?",
+    [res.locals.eventId],
+    (err, results) => {
+      if (err) return next(err);
+      res.locals.event = inflate(results[0]);
+      next();
+    }
+  );
+};
+
 // post transaction
-const respond: EC = (req, res, next) => {
+const respond: EC = (_, res, next) => {
   const status: LockStatus = res.locals.lockStatus;
   switch (status) {
     case LockStatus.LockLock:
@@ -95,7 +108,7 @@ const respond: EC = (req, res, next) => {
     case LockStatus.UnlockLockedNoKey:
     case LockStatus.LockUnlocked:
     case LockStatus.UnlockLockedWithKey:
-      return res.status(200).json({ data: {} });
+      return res.status(200).json({ data: { event: res.locals.event } });
     default:
       next("Unknown event lock state");
   }
@@ -103,5 +116,5 @@ const respond: EC = (req, res, next) => {
 
 export const lockHandler = [
   lockAssert,
-  ...useTransaction([getLock, tryLock, examineLockStatus], [respond]),
+  ...useTransaction([getLock, tryLock, examineLockStatus, getEvent], [respond]),
 ];

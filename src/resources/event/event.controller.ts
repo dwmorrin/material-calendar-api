@@ -115,12 +115,17 @@ export default {
   getMany,
   getManyById: [
     query({
+      assert: (req) => {
+        if (!Array.isArray(req.body.eventIds))
+          throw "Requesting events by ID without 'eventIds' array";
+      },
       sql: "SELECT * FROM event_view WHERE id IN (?)",
-      using: (req) => [req.body.ids],
+      using: (req) => [req.body.eventIds],
+      then: (results, _, res) => (res.locals.events = results),
     }),
     respond({
       status: 200,
-      data: (_, res) => ({ events: res.locals.results }),
+      data: (_, res) => ({ events: res.locals.events }),
     }),
   ],
   getOne: crud.readOne("SELECT * FROM event_view WHERE id = ?", (req) =>
