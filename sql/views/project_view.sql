@@ -8,7 +8,8 @@ SELECT
         JSON_OBJECT(
           'id', IFNULL(c.id, 0),
           'title', IFNULL(c.title, ''),
-          'sections', IF(s.title IS NULL, '[]', JSON_ARRAYAGG(s.title))
+          'sections', IF(s.title IS NULL, '[]', JSON_ARRAYAGG(s.title)),
+          'semesterId', s.semester_id
         )
       FROM section_project sp
         INNER JOIN section s ON s.id = sp.section_id

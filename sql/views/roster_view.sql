@@ -24,10 +24,11 @@ SELECT
       'middle', u.middle_name,
       'last', u.last_name
     )
-  ) AS student
+  ) AS student,
+  s.semester_id AS semesterId
 FROM
   roster r
   INNER JOIN user u ON r.user_id = u.id
   INNER JOIN section s ON r.section_id = s.id
-  INNER JOIN course c on s.course_id = c.id
+  INNER JOIN course c ON s.course_id = c.id
 ORDER BY c.catalog_id, s.title, u.last_name, u.first_name
