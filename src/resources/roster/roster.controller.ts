@@ -124,7 +124,9 @@ const createMany: EC = (req, res, next) => {
       ({ username, course: catalogId, section: sectionTitle }) => {
         const user = users.find((u) => u.user_id === username);
         if (!user) throw `No existing user with username "${username}"`;
-        const course = courses.find((c) => c.catalog_id === catalogId);
+        const course: Course | undefined = courses.find(
+          (c) => c.catalog_id === catalogId
+        );
         if (!course) throw `No existing course with catalog ID "${catalogId}"`;
         const section = sections.find(
           (s) =>
