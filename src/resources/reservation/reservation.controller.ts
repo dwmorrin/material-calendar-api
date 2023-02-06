@@ -122,10 +122,51 @@ const cancelReservation = query({
   using: (req, res) => [getCancellation(req, res), req.params.id],
 });
 
-const cancelManyReservations = query({
-  sql: "UPDATE reservation SET ? WHERE id in (?)",
+interface ReservationInfo {
+  minutesSinceCreated: number;
+  hasStarted: number;
+}
+
+const cancelManyReservations = [
+  query({
+    sql: `SELECT
+     TIMESTAMPDIFF(MINUTE, r.created, NOW()) AS minutesSinceCreated,
+     NOW() > e.start as hasStarted
+     FROM reservation r JOIN event e ON e.id = r.event_id
+     WHERE r.id IN (?)`,
+    using: (req) => [req.body.reservationIds],
+    then: (results, _, res) => (res.locals.reservations = results),
+  }),
+  query({
+    sql: `SELECT
+      user_id AS userId
+      FROM project_group_user
+      WHERE project_group_id = ?`,
+    using: (req) => req.body.groupId,
+    then: (results, _, res) => (res.locals.groupUserIds = results),
+  }),
+  query({
+    assert: (_, res) => {
+      // RULE 0: admins can bypass the rules
+      if (res.locals.admin) return;
+      // RULE 1: user should be in the group
+      const groupUserIds: { userId: number }[] = res.locals.groupUserIds;
+      if (!groupUserIds.some(({ userId }) => userId === res.locals.user.id))
+        throw "Cannot cancel: Not a member of the group.";
+      // RULE 2: 5 minute creation grace period, otherwise start cannot have passed
+      const reservations: ReservationInfo[] = res.locals.reservations;
+      if (
+        reservations.some(
+          ({ minutesSinceCreated, hasStarted }) =>
+            hasStarted && minutesSinceCreated > 15
+        )
+      )
+        throw "Cannot cancel: reservation is in progress.";
+    },
+    sql: "UPDATE reservation SET ? WHERE id IN (?)",
   using: (req, res) => [getCancellation(req, res), req.body.reservationIds],
-});
+  }),
+];
 
 // TODO: send updated project & group info (reserved hours may have changed)
 const cancelResponse: EC = (_, res, next) => {
@@ -719,7 +760,7 @@ export default {
   importClassMeetings: importClassMeetingReservations,
   refund,
   cancelManyReservations: [
-    cancelManyReservations,
+    ...cancelManyReservations,
     ...withUpdatedEventsAndReservations,
     cancelResponse,
     useMailbox,
