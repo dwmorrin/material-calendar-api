@@ -13,6 +13,7 @@ import authorization, { onNotAuthorized } from "./utils/authorization";
 import password from "./utils/password";
 import login from "./utils/login";
 import logout from "./utils/logout";
+import { CrudError } from "./utils/crud";
 
 // configure express
 const app = express();
@@ -70,7 +71,25 @@ app.use(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _: NextFunction
   ): void => {
-    if (error instanceof Error) {
+    if (error instanceof CrudError) {
+      // eslint-disable-next-line no-console
+      console.error(
+        [
+          new Date().toLocaleString(),
+          "--- CRUD ERROR ---",
+          error.message,
+          "--- END CRUD ERROR ---",
+        ].join("\n")
+      );
+      if (req.is("application/json")) {
+        res.status(200).json({
+          error: { message: error.message },
+          context: req.query.context,
+        });
+      } else {
+        res.redirect(500, "/");
+      }
+    } else if (error instanceof Error) {
       // eslint-disable-next-line no-console
       console.error(
         [

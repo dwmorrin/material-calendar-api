@@ -8,6 +8,12 @@ import pool, { inflate } from "./db";
 import { MysqlError } from "mysql";
 import { EC } from "./types";
 
+export class CrudError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 // for use in express routes: ID must be numeric
 // (e.g. /api/users/12345, router.get(`/api/users/${numericId}`))
 export const numericId = ":id(\\d+)";
@@ -71,6 +77,7 @@ export function query<T>({
         assert(req, res);
       } catch (error) {
         if (error === "continue") return next();
+        if (typeof error === "string") return next(new CrudError(error));
         return next(error);
       }
     const values: T | T[] = using ? using(req, res) : [];
