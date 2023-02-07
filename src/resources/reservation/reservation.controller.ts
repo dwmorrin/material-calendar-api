@@ -164,7 +164,7 @@ const cancelManyReservations = [
         throw "Cannot cancel: reservation is in progress.";
     },
     sql: "UPDATE reservation SET ? WHERE id IN (?)",
-  using: (req, res) => [getCancellation(req, res), req.body.reservationIds],
+    using: (req, res) => [getCancellation(req, res), req.body.reservationIds],
   }),
 ];
 
@@ -535,19 +535,6 @@ const importClassMeetingReservations = [
   respond({ status: 201, data: (_, res) => res.locals.warnings }),
 ];
 
-interface Reservation {
-  id: number;
-  eventId: number;
-  projectId: number;
-  groupId: number;
-  description: string;
-  guests: string;
-  liveRoom: boolean;
-  phone: string;
-  notes: string;
-  equipment: { id: number; quantity: number }[];
-}
-
 interface FormUser {
   username: string;
   name: string;
@@ -557,11 +544,6 @@ interface FormUser {
 interface FormItem {
   sku: string;
   quantity: number;
-}
-
-interface ItemInfo {
-  id: number;
-  sku: string;
 }
 
 interface Form {
@@ -588,27 +570,11 @@ const makeReservationForm: EC = (req, res, next) => {
   const event: Event = res.locals.event;
   const location: { title: string } = res.locals.location;
   const group: ProjectGroup = res.locals.group;
-  const itemSkus: ItemInfo[] | undefined = res.locals.items;
-  const reservation: Reservation = req.body.reservation;
-
-  let items: FormItem[];
-  try {
-    if (!Array.isArray(itemSkus)) throw "No skus";
-    items = itemSkus.map(({ id, sku }) => {
-      const item = reservation.equipment.find((i) => i.id === id);
-      if (!item) throw "No item";
-      return {
-        id,
-        sku,
-        quantity: item.quantity,
-      };
-    });
-  } catch (e) {
-    items = [];
-  }
+  const items: FormItem[] = res.locals.items || [];
+  const reservationId: number = req.body.primaryReservationId;
 
   const form: Form = {
-    reservationId: reservation.id,
+    reservationId,
     start: event.start,
     end: event.end,
     locationTitle: location.title,
@@ -624,29 +590,7 @@ const makeReservationForm: EC = (req, res, next) => {
   next();
 };
 
-const forwardRemoveOne: EC = (req, res, next) => {
-  const { reservation } = req.body;
-  if (!reservation)
-    return res.status(400).json({ error: { message: "No reservation" } });
-  const { id } = reservation as { id: number };
-  if (!id || typeof id !== "number" || id < 1)
-    return res
-      .status(400)
-      .json({ error: { message: "No reservation ID sent" } });
-  const form: Form = {
-    reservationId: id,
-    start: "",
-    end: "",
-    locationTitle: "",
-    groupTitle: "DELETE",
-    users: [],
-    items: [],
-  };
-  res.locals.form = form;
-  next();
-};
-
-const forwardOne: EC = (req, res) => {
+const forwardOne: EC = (_, res) => {
   const url = process.env.RESERVATION_FORWARD_URL;
   if (!url) return res.status(500).send("reservation forward URL not set");
   let forwardEnv;
@@ -655,12 +599,11 @@ const forwardOne: EC = (req, res) => {
   } catch (e) {
     return res.status(500).send("reservation forward JSON not valid");
   }
-  const { method }: { method: string } = req.body;
   const form: Form = res.locals.form;
   const formLogFormatted = `${form.reservationId}: ${form.groupTitle}, ${form.start}`;
   const body = JSON.stringify({
     ...forwardEnv,
-    method,
+    method: "POST",
     params: form,
   });
 
@@ -674,33 +617,29 @@ const forwardOne: EC = (req, res) => {
     if (!res.writableEnded) res.status(500).json({ error });
   };
   const onSuccess = () => {
-    console.log("FORWARD OK:", formLogFormatted);
-    if (!res.writableEnded) res.status(200).json({ data });
+    if (!res.writableEnded)
+      res.status(200).json({ data: { events: res.locals.eventViews } });
   };
 
   // make the request
-  const fwd = request(
-    url,
-    { method: process.env.NODE_ENV === "production" ? "POST" : "inspect" },
-    (fwdRes) => {
-      if (fwdRes.statusCode === 302) {
-        // follow temporary redirects
-        const { location } = fwdRes.headers;
-        if (!location) return onError(new Error("Redirect without location"));
-        const url = new URL(location);
-        const redirect = request(url, (redirectRes) => {
-          redirectRes
-            .on("error", onError)
-            .on("data", onData)
-            .on("end", onSuccess);
-        });
-        redirect.on("error", onError);
-        redirect.end();
-      } else {
-        fwdRes.on("error", onError).on("data", onData).on("end", onSuccess);
-      }
+  const fwd = request(url, { method: "POST" }, (fwdRes) => {
+    if (fwdRes.statusCode === 302) {
+      // follow temporary redirects
+      const { location } = fwdRes.headers;
+      if (!location) return onError(new Error("Redirect without location"));
+      const url = new URL(location);
+      const redirect = request(url, (redirectRes) => {
+        redirectRes
+          .on("error", onError)
+          .on("data", onData)
+          .on("end", onSuccess);
+      });
+      redirect.on("error", onError);
+      redirect.end();
+    } else {
+      fwdRes.on("error", onError).on("data", onData).on("end", onSuccess);
     }
-  );
+  });
   fwd.on("error", onError);
   fwd.write(body);
   fwd.end();
@@ -713,46 +652,81 @@ const forwardOne: EC = (req, res) => {
 // const reservation: Reservation = req.body.reservation;
 const forwardStack = [
   query({
-    sql: "SELECT start, end, location_id AS locationId FROM event WHERE id = ?",
-    using: (req) => req.body.reservation.eventId,
+    assert: (_, res) => {
+      if (!(res.locals.admin || res.locals.roles.includes("staff")))
+        throw "Cannot complete request: unauthorized";
+    },
+    sql: `SELECT
+        id,
+        event_id AS eventId,
+        group_id AS groupId
+      FROM reservation WHERE id IN (?)`,
+    using: (req) => [req.body.reservationIds],
+    then: (results, _, res) => (res.locals.reservations = results),
+  }),
+  query({
+    sql: `SELECT DISTINCT
+        e.id,
+        e.sku,
+        er.quantity
+      FROM equipment_reservation er JOIN equipment e on e.id = er.equipment_id
+      WHERE er.booking_id IN (?)`,
+    using: (req) => [req.body.reservationIds],
+    then: (results, _, res) => (res.locals.items = results),
+  }),
+  query({
+    sql: "SELECT start, end, location_id AS locationId FROM event WHERE id in (?)",
+    using: (_, res) => [
+      (res.locals.reservations as { eventId: number }[]).map(
+        ({ eventId }) => eventId
+      ),
+    ],
     then: (results, _, res) => (res.locals.event = results[0]),
   }),
   query({
+    assert: (_, res) => {
+      const reservations: { groupId: number }[] = res.locals.reservations;
+      if (!Array.isArray(reservations))
+        throw "Internal error: reservations not an array.";
+      if (reservations.length > 1) {
+        const groupId = reservations[0].groupId;
+        for (let i = 1; i < reservations.length; ++i)
+          if (groupId !== reservations[i].groupId)
+            throw "Cannot generate form automatically: multiple groups found.";
+      }
+    },
     sql: "SELECT * FROM project_group_view WHERE id = ?",
-    using: (req) => req.body.reservation.groupId,
+    using: (_, res) => res.locals.reservations[0].groupId,
     then: (results, _, res) => (res.locals.group = results[0]),
   }),
   query({
+    assert: (_, res) => {
+      if (!res.locals.group)
+        throw "Cannot generate form automatically: no user associated with this reservation.";
+    },
     sql: "SELECT title FROM location WHERE id = ?",
     using: (_, res) => res.locals.event.locationId,
     then: (results, _, res) => (res.locals.location = results[0]),
   }),
   query({
-    assert: (req) => {
-      const { reservation } = req.body;
-      if (!reservation) throw "continue";
-      const { equipment } = reservation;
-      if (!Array.isArray(equipment) || !equipment.length) throw "continue";
-    },
-    sql: "SELECT id, sku FROM equipment_view WHERE id IN (?)",
-    using: (req) => {
-      // repeat of assert above, repeating for type safety
-      const { reservation } = req.body;
-      if (!reservation) throw "no reservation";
-      const { equipment } = reservation;
-      if (!Array.isArray(equipment)) throw "no equipment";
-      return [equipment.map((e) => e.id)];
-    },
-    then: (results, _, res) => (res.locals.items = results),
+    sql: "SELECT * FROM event_view WHERE id IN (?)",
+    using: (_, res) =>
+      (res.locals.reservations as { eventId: number }[]).map(
+        ({ eventId }) => eventId
+      ),
+    then: (results, _, res) => (res.locals.eventViews = results),
+  }),
+  query({
+    sql: "UPDATE reservation SET checkin = NOW() WHERE id IN (?)",
+    using: (req) => [req.body.reservationIds],
   }),
   makeReservationForm,
   forwardOne,
 ];
 
 export default {
+  checkIn: [...forwardStack],
   createOne: [...createOneStack, ...editReservationStack],
-  forwardOne: [...forwardStack],
-  forwardRemoveOne: [forwardRemoveOne, forwardOne],
   updateOne: [updateOne, ...editReservationStack],
   getOne,
   getByUser,
