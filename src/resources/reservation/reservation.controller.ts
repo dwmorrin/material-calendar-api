@@ -653,7 +653,7 @@ const forwardOne: EC = (_, res) => {
 const forwardStack = [
   query({
     assert: (_, res) => {
-      if (!(res.locals.admin || res.locals.roles.includes("staff")))
+      if (!(res.locals.admin || res.locals.user.roles.includes("staff")))
         throw "Cannot complete request: unauthorized";
     },
     sql: `SELECT
