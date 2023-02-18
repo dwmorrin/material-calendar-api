@@ -134,12 +134,11 @@ CREATE TABLE `event` (
   `lock_user_id` int DEFAULT NULL,
   `locked_time` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `start_studio_idx` (`start`,`location_id`),
   KEY `studio_id_idx` (`location_id`),
   KEY `user_foreign_key` (`lock_user_id`),
   CONSTRAINT `allotment_studio_id_studio_id` FOREIGN KEY (`location_id`) REFERENCES `location` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `user_foreign_key` FOREIGN KEY (`lock_user_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE=InnoDB  DEFAULT CHARSET=latin1;
+) /*!50100 TABLESPACE `innodb_system` */ ENGINE=InnoDB  DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 SET @saved_cs_client     = @@character_set_client;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -451,7 +450,8 @@ SET @saved_cs_client     = @@character_set_client;
 /*!50001 CREATE VIEW `roster_view` AS SELECT 
  1 AS `id`,
  1 AS `course`,
- 1 AS `student`*/;
+ 1 AS `student`,
+ 1 AS `semesterId`*/;
 SET character_set_client = @saved_cs_client;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -756,7 +756,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `project_view` AS select `p`.`id` AS `id`,`p`.`title` AS `title`,ifnull((select json_object('id',ifnull(`c`.`id`,0),'title',ifnull(`c`.`title`,''),'sections',if((`s`.`title` is null),'[]',json_arrayagg(`s`.`title`))) from ((`section_project` `sp` join `section` `s` on((`s`.`id` = `sp`.`section_id`))) join `course` `c`) where ((`sp`.`project_id` = `p`.`id`) and (`s`.`course_id` = `c`.`id`)) limit 1),json_object('id',-(1),'title','')) AS `course`,`p`.`start` AS `start`,`p`.`end` AS `end`,`p`.`book_start` AS `reservationStart`,ifnull((select json_arrayagg(json_object('locationId',`vw`.`location_id`,'virtualWeekId',`vw`.`id`,'start',if((`vw`.`start` >= `p`.`start`),`vw`.`start`,`p`.`start`),'end',if((`vw`.`end` <= `p`.`end`),`vw`.`end`,`p`.`end`),'hours',ifnull(`ph`.`hours`,0))) from ((`project_location_hours` `psh` join `virtual_week` `vw` on((`psh`.`location_id` = `vw`.`location_id`))) left join `project_virtual_week_hours` `ph` on(((`ph`.`project_id` = `psh`.`project_id`) and (`ph`.`virtual_week_id` = `vw`.`id`)))) where ((`psh`.`project_id` = `p`.`id`) and (`vw`.`end` >= `p`.`start`) and (`vw`.`start` <= `p`.`end`))),'[]') AS `allotments`,ifnull((select sum(`ph`.`hours`) from `project_virtual_week_hours` `ph` where (`ph`.`project_id` = `p`.`id`)),0) AS `totalAllottedHours`,ifnull((select json_arrayagg(json_object('locationId',`ps`.`location_id`,'hours',`ps`.`hours`)) from `project_location_hours` `ps` where (`ps`.`project_id` = `p`.`id`)),'[]') AS `locationHours`,`p`.`open` AS `open`,`p`.`group_size` AS `groupSize`,`p`.`group_hours` AS `groupAllottedHours` from `project` `p` */;
+/*!50001 VIEW `project_view` AS select `p`.`id` AS `id`,`p`.`title` AS `title`,ifnull((select json_object('id',ifnull(`c`.`id`,0),'title',ifnull(`c`.`title`,''),'sections',if((`s`.`title` is null),'[]',json_arrayagg(`s`.`title`)),'semesterId',`s`.`semester_id`) from ((`section_project` `sp` join `section` `s` on((`s`.`id` = `sp`.`section_id`))) join `course` `c`) where ((`sp`.`project_id` = `p`.`id`) and (`s`.`course_id` = `c`.`id`)) limit 1),json_object('id',-(1),'title','')) AS `course`,`p`.`start` AS `start`,`p`.`end` AS `end`,`p`.`book_start` AS `reservationStart`,ifnull((select json_arrayagg(json_object('locationId',`vw`.`location_id`,'virtualWeekId',`vw`.`id`,'start',if((`vw`.`start` >= `p`.`start`),`vw`.`start`,`p`.`start`),'end',if((`vw`.`end` <= `p`.`end`),`vw`.`end`,`p`.`end`),'hours',ifnull(`ph`.`hours`,0))) from ((`project_location_hours` `psh` join `virtual_week` `vw` on((`psh`.`location_id` = `vw`.`location_id`))) left join `project_virtual_week_hours` `ph` on(((`ph`.`project_id` = `psh`.`project_id`) and (`ph`.`virtual_week_id` = `vw`.`id`)))) where ((`psh`.`project_id` = `p`.`id`) and (`vw`.`end` >= `p`.`start`) and (`vw`.`start` <= `p`.`end`))),'[]') AS `allotments`,ifnull((select sum(`ph`.`hours`) from `project_virtual_week_hours` `ph` where (`ph`.`project_id` = `p`.`id`)),0) AS `totalAllottedHours`,ifnull((select json_arrayagg(json_object('locationId',`ps`.`location_id`,'hours',`ps`.`hours`)) from `project_location_hours` `ps` where (`ps`.`project_id` = `p`.`id`)),'[]') AS `locationHours`,`p`.`open` AS `open`,`p`.`group_size` AS `groupSize`,`p`.`group_hours` AS `groupAllottedHours` from `project` `p` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -808,7 +808,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 */
-/*!50001 VIEW `roster_view` AS select `r`.`id` AS `id`,json_object('id',`c`.`id`,'title',`c`.`title`,'catalogId',`c`.`catalog_id`,'section',`s`.`title`,'instructor',if((`s`.`instructor_id` is not null),(select concat(`user`.`first_name`,' ',`user`.`last_name`) from `user` where (`user`.`id` = `s`.`instructor_id`)),'TBA')) AS `course`,json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'middle',`u`.`middle_name`,'last',`u`.`last_name`)) AS `student` from (((`roster` `r` join `user` `u` on((`r`.`user_id` = `u`.`id`))) join `section` `s` on((`r`.`section_id` = `s`.`id`))) join `course` `c` on((`s`.`course_id` = `c`.`id`))) order by `c`.`catalog_id`,`s`.`title`,`u`.`last_name`,`u`.`first_name` */;
+/*!50001 VIEW `roster_view` AS select `r`.`id` AS `id`,json_object('id',`c`.`id`,'title',`c`.`title`,'catalogId',`c`.`catalog_id`,'section',`s`.`title`,'instructor',if((`s`.`instructor_id` is not null),(select concat(`user`.`first_name`,' ',`user`.`last_name`) from `user` where (`user`.`id` = `s`.`instructor_id`)),'TBA')) AS `course`,json_object('id',`u`.`id`,'username',`u`.`user_id`,'name',json_object('first',`u`.`first_name`,'middle',`u`.`middle_name`,'last',`u`.`last_name`)) AS `student`,`s`.`semester_id` AS `semesterId` from (((`roster` `r` join `user` `u` on((`r`.`user_id` = `u`.`id`))) join `section` `s` on((`r`.`section_id` = `s`.`id`))) join `course` `c` on((`s`.`course_id` = `c`.`id`))) order by `c`.`catalog_id`,`s`.`title`,`u`.`last_name`,`u`.`first_name` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
