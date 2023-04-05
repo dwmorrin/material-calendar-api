@@ -122,20 +122,90 @@ const cancelReservation = query({
   using: (req, res) => [getCancellation(req, res), req.params.id],
 });
 
-interface ReservationInfo {
-  minutesSinceCreated: number;
-  hasStarted: number;
+interface ReservationCancelInfo {
+  minutesSinceCreated: number; // for business logic
+  hasStarted: number; // for business logic
+  start: string; // formatted date & time string for email
+  projectTitle: string; // for email
+  location: string; // for email
 }
+
+const composeCancelEmail: EC = (req, res, next) => {
+  const { myName, group, cancelReservationInfo } = res.locals;
+  if (!Array.isArray(cancelReservationInfo))
+    return next("Error: no reservation info");
+  const { start, projectTitle, location } = cancelReservationInfo[0];
+  const { refundApproved, refundRequest, refundComment } = req.body;
+  const adminEmail =
+    process.env.EMAIL_FROM || "Calendar Admin <admin@calendar.app>";
+  const subject = "canceled a reservation for your group";
+  const whatWhenWhere = `${projectTitle} on ${start} in ${location}`;
+  const body = `${subject} for ${whatWhenWhere}`;
+  const mail = [];
+  const refundMessage = refundRequest
+    ? " They requested that project hours be refunded. The request has been sent to the administrator."
+    : " They did not request that project hours be refunded, so the hours have been forfeited.";
+  mail.push({
+    to: group.members,
+    subject: `${myName} has ${subject}`,
+    text: `You are receiving this because you are a member of ${
+      group.title
+    }. ${myName} has ${body}.${refundApproved ? "" : refundMessage}`,
+  });
+  if (!refundApproved && adminEmail && refundRequest)
+    mail.push({
+      to: adminEmail,
+      subject: "Project Hour Refund Request",
+      text: `${myName} is requesting a project hour refund for their booking: ${whatWhenWhere}. Message: ${
+        refundComment || "(no message)"
+      }`,
+    });
+  res.locals.mail = mail;
+  next();
+};
+
+const cancelMail = [
+  query({
+    sql: `
+    select title, group_concat(u.email) as members
+    from user u
+    join project_group_user pgu on pgu.user_id = u.id
+    join project_group g on pgu.project_group_id = g.id
+    where g.id = ?
+    group by g.id
+    `,
+    using: (req) => req.body.groupId,
+    then: (results, _, res) => (res.locals.group = results[0]),
+  }),
+  query({
+    sql: `
+    select concat_ws(' ', first_name, last_name) as myName
+    from user where id = ?
+    `,
+    using: (_, res) => res.locals.user.id,
+    then: (results, _, res) => (res.locals.myName = results[0].myName),
+  }),
+  composeCancelEmail,
+];
 
 const cancelManyReservations = [
   query({
     sql: `SELECT
      TIMESTAMPDIFF(MINUTE, r.created, NOW()) AS minutesSinceCreated,
-     NOW() > e.start as hasStarted
-     FROM reservation r JOIN event e ON e.id = r.event_id
-     WHERE r.id IN (?)`,
+     NOW() > e.start as hasStarted,
+     DATE_FORMAT(e.start, '%b %e, %l:%i %p') as start,
+     p.title as projectTitle,
+     l.title as location
+     FROM reservation r
+     JOIN event e ON e.id = r.event_id
+     JOIN project_group g ON g.id = r.group_id
+     JOIN project p ON p.id = g.project_id
+     JOIN location l ON l.id = e.location_id
+     WHERE r.id IN (?)
+     ORDER BY e.start
+     `,
     using: (req) => [req.body.reservationIds],
-    then: (results, _, res) => (res.locals.reservations = results),
+    then: (results, _, res) => (res.locals.cancelReservationInfo = results),
   }),
   query({
     sql: `SELECT
@@ -154,7 +224,8 @@ const cancelManyReservations = [
       if (!groupUserIds.some(({ userId }) => userId === res.locals.user.id))
         throw "Cannot cancel: Not a member of the group.";
       // RULE 2: 5 minute creation grace period, otherwise start cannot have passed
-      const reservations: ReservationInfo[] = res.locals.reservations;
+      const reservations: ReservationCancelInfo[] =
+        res.locals.cancelReservationInfo;
       if (
         reservations.some(
           ({ minutesSinceCreated, hasStarted }) =>
@@ -737,6 +808,7 @@ export default {
     ...cancelManyReservations,
     ...withUpdatedEventsAndReservations,
     cancelResponse,
+    ...cancelMail,
     useMailbox,
   ],
   cancelReservation: [

@@ -32,8 +32,10 @@ const sendMail = (mail: Mail[]) => {
 
 // must be placed **last**.  does not call next
 // TODO check if we can use sockets to alert client on failure
-export const useMailbox: EC = (req) => {
-  const mail: Mail | Mail[] = req.body.mail;
+export const useMailbox: EC = (req, res) => {
+  const mail: Mail | Mail[] = Array.isArray(res.locals.mail)
+    ? res.locals.mail
+    : req.body.mail;
   if (!Array.isArray(mail) && !mail)
     return logError("useMailbox called without mail in request body");
   // filters out empty "to" strings
